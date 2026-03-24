@@ -119,8 +119,10 @@
 (defn- tag-line? [trimmed]
   (str/starts-with? trimmed "@"))
 
-(defn- has-wip-tag? [trimmed]
-  (some #(= "@wip" %) (str/split trimmed #"\s+")))
+(defn- parse-tags [trimmed]
+  (->> (str/split trimmed #"\s+")
+       (filter #(str/starts-with? % "@"))
+       (mapv #(subs % 1))))
 
 (defn- append-to-current-scenario [result trimmed]
   (let [scenarios (:scenarios result)
@@ -133,9 +135,10 @@
   [lines]
   (loop [lines lines
          state :start
-         wip-pending false
+         tags-pending []
          in-doc-string false
          result {:feature-line nil
+                 :feature-tags []
                  :description-lines []
                  :background-lines []
                  :scenarios []}]
@@ -150,62 +153,62 @@
           (let [result (if (= state :background)
                          (update result :background-lines conj trimmed)
                          (append-to-current-scenario result trimmed))]
-            (recur rest-lines state wip-pending false result))
+            (recur rest-lines state tags-pending false result))
 
           in-doc-string
           (let [result (if (= state :background)
                          (update result :background-lines conj trimmed)
                          (append-to-current-scenario result trimmed))]
-            (recur rest-lines state wip-pending true result))
+            (recur rest-lines state tags-pending true result))
 
           ;; Opening doc-string fence
           (doc-string-fence? trimmed)
           (let [result (if (= state :background)
                          (update result :background-lines conj trimmed)
                          (append-to-current-scenario result trimmed))]
-            (recur rest-lines state wip-pending true result))
+            (recur rest-lines state tags-pending true result))
 
           (and (= state :start) (str/starts-with? trimmed "Feature:"))
-          (recur rest-lines :description false false
-                 (assoc result :feature-line trimmed))
+          (recur rest-lines :description [] false
+                 (assoc result :feature-line trimmed :feature-tags tags-pending))
 
           (and (= state :description) (str/blank? trimmed))
-          (recur rest-lines :description false false result)
+          (recur rest-lines :description [] false result)
 
           (str/starts-with? trimmed "Background:")
-          (recur rest-lines :background false false result)
+          (recur rest-lines :background [] false result)
 
           (tag-line? trimmed)
-          (recur rest-lines state (has-wip-tag? trimmed) false result)
+          (recur rest-lines state (into tags-pending (parse-tags trimmed)) false result)
 
           (str/starts-with? trimmed "Scenario:")
           (let [title (str/trim (subs trimmed 9))
-                scenario-entry {:title title :lines [] :wip wip-pending}]
-            (recur rest-lines :scenario false false
+                scenario-entry {:title title :lines [] :tags tags-pending}]
+            (recur rest-lines :scenario [] false
                    (update result :scenarios conj scenario-entry)))
 
           (and (= state :background) (step-keyword? trimmed))
-          (recur rest-lines :background false false
+          (recur rest-lines :background [] false
                  (update result :background-lines conj trimmed))
 
           (and (= state :background) (table-line? trimmed))
-          (recur rest-lines :background false false
+          (recur rest-lines :background [] false
                  (update result :background-lines conj trimmed))
 
           (and (= state :scenario) (step-keyword? trimmed))
-          (recur rest-lines :scenario false false
+          (recur rest-lines :scenario [] false
                  (append-to-current-scenario result trimmed))
 
           (and (= state :scenario) (table-line? trimmed))
-          (recur rest-lines :scenario false false
+          (recur rest-lines :scenario [] false
                  (append-to-current-scenario result trimmed))
 
           (and (= state :description) (seq trimmed))
-          (recur rest-lines :description false false
+          (recur rest-lines :description [] false
                  (update result :description-lines conj trimmed))
 
           :else
-          (recur rest-lines state wip-pending false result))))))
+          (recur rest-lines state tags-pending false result))))))
 
 (defn parse-feature
   "Parse a Gherkin feature string into an EDN IR map."
@@ -215,13 +218,18 @@
         feature-name (str/trim (subs (:feature-line sections) 8))
         description-lines (:description-lines sections)
         background-lines (:background-lines sections)
-        scenarios (mapv (fn [{:keys [title lines wip]}]
-                          (let [parsed (parse-scenario-lines lines)]
+        feature-tags (:feature-tags sections)
+        scenarios (mapv (fn [{:keys [title lines tags]}]
+                          (let [parsed (parse-scenario-lines lines)
+                                all-tags (into feature-tags tags)]
                             (cond-> (assoc parsed :scenario title)
-                              wip (assoc :wip true))))
+                              (seq all-tags) (assoc :tags all-tags))))
                         (:scenarios sections))]
     (cond-> {:feature feature-name
              :scenarios scenarios}
+      (seq feature-tags)
+      (assoc :tags feature-tags)
+
       (seq description-lines)
       (assoc :description (str/join "\n" description-lines))
 
