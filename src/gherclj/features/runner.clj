@@ -9,8 +9,8 @@
 (defn -main [& _args]
   (pipeline/run!
     {:features-dir "features"
-     :edn-dir "features/edn"
-     :output-dir "features/generated"
+     :edn-dir "target/gherclj/edn"
+     :output-dir "target/gherclj/generated"
      :step-namespaces ['gherclj.features.steps.template-compilation
                        'gherclj.features.steps.step-definitions
                        'gherclj.features.steps.code-generation
@@ -18,4 +18,4 @@
      :harness-ns 'gherclj.features.harness
      :test-framework :speclj
      :verbose true})
-  (speclj/run "-c" "features/generated" "-s" "src"))
+  (speclj/run "-c" "target/gherclj/generated" "-s" "src"))

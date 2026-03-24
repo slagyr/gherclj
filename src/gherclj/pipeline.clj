@@ -41,11 +41,11 @@
 
    Config keys:
      :features-dir - directory containing .feature files
-     :edn-dir      - directory to write .edn IR files (default: features/edn)
+     :edn-dir      - directory to write .edn IR files (default: target/gherclj/edn)
      :verbose      - when truthy, print progress to stdout"
   [config]
   (let [{:keys [features-dir edn-dir verbose]
-         :or {edn-dir "features/edn"}} config
+         :or {edn-dir "target/gherclj/edn"}} config
         features (parser/parse-features-dir features-dir)]
     (io/make-parents (io/file edn-dir "dummy"))
     (doseq [ir features]
@@ -59,15 +59,15 @@
   "Generate spec files from .edn IR files.
 
    Config keys:
-     :edn-dir         - directory containing .edn IR files (default: features/edn)
-     :output-dir      - directory to write generated specs (default: features/generated)
+     :edn-dir         - directory containing .edn IR files (default: target/gherclj/edn)
+     :output-dir      - directory to write generated specs (default: target/gherclj/generated)
      :step-namespaces - vector of namespace symbols containing step definitions
      :harness-ns      - namespace symbol for the test harness
      :test-framework  - :speclj or :clojure.test"
   [config]
   (let [{:keys [edn-dir output-dir step-namespaces test-framework verbose]
-         :or {edn-dir "features/edn"
-              output-dir "features/generated"}} config]
+         :or {edn-dir "target/gherclj/edn"
+              output-dir "target/gherclj/generated"}} config]
     (ensure-framework-loaded! test-framework)
     (ensure-steps-loaded! step-namespaces)
     (let [edn-files (->> (.listFiles (io/file edn-dir))
@@ -88,8 +88,8 @@
 
    Config keys:
      :features-dir    - directory containing .feature files
-     :edn-dir         - directory to write .edn IR files (default: features/edn)
-     :output-dir      - directory to write generated specs (default: features/generated)
+     :edn-dir         - directory to write .edn IR files (default: target/gherclj/edn)
+     :output-dir      - directory to write generated specs (default: target/gherclj/generated)
      :step-namespaces - vector of namespace symbols containing step definitions
      :harness-ns      - namespace symbol for the test harness
      :test-framework  - :speclj or :clojure.test"

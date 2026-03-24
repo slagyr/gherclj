@@ -1,4 +1,6 @@
 target/
+features/edn/
+features/generated/
 .cpcache/
 .nrepl-port
 *.class
