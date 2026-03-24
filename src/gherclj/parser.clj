@@ -213,9 +213,13 @@
 (defn parse-feature
   "Parse a Gherkin feature string into an EDN IR map."
   [text]
+  (when (str/blank? text)
+    (throw (RuntimeException. "Cannot parse empty feature file")))
   (let [lines (str/split-lines text)
-        sections (parse-sections lines)
-        feature-name (str/trim (subs (:feature-line sections) 8))
+        sections (parse-sections lines)]
+    (when-not (:feature-line sections)
+      (throw (RuntimeException. "Missing Feature keyword — expected a line starting with 'Feature:'")))
+    (let [feature-name (str/trim (subs (:feature-line sections) 8))
         description-lines (:description-lines sections)
         background-lines (:background-lines sections)
         feature-tags (:feature-tags sections)
@@ -234,7 +238,7 @@
       (assoc :description (str/join "\n" description-lines))
 
       (seq background-lines)
-      (assoc :background (parse-scenario-lines background-lines)))))
+      (assoc :background (parse-scenario-lines background-lines))))))
 
 (defn parse-feature-file
   "Parse a .feature file into an EDN IR map with :source."

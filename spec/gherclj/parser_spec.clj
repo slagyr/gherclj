@@ -98,4 +98,14 @@
                       "  Scenario: Not ready\n"
                       "    Given something\n"))]
         (should= ["wip"] (:tags (first (:scenarios ir))))
-        (should-be-nil (:wip (first (:scenarios ir))))))))
+        (should-be-nil (:wip (first (:scenarios ir)))))))
+
+  (context "error reporting"
+
+    (it "throws on missing Feature keyword"
+      (should-throw RuntimeException
+        (parser/parse-feature "Scenario: No feature\n  Given something\n")))
+
+    (it "throws on empty input"
+      (should-throw RuntimeException
+        (parser/parse-feature "")))))

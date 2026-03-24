@@ -1,6 +1,7 @@
 (ns gherclj.core
-  (:refer-clojure :exclude [get get-in swap! dissoc update update-in])
-  (:require [gherclj.template :as template]))
+  (:refer-clojure :exclude [get get-in swap! dissoc update update-in reset! assoc! dissoc!])
+  (:require [clojure.string :as str]
+            [gherclj.template :as template]))
 
 ;; --- State management ---
 ;; Shared state atom for step definitions to use. Internal gherclj
@@ -87,18 +88,25 @@
   (into [] (mapcat #(steps-in-ns %)) ns-syms))
 
 (defn classify-step
-  "Match step text against collected steps. Returns the first matching step
-   entry with :args populated, or nil if no match."
+  "Match step text against collected steps. Returns the matching step
+   entry with :args populated, or nil if no match.
+   Throws if multiple steps match (ambiguous)."
   [steps text]
-  (some (fn [{:keys [regex bindings] :as step}]
-          (when-let [match (re-matches regex text)]
-            (let [groups (if (string? match) [] (vec (rest match)))
-                  args (if bindings
-                         (mapv (fn [group {:keys [coerce]}] (coerce group))
-                               groups bindings)
-                         groups)]
-              (assoc step :args args))))
-        steps))
+  (let [matches (keep (fn [{:keys [regex bindings] :as step}]
+                        (when-let [match (re-matches regex text)]
+                          (let [groups (if (string? match) [] (vec (rest match)))
+                                args (if bindings
+                                       (mapv (fn [group {:keys [coerce]}] (coerce group))
+                                             groups bindings)
+                                       groups)]
+                            (assoc step :args args))))
+                      steps)]
+    (when (> (count matches) 1)
+      (let [names (mapv :name matches)]
+        (throw (RuntimeException.
+                 (str "Ambiguous step match — \"" text "\" matches: "
+                      (str/join ", " names))))))
+    (first matches)))
 
 ;; --- Macros ---
 

@@ -83,10 +83,6 @@
         ir (edn/read-string (slurp (io/file base path)))]
     (count (:scenarios ir))))
 
-(defthen pipeline-output-should-contain "the output should contain \"{text}\""
-  [text]
-  (h/pipeline-output))
-
 (defthen pipeline-output-should-be-empty "the output should be empty"
   []
   (h/pipeline-output))

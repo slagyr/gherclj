@@ -82,7 +82,16 @@
     (it "returns nil for unrecognized step text"
       (let [steps (core/collect-steps ['gherclj.core-spec])
             result (core/classify-step steps "something completely unrecognized")]
-        (should-be-nil result))))
+        (should-be-nil result)))
+
+    (it "throws on ambiguous matches"
+      (let [steps [{:name "greet-any" :regex #"^hello (\S+)$"
+                    :bindings [{:name "name" :coerce identity}]
+                    :ns 'test :type :given}
+                   {:name "greet-world" :regex #"^hello world$"
+                    :ns 'test :type :given}]]
+        (should-throw RuntimeException
+          (core/classify-step steps "hello world")))))
 
   (context "state management"
 

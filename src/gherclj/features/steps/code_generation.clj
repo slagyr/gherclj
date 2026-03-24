@@ -45,7 +45,7 @@
 
 (defthen output-should-contain "the output should contain \"{expected}\""
   [expected]
-  (h/generated-output))
+  (or (h/generated-output) (h/pipeline-output)))
 
 (defthen output-should-not-contain "the output should not contain \"{text}\""
   [text]
