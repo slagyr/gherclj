@@ -6,6 +6,7 @@
             [gherclj.frameworks.speclj]
             [gherclj.frameworks.clojure-test]
             [gherclj.pipeline :as pipeline]
+            [gherclj.parser :as parser]
             [clojure.java.io :as io]))
 
 (def ^:private state (atom nil))
@@ -92,6 +93,16 @@
     (swap! state assoc :generated-output (gen/generate-spec config (:feature-ir @state)))))
 
 (defn generated-output [] (:generated-output @state))
+
+;; --- Parsing state ---
+
+(defn set-raw-feature! [text]
+  (swap! state assoc :raw-feature text))
+
+(defn parse-raw-feature! []
+  (swap! state assoc :parsed-ir (parser/parse-feature (:raw-feature @state))))
+
+(defn parsed-ir [] (:parsed-ir @state))
 
 ;; --- Pipeline state ---
 

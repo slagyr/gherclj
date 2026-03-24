@@ -5,6 +5,7 @@
             [gherclj.features.steps.code-generation]
             [gherclj.features.steps.step-patterns]
             [gherclj.features.steps.pipeline]
+            [gherclj.features.steps.gherkin-parsing]
             [speclj.cli :as speclj]))
 
 (defn -main [& _args]
@@ -16,7 +17,8 @@
                        'gherclj.features.steps.step-definitions
                        'gherclj.features.steps.code-generation
                        'gherclj.features.steps.step-patterns
-                       'gherclj.features.steps.pipeline]
+                       'gherclj.features.steps.pipeline
+                       'gherclj.features.steps.gherkin-parsing]
      :harness-ns 'gherclj.features.harness
      :test-framework :speclj
      :verbose true})

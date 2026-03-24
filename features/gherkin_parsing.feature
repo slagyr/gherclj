@@ -1,4 +1,3 @@
-@wip
 Feature: Gherkin parsing
 
   The parser converts .feature file text into an EDN intermediate
