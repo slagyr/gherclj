@@ -6,7 +6,7 @@
 
 (defmulti generate-ns-form
   "Generate the ns declaration string for a feature spec."
-  (fn [config & _] (:test-framework config)))
+  (fn [config & _args] (:test-framework config)))
 
 (defmulti wrap-feature
   "Wrap scenario blocks in a feature-level form."
@@ -87,15 +87,14 @@
 (defn generate-spec
   "Generate a complete spec file string from a config and feature IR."
   [config ir]
-  (let [{:keys [step-namespaces harness-ns]} config
+  (let [{:keys [step-namespaces]} config
         {:keys [source feature scenarios background]} ir
         steps (core/collect-steps step-namespaces)
         non-wip (remove :wip scenarios)
         classified-scenarios (mapv #(classify-scenario steps %) non-wip)
         classified-bg (when background (classify-scenario steps background))
         ns-form (generate-ns-form config source
-                                  (step-ns-requires steps non-wip)
-                                  harness-ns)
+                                  (step-ns-requires steps non-wip))
         scenario-blocks (->> classified-scenarios
                              (map (fn [scenario]
                                     (if (all-classified? scenario)

@@ -94,7 +94,6 @@
              :edn-dir edn-dir
              :output-dir output-dir
              :step-namespaces ['gherclj.pipeline-spec]
-             :harness-ns 'myapp.harness
              :test-framework :speclj})
 
           (should (.exists (io/file edn-dir "auth.edn")))

@@ -62,7 +62,6 @@
      :edn-dir         - directory containing .edn IR files (default: target/gherclj/edn)
      :output-dir      - directory to write generated specs (default: target/gherclj/generated)
      :step-namespaces - vector of namespace symbols containing step definitions
-     :harness-ns      - namespace symbol for the test harness
      :test-framework  - :speclj or :clojure.test"
   [config]
   (let [{:keys [edn-dir output-dir step-namespaces test-framework verbose]
@@ -91,7 +90,6 @@
      :edn-dir         - directory to write .edn IR files (default: target/gherclj/edn)
      :output-dir      - directory to write generated specs (default: target/gherclj/generated)
      :step-namespaces - vector of namespace symbols containing step definitions
-     :harness-ns      - namespace symbol for the test harness
      :test-framework  - :speclj or :clojure.test"
   [config]
   (parse! config)

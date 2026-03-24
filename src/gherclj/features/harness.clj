@@ -88,7 +88,6 @@
 
 (defn generate-spec! [framework step-namespaces]
   (let [config {:step-namespaces step-namespaces
-                :harness-ns 'gherclj.features.harness
                 :test-framework framework}]
     (swap! state assoc :generated-output (gen/generate-spec config (:feature-ir @state)))))
 
@@ -126,8 +125,7 @@
            :output-dir (pipeline-output-dir)}
     verbose (assoc :verbose true)
     framework (assoc :test-framework framework
-                     :step-namespaces []
-                     :harness-ns 'gherclj.features.harness)))
+                     :step-namespaces [])))
 
 (defn run-parse-stage! []
   (let [output (with-out-str (pipeline/parse! (pipeline-config)))]

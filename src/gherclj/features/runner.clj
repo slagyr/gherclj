@@ -19,7 +19,6 @@
                        'gherclj.features.steps.step-patterns
                        'gherclj.features.steps.pipeline
                        'gherclj.features.steps.gherkin-parsing]
-     :harness-ns 'gherclj.features.harness
      :test-framework :speclj
      :verbose true})
   (speclj/run "-c" "target/gherclj/generated" "-s" "src"))

@@ -59,7 +59,6 @@
 
     (it "generates a complete spec string for a feature IR"
       (let [config {:step-namespaces ['gherclj.generator-spec]
-                    :harness-ns 'myapp.harness
                     :test-framework :speclj}
             ir {:feature "Sample feature"
                 :source "sample.feature"
@@ -74,4 +73,5 @@
         (should (str/includes? result "(generator-spec/run-action)"))
         (should (str/includes? result "(generator-spec/check-result \"ok\")"))
         (should (str/includes? result "[gherclj.generator-spec :as generator-spec]"))
-        (should (str/includes? result "(h/reset!)"))))))
+        (should (str/includes? result "[gherclj.core :as g]"))
+        (should (str/includes? result "(g/reset!)"))))))

@@ -9,15 +9,14 @@
       (str/replace #"^-|-$" "")))
 
 (defmethod gen/generate-ns-form :clojure.test
-  [config source step-ns-syms harness-ns]
+  [_config source step-ns-syms]
   (let [ns-name (str (#'gen/source->ns-name source "-test"))
-        harness-req (str "            [" harness-ns " :as h]")
         step-reqs (->> step-ns-syms
                        sort
                        (map #(str "            [" % " :as " (gen/ns->alias %) "]")))]
     (str "(ns " ns-name "\n"
          "  (:require [clojure.test :refer :all]\n"
-         harness-req
+         "            [gherclj.core :as g]"
          (when (seq step-reqs)
            (str "\n" (str/join "\n" step-reqs)))
          "))")))
@@ -36,7 +35,7 @@
                         (map #'gen/generate-step-call-with-extras)))
         step-calls (->> (:steps scenario)
                         (map #'gen/generate-step-call-with-extras))
-        all-calls (concat ["(h/reset!)"] bg-calls step-calls)
+        all-calls (concat ["(g/reset!)"] bg-calls step-calls)
         body (->> all-calls
                   (map #(str "    " %))
                   (str/join "\n"))]

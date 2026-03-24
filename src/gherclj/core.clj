@@ -1,5 +1,59 @@
 (ns gherclj.core
+  (:refer-clojure :exclude [get get-in swap! dissoc update update-in])
   (:require [gherclj.template :as template]))
+
+;; --- State management ---
+;; Shared state atom for step definitions to use. Internal gherclj
+;; data lives under :_gherclj to avoid collisions with user state.
+
+(defonce ^:private state (atom {}))
+
+(defn reset!
+  "Clear all state, preserving only the internal :_gherclj key."
+  []
+  (clojure.core/swap! state (fn [_] {:_gherclj {}})))
+
+(defn get
+  "Access state. No args returns user-visible state (excludes internal keys),
+   with key returns value, with key+default returns value or default."
+  ([] (clojure.core/dissoc @state :_gherclj))
+  ([key] (clojure.core/get @state key))
+  ([key default] (clojure.core/get @state key default)))
+
+(defn get-in
+  "Nested state access."
+  ([keys] (clojure.core/get-in @state keys))
+  ([keys default] (clojure.core/get-in @state keys default)))
+
+(defn swap!
+  "Apply function to entire state."
+  [f & args]
+  (apply clojure.core/swap! state f args))
+
+(defn assoc!
+  "Set key-value pairs in state."
+  [key val & kvs]
+  (apply clojure.core/swap! state clojure.core/assoc key val kvs))
+
+(defn assoc-in!
+  "Set a nested value in state."
+  [keys val]
+  (clojure.core/swap! state clojure.core/assoc-in keys val))
+
+(defn dissoc!
+  "Remove keys from state."
+  [key & keys]
+  (apply clojure.core/swap! state clojure.core/dissoc key keys))
+
+(defn update!
+  "Update a value in state by applying f."
+  [key f & args]
+  (apply clojure.core/swap! state clojure.core/update key f args))
+
+(defn update-in!
+  "Update a nested value in state by applying f."
+  [keys f & args]
+  (apply clojure.core/swap! state clojure.core/update-in keys f args))
 
 ;; --- Step registry ---
 ;; Each namespace that uses defgiven/defwhen/defthen accumulates steps here,
@@ -18,13 +72,13 @@
                        {:template template-or-regex
                         :regex (:regex compiled)
                         :bindings (:bindings compiled)}))]
-    (swap! registry update ns-sym (fnil conj []) entry)
+    (clojure.core/swap! registry clojure.core/update ns-sym (fnil conj []) entry)
     nil))
 
 (defn steps-in-ns
   "Return all step definitions registered in the given namespace."
   [ns-sym]
-  (get @registry ns-sym []))
+  (clojure.core/get @registry ns-sym []))
 
 (defn collect-steps
   "Collect all step definitions from the given namespace symbols, in order.
