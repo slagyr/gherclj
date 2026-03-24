@@ -71,4 +71,14 @@
             (should= :clojure.test (:test-framework result)))
           (finally
             (.delete (clojure.java.io/file tmp "gherclj.edn"))
-            (.delete (clojure.java.io/file tmp))))))))
+            (.delete (clojure.java.io/file tmp))))))
+
+    (it "rejects unknown keys"
+      (let [result (config/resolve-config {:turbo-mode true})]
+        (should (config/invalid? result))
+        (should (clojure.string/includes? (config/error-message result) "turbo-mode"))))
+
+    (it "returns resolved config for valid input"
+      (let [result (config/resolve-config {:features-dir "my-features"})]
+        (should-not (config/invalid? result))
+        (should= "my-features" (:features-dir result))))))

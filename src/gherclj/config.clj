@@ -1,7 +1,8 @@
 (ns gherclj.config
   (:require [c3kit.apron.schema :as schema]
             [clojure.edn :as edn]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [clojure.string :as str]))
 
 (def pipeline-schema
   {:features-dir    {:type   :string
@@ -24,6 +25,28 @@
   (let [f (io/file path)]
     (when (.exists f)
       (edn/read-string (slurp f)))))
+
+(defn resolve-config
+  "Validate and apply defaults to a config map. Returns the resolved config
+   or a map with :_invalid and :_message keys on error."
+  [config]
+  (let [unknown-keys (remove (set (keys pipeline-schema)) (keys config))]
+    (if (seq unknown-keys)
+      {:_invalid true
+       :_message (str "Unknown config keys: " (str/join ", " (map name unknown-keys)))}
+      (let [result (schema/conform pipeline-schema config)
+            errors (filter (fn [[_ v]] (schema/error? v)) result)]
+        (if (seq errors)
+          {:_invalid true
+           :_message (str "Invalid config: "
+                          (str/join ", " (map (fn [[k v]] (str (name k) " " (schema/error-message v))) errors)))}
+          result)))))
+
+(defn invalid? [result]
+  (:_invalid result))
+
+(defn error-message [result]
+  (:_message result))
 
 (defn load-config
   "Load pipeline config. Resolution: schema defaults -> gherclj.edn.
