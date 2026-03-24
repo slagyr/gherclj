@@ -109,27 +109,61 @@ Steps that accept a Gherkin table receive it as an additional argument:
 
 ### 4. Configure and run
 
-Create a `gherclj.edn` at your project root:
+There are several ways to configure and run the pipeline.
+
+**Option A: bb/deps task with CLI flags (recommended)**
 
 ```clojure
-{:features-dir    "features"
- :step-namespaces [myapp.features.steps.auth]
+;; bb.edn
+{:deps {io.github.slagyr/gherclj {:git/tag "v0.1.0" :git/sha "..."}}
+ :tasks
+ {features {:doc "Run feature specs"
+            :requires ([gherclj.main :as main]
+                       [speclj.cli :as speclj])
+            :task (do (main/-main "-s" "myapp.features.steps.auth"
+                                  "-s" "myapp.features.steps.cart"
+                                  "-t" "speclj" "--verbose")
+                      (speclj/run "-c" "target/gherclj/generated"))}}}
+```
+
+```bash
+bb features
+```
+
+**Option B: Config file with CLI runner**
+
+Create a `gherclj.edn` at your project root (or on the classpath):
+
+```clojure
+{:step-namespaces [myapp.features.steps.auth
+                   myapp.features.steps.cart]
  :test-framework  :speclj}
 ```
 
-Run via CLI:
-
 ```bash
-clj -M -m gherclj.main
+clj -M -m gherclj.main --verbose
+# or
+bb -m gherclj.main --verbose
 ```
 
-Or with Babashka:
+**Option C: Custom main**
 
-```bash
-bb -m gherclj.main
+```clojure
+(ns myapp.features.runner
+  (:require [gherclj.pipeline :as pipeline]
+            [speclj.cli :as speclj]))
+
+(defn -main [& _]
+  (pipeline/run!
+    {:features-dir    "features"
+     :step-namespaces ['myapp.features.steps.auth
+                       'myapp.features.steps.cart]
+     :test-framework  :speclj
+     :verbose         true})
+  (speclj/run "-c" "target/gherclj/generated"))
 ```
 
-This produces:
+All options produce:
 - `target/gherclj/edn/auth.edn` — the parsed IR (inspectable, debuggable)
 - `target/gherclj/generated/auth_spec.clj` — executable spec with qualified function calls
 
