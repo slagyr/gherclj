@@ -1,4 +1,6 @@
-# <img src="https://raw.githubusercontent.com/slagyr/gherclj/master/gherclj.png" alt="gherclj" width="50"> gherclj
+<img src="https://raw.githubusercontent.com/slagyr/gherclj/master/gherclj.png" alt="gherclj" width="200" align="right">
+
+# gherclj
 
 A Clojure library for Gherkin-based acceptance testing. Write `.feature` files, define steps with `defgiven`/`defwhen`/`defthen`, and generate executable test specs.
 
