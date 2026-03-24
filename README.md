@@ -194,34 +194,18 @@ gherclj discovers steps through a config map. Each `defgiven`/`defwhen`/`defthen
 - Clojure 1.12+
 - [speclj](https://github.com/slagyr/speclj) (test dependency, loaded via `:spec` alias)
 
-### Run tests
+### Run unit specs
 
 ```bash
 clj -M:spec
 ```
 
-This runs both the unit specs in `spec/` and the generated feature specs in `features/generated/`.
+### Run feature specs
 
-### Regenerate feature specs
-
-gherclj eats its own dogfood — its own acceptance tests are written as `.feature` files and run through the pipeline:
+gherclj eats its own dogfood — its own acceptance tests are `.feature` files run through the pipeline. This regenerates and runs them in one step:
 
 ```bash
-clj -M -e '
-(require (quote gherclj.pipeline))
-(require (quote gherclj.features.steps.template-compilation))
-(require (quote gherclj.features.steps.step-definitions))
-(require (quote gherclj.features.steps.code-generation))
-(gherclj.pipeline/run!
-  {:features-dir "features"
-   :edn-dir "features/edn"
-   :output-dir "features/generated"
-   :step-namespaces [(quote gherclj.features.steps.template-compilation)
-                     (quote gherclj.features.steps.step-definitions)
-                     (quote gherclj.features.steps.code-generation)]
-   :harness-ns (quote gherclj.features.harness)
-   :test-framework :speclj})
-'
+clj -M:features
 ```
 
 ### Project structure

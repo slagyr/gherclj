@@ -1,0 +1,31 @@
+{:feature "Template compilation",
+ :scenarios
+ [{:steps
+   [{:type :given, :text "a template \"checking for zombies\""}
+    {:type :when, :text "the template is compiled"}
+    {:type :then,
+     :text "the regex should be \"^checking for zombies$\""}
+    {:type :and, :text "there should be 0 bindings"}],
+   :scenario "Compile a plain template with no captures"}
+  {:steps
+   [{:type :given, :text "a template \"timeout is {seconds:int}\""}
+    {:type :when, :text "the template is compiled"}
+    {:type :then, :text "the regex should match \"timeout is 300\""}
+    {:type :and, :text "the captured value should be 300"}],
+   :scenario "Compile an integer capture"}
+  {:steps
+   [{:type :given, :text "a template \"status is {status}\""}
+    {:type :when, :text "the template is compiled"}
+    {:type :then, :text "the regex should match \"status is active\""}
+    {:type :and, :text "the captured value should be \"active\""}],
+   :scenario "Compile a word capture"}
+  {:steps
+   [{:type :given, :text "a template \"set {key} to {value}\""}
+    {:type :when, :text "the template is compiled"}
+    {:type :then,
+     :text "the regex should match \"set timeout to 300\""}
+    {:type :and, :text "there should be 2 bindings"}],
+   :scenario "Compile multiple captures"}],
+ :description
+ "Templates are the human-readable patterns in step definitions.\nThe compiler converts them to regexes with named captures\nand type coercions.",
+ :source "template_compilation.feature"}
