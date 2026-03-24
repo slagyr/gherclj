@@ -52,7 +52,6 @@ Feature: Config file loading
        :edn-dir "target/gherclj/edn"
        :output-dir "target/gherclj/generated"
        :step-namespaces []
-       :harness-ns nil
        :test-framework :speclj
        :verbose false}
       """

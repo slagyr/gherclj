@@ -16,14 +16,14 @@ Feature: IR to code generation
       """
       (ns login-spec
         (:require [speclj.core :refer :all]
-                  [gherclj.features.harness :as h]
+                  [gherclj.core :as g]
                   [gherclj.features.steps.sample-app :as sample-app]))
 
       (describe "Login"
 
         (context "Valid credentials"
           (it "Valid credentials"
-            (h/reset!)
+            (g/reset!)
             (sample-app/create-user "alice")
             (sample-app/user-logs-in)
             (sample-app/response-should-be 200))))
@@ -41,12 +41,12 @@ Feature: IR to code generation
       """
       (ns login-test
         (:require [clojure.test :refer :all]
-                  [gherclj.features.harness :as h]
+                  [gherclj.core :as g]
                   [gherclj.features.steps.sample-app :as sample-app]))
 
       (deftest valid-credentials
         (testing "Valid credentials"
-          (h/reset!)
+          (g/reset!)
           (sample-app/create-user "alice")
           (sample-app/user-logs-in)
           (sample-app/response-should-be 200)))
@@ -69,19 +69,19 @@ Feature: IR to code generation
       """
       (ns login-test
         (:require [clojure.test :refer :all]
-                  [gherclj.features.harness :as h]
+                  [gherclj.core :as g]
                   [gherclj.features.steps.sample-app :as sample-app]))
 
       (deftest valid-credentials
         (testing "Valid credentials"
-          (h/reset!)
+          (g/reset!)
           (sample-app/create-user "alice")
           (sample-app/user-logs-in)
           (sample-app/response-should-be 200)))
 
       (deftest invalid-credentials
         (testing "Invalid credentials"
-          (h/reset!)
+          (g/reset!)
           (sample-app/create-user "nobody")
           (sample-app/user-logs-in)
           (sample-app/response-should-be 401)))
@@ -101,12 +101,12 @@ Feature: IR to code generation
       """
       (ns login-test
         (:require [clojure.test :refer :all]
-                  [gherclj.features.harness :as h]
+                  [gherclj.core :as g]
                   [gherclj.features.steps.sample-app :as sample-app]))
 
       (deftest check-response
         (testing "Check response"
-          (h/reset!)
+          (g/reset!)
           (sample-app/create-user "alice")
           (sample-app/user-logs-in)
           (sample-app/response-should-be 200)))
@@ -123,7 +123,7 @@ Feature: IR to code generation
       """
       (ns login-test
         (:require [clojure.test :refer :all]
-                  [gherclj.features.harness :as h]))
+                  [gherclj.core :as g]))
 
       (deftest not-implemented
         (testing "Not implemented"
@@ -147,7 +147,7 @@ Feature: IR to code generation
     And the output should contain "(sample-app/user-logs-in)"
     And the output should contain "(sample-app/response-should-be 200)"
 
-  Scenario: Harness reset is called before each scenario
+  Scenario: State is reset before each scenario
     Given a feature named "Login" from source "login.feature"
     And a scenario "First" with steps:
       | type  | text             |
@@ -156,7 +156,7 @@ Feature: IR to code generation
       | type  | text             |
       | when  | the user logs in |
     When generating the spec with framework :speclj
-    Then the output should contain "(h/reset!)"
+    Then the output should contain "(g/reset!)"
 
   Scenario: Unrecognized steps generate pending speclj scenarios
     Given a feature named "Login" from source "login.feature"

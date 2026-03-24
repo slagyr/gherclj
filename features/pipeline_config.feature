@@ -14,7 +14,6 @@ Feature: Pipeline configuration
        :edn-dir "target/gherclj/edn"
        :output-dir "target/gherclj/generated"
        :step-namespaces []
-       :harness-ns nil
        :test-framework :speclj
        :verbose false}
       """
@@ -33,7 +32,6 @@ Feature: Pipeline configuration
        :edn-dir "target/gherclj/edn"
        :output-dir "target/gherclj/generated"
        :step-namespaces []
-       :harness-ns nil
        :test-framework :clojure.test
        :verbose true}
       """

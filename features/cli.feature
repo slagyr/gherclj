@@ -11,7 +11,6 @@ Feature: CLI
     And the output should contain "-e, --edn-dir DIR"
     And the output should contain "-o, --output-dir DIR"
     And the output should contain "-s, --step-namespaces NS"
-    And the output should contain "-n, --harness-ns NS"
     And the output should contain "-t, --test-framework FRAMEWORK"
     And the output should contain "-v, --verbose"
     And the output should contain "-h, --help"
