@@ -1,4 +1,3 @@
-@wip
 Feature: IR to code generation
 
   The generator converts parsed feature IR into executable spec files.

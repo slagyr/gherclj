@@ -33,9 +33,9 @@
         bg-calls (when background
                    (->> (:steps background)
                         (filter :classified?)
-                        (map #'gen/generate-step-call-with-table)))
+                        (map #'gen/generate-step-call-with-extras)))
         step-calls (->> (:steps scenario)
-                        (map #'gen/generate-step-call-with-table))
+                        (map #'gen/generate-step-call-with-extras))
         all-calls (concat ["(h/reset!)"] bg-calls step-calls)
         body (->> all-calls
                   (map #(str "    " %))

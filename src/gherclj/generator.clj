@@ -53,12 +53,13 @@
       (str "(" fn-sym " " args-str ")")
       (str "(" fn-sym ")"))))
 
-(defn- generate-step-call-with-table
-  "Generate a function call, appending the table as the last arg if present."
-  [{:keys [ns name args table] :as step}]
-  (if table
+(defn- generate-step-call-with-extras
+  "Generate a function call, appending table or doc-string as the last arg if present."
+  [{:keys [ns name args table doc-string] :as step}]
+  (if (or table doc-string)
     (let [fn-sym (str (ns->alias ns) "/" name)
-          all-args (concat (map pr-str args) [(pr-str table)])
+          extra (if table (pr-str table) (pr-str doc-string))
+          all-args (concat (map pr-str args) [extra])
           args-str (str/join " " all-args)]
       (str "(" fn-sym " " args-str ")"))
     (generate-step-call step)))

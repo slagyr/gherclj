@@ -3,7 +3,8 @@
   (:require [gherclj.template :as template]
             [gherclj.core :as core]
             [gherclj.generator :as gen]
-            [gherclj.frameworks.speclj]))
+            [gherclj.frameworks.speclj]
+            [gherclj.frameworks.clojure-test]))
 
 (def ^:private state (atom nil))
 
@@ -73,6 +74,14 @@
 (defn add-scenario! [title steps]
   (swap! state update-in [:feature-ir :scenarios] conj
          {:scenario title :steps steps}))
+
+(defn add-wip-scenario! [title steps]
+  (swap! state update-in [:feature-ir :scenarios] conj
+         {:scenario title :steps steps :wip true}))
+
+(defn set-background! [steps]
+  (swap! state assoc-in [:feature-ir :background]
+         {:steps steps}))
 
 (defn generate-spec! [framework step-namespaces]
   (let [config {:step-namespaces step-namespaces
