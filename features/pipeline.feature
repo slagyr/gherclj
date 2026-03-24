@@ -1,4 +1,3 @@
-@wip
 Feature: Pipeline
 
   The pipeline orchestrates parsing and code generation as a

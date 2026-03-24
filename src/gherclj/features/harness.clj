@@ -4,7 +4,9 @@
             [gherclj.core :as core]
             [gherclj.generator :as gen]
             [gherclj.frameworks.speclj]
-            [gherclj.frameworks.clojure-test]))
+            [gherclj.frameworks.clojure-test]
+            [gherclj.pipeline :as pipeline]
+            [clojure.java.io :as io]))
 
 (def ^:private state (atom nil))
 
@@ -90,3 +92,56 @@
     (swap! state assoc :generated-output (gen/generate-spec config (:feature-ir @state)))))
 
 (defn generated-output [] (:generated-output @state))
+
+;; --- Pipeline state ---
+
+(defn set-pipeline-dir! [dir]
+  (swap! state assoc :pipeline-dir dir))
+
+(defn pipeline-dir [] (:pipeline-dir @state))
+
+(defn pipeline-base-dir []
+  (str (System/getProperty "java.io.tmpdir") "/gherclj-pipeline-test"))
+
+(defn- pipeline-edn-dir []
+  (str (pipeline-base-dir) "/target/gherclj/edn"))
+
+(defn- pipeline-output-dir []
+  (str (pipeline-base-dir) "/target/gherclj/generated"))
+
+(defn- pipeline-config [& {:keys [verbose framework]}]
+  (cond-> {:features-dir (:pipeline-dir @state)
+           :edn-dir (pipeline-edn-dir)
+           :output-dir (pipeline-output-dir)}
+    verbose (assoc :verbose true)
+    framework (assoc :test-framework framework
+                     :step-namespaces []
+                     :harness-ns 'gherclj.features.harness)))
+
+(defn run-parse-stage! []
+  (let [output (with-out-str (pipeline/parse! (pipeline-config)))]
+    (swap! state assoc :pipeline-output output)))
+
+(defn run-parse-stage-verbose! []
+  (let [output (with-out-str (pipeline/parse! (pipeline-config :verbose true)))]
+    (swap! state assoc :pipeline-output output)))
+
+(defn run-generate-stage! [framework]
+  (let [output (with-out-str (pipeline/generate! (pipeline-config :framework framework)))]
+    (swap! state assoc :pipeline-output output)))
+
+(defn run-generate-stage-verbose! [framework]
+  (let [output (with-out-str (pipeline/generate! (pipeline-config :framework framework :verbose true)))]
+    (swap! state assoc :pipeline-output output)))
+
+(defn run-full-pipeline! [framework]
+  (let [output (with-out-str (pipeline/run! (pipeline-config :framework framework)))]
+    (swap! state assoc :pipeline-output output)))
+
+(defn pipeline-output [] (:pipeline-output @state))
+
+(defn cleanup-pipeline! []
+  (let [base (io/file (pipeline-base-dir))]
+    (when (.exists base)
+      (doseq [f (reverse (file-seq base))]
+        (.delete f)))))

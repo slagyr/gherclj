@@ -4,6 +4,7 @@
             [gherclj.features.steps.step-definitions]
             [gherclj.features.steps.code-generation]
             [gherclj.features.steps.step-patterns]
+            [gherclj.features.steps.pipeline]
             [speclj.cli :as speclj]))
 
 (defn -main [& _args]
@@ -14,7 +15,8 @@
      :step-namespaces ['gherclj.features.steps.template-compilation
                        'gherclj.features.steps.step-definitions
                        'gherclj.features.steps.code-generation
-                       'gherclj.features.steps.step-patterns]
+                       'gherclj.features.steps.step-patterns
+                       'gherclj.features.steps.pipeline]
      :harness-ns 'gherclj.features.harness
      :test-framework :speclj
      :verbose true})
