@@ -1,13 +1,25 @@
 @wip
 Feature: Step namespace discovery
 
-  Step namespaces can be discovered automatically using glob
-  patterns instead of listing every namespace explicitly.
+  Step namespaces can be specified as concrete symbols or
+  glob pattern strings. Patterns are matched against namespaces
+  found on the classpath.
 
-  Scenario: Discover step namespaces by pattern
+  Scenario: Concrete namespace symbol
     Given a config:
       """
-      {:step-ns-patterns ["myapp.features.steps.*"]}
+      {:step-namespaces [myapp.steps.auth]}
+      """
+    When step namespaces are resolved
+    Then the resolved step namespaces should be:
+      """
+      [myapp.steps.auth]
+      """
+
+  Scenario: Glob pattern discovers namespaces
+    Given a config:
+      """
+      {:step-namespaces ["myapp.features.steps.*"]}
       """
     And namespaces on the classpath:
       | namespace                     |
@@ -20,10 +32,10 @@ Feature: Step namespace discovery
       [myapp.features.steps.auth myapp.features.steps.cart]
       """
 
-  Scenario: Pattern with glob in the middle
+  Scenario: Glob in the middle of a pattern
     Given a config:
       """
-      {:step-ns-patterns ["myapp.*-steps"]}
+      {:step-namespaces ["myapp.*-steps"]}
       """
     And namespaces on the classpath:
       | namespace            |
@@ -36,38 +48,21 @@ Feature: Step namespace discovery
       [myapp.auth-steps myapp.cart-steps]
       """
 
-  Scenario: Multiple patterns
+  Scenario: Mix of concrete symbols and patterns
     Given a config:
       """
-      {:step-ns-patterns ["myapp.steps.*" "myapp.extra.*"]}
+      {:step-namespaces [myapp.manual.steps "myapp.features.steps.*"]}
       """
     And namespaces on the classpath:
-      | namespace            |
-      | myapp.steps.auth     |
-      | myapp.extra.billing  |
-      | myapp.core           |
+      | namespace                     |
+      | myapp.features.steps.auth     |
     When step namespaces are resolved
     Then the resolved step namespaces should be:
       """
-      [myapp.extra.billing myapp.steps.auth]
+      [myapp.manual.steps myapp.features.steps.auth]
       """
 
-  Scenario: Explicit namespaces combine with patterns
-    Given a config:
-      """
-      {:step-ns-patterns ["myapp.steps.*"]
-       :step-namespaces [myapp.manual.steps]}
-      """
-    And namespaces on the classpath:
-      | namespace            |
-      | myapp.steps.auth     |
-    When step namespaces are resolved
-    Then the resolved step namespaces should be:
-      """
-      [myapp.manual.steps myapp.steps.auth]
-      """
-
-  Scenario: No pattern and no explicit namespaces
+  Scenario: No step namespaces configured
     Given a config:
       """
       {}
