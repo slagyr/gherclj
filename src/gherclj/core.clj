@@ -12,8 +12,7 @@
   [ns-sym step-type step-name template-or-regex compiled]
   (let [entry (merge {:name (name step-name)
                       :type step-type
-                      :ns ns-sym
-                      :fn-var (ns-resolve ns-sym step-name)}
+                      :ns ns-sym}
                      (if (instance? java.util.regex.Pattern template-or-regex)
                        {:regex template-or-regex}
                        {:template template-or-regex

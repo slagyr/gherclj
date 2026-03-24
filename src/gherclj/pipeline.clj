@@ -20,8 +20,7 @@
   "Require all step namespaces."
   [step-namespaces]
   (doseq [ns-sym step-namespaces]
-    (when-not (find-ns ns-sym)
-      (require ns-sym))))
+    (require ns-sym)))
 
 (defn- source->edn-filename [source]
   (str/replace source #"\.feature$" ".edn"))

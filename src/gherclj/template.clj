@@ -2,8 +2,8 @@
   (:require [clojure.string :as str]))
 
 (def ^:private type-patterns
-  {"int"   {:regex "\\d+" :coerce `parse-long}
-   "float" {:regex "[\\d.]+" :coerce `parse-double}})
+  {"int"   {:regex "\\d+" :coerce parse-long}
+   "float" {:regex "[\\d.]+" :coerce parse-double}})
 
 (def ^:private regex-special-chars
   #{\. \^ \$ \* \+ \? \( \) \[ \] \{ \} \\ \|})
@@ -21,12 +21,12 @@
         type-info (get type-patterns type-str)]
     (if type-info
       {:name name :regex (:regex type-info) :coerce (:coerce type-info)}
-      {:name name :regex "\\S+" :coerce `identity})))
+      {:name name :regex "\\S+" :coerce identity})))
 
 (defn- parse-quoted-capture
   "Parse a \"{name}\" capture. Returns {:name str :coerce fn :regex str}."
   [expr]
-  {:name expr :regex "[^\"]+" :coerce `identity})
+  {:name expr :regex "[^\"]+" :coerce identity})
 
 (defn compile-template
   "Compile a step template string into {:regex Pattern :bindings [{:name str :coerce fn}]}.
@@ -69,9 +69,7 @@
                      {:regex-str (str "^" (apply str (conj regex-parts escaped-remaining)) "$")
                       :bindings bindings})))]
     {:regex (re-pattern (:regex-str result))
-     :bindings (mapv (fn [{:keys [name coerce]}]
-                       {:name name :coerce (deref (resolve coerce))})
-                     (:bindings result))}))
+     :bindings (:bindings result)}))
 
 (defn match-step
   "Match step text against a compiled template. Returns a vector of coerced
