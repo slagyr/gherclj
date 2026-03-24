@@ -1,12 +1,12 @@
-<img src="https://raw.githubusercontent.com/slagyr/gherclj/master/gherclj.png" alt="gherclj" 
-width="200" align="left">
+<img align="left" width="200" src="https://raw.githubusercontent.com/slagyr/gherclj/master/gherclj.png" alt="gherclj" style="margin-right: 20px; margin-bottom: 10px;">
 
-<h1 style="border: 0">gherclj</h1>
-*pronounced: /ˈɡɜːrkəl/, gur-kull*
+### gherclj
 
-A library to translate Gherkin Acceptance Tests into code.
+_pronounced: /ˈɡɜːrkəl/, gur-kull_
 
-<br clear="both">
+Translates Gherkin acceptance tests into code.
+
+<br clear="left">
 
 ## Introduction
 
