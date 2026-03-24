@@ -1,0 +1,20 @@
+{:tasks
+ {clean {:doc "Remove generated EDN and spec files"
+         :task (do
+                 (babashka.fs/delete-tree "target/gherclj")
+                 (println "Cleaned target/gherclj/"))}
+
+  spec {:doc "Run unit specs"
+        :task (clojure "-M:spec")}
+
+  features {:doc "Run feature specs (parse, generate, execute)"
+            :task (clojure "-M:features")}
+
+  parse {:doc "Run parse stage only"
+         :task (clojure "-M -e" "(do (require '[gherclj.pipeline :as p]) (p/parse! {:features-dir \"features\" :verbose true}))")}
+
+  generate {:doc "Run generate stage only (parse must have run first)"
+            :task (clojure "-M -e" "(do (require '[gherclj.pipeline :as p] '[gherclj.features.steps.sample-app]) (p/generate! {:edn-dir \"target/gherclj/edn\" :output-dir \"target/gherclj/generated\" :step-namespaces [] :harness-ns 'gherclj.features.harness :test-framework :speclj :verbose true}))")}
+
+  test {:doc "Run all tests (unit specs + feature specs)"
+        :task (do (run 'spec) (run 'features))}}}
