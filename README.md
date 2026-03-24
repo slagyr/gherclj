@@ -29,6 +29,11 @@ Each stage produces a visible, inspectable artifact. If a step isn't matching, c
 {:deps {gherclj/gherclj {:mvn/version "..."}}}
 ```
 
+```clojure
+;; bb.edn
+{:deps {gherclj/gherclj {:mvn/version "..."}}}
+```
+
 ### 2. Write features
 
 ```gherkin
