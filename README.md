@@ -1,8 +1,10 @@
-<img src="https://raw.githubusercontent.com/slagyr/gherclj/master/gherclj.png" alt="gherclj" width="200" align="left">
+<img src="https://raw.githubusercontent.com/slagyr/gherclj/master/gherclj.png" alt="gherclj" 
+width="200" align="left">
 
-# gherclj
+<h1 style="border: 0">gherclj</h1>
+*pronounced: /ˈɡɜːrkəl/, gur-kull*
 
-A Clojure library for Gherkin-based acceptance testing. Write `.feature` files, define steps with `defgiven`/`defwhen`/`defthen`, and generate executable test specs.
+A library to translate Gherkin Acceptance Tests into code.
 
 <br clear="both">
 
@@ -13,7 +15,7 @@ gherclj bridges the gap between human-readable feature specifications and execut
 The pipeline:
 
 ```
-.feature files → EDN intermediate representation → generated spec files
+.feature files → EDN intermediate representation → generated unit test files
 ```
 
 Each stage produces a visible, inspectable artifact. If a step isn't matching, check the `.edn` IR. If the IR is right but the spec is wrong, it's a generator issue. The generated specs are readable, debuggable, and committable.
@@ -69,7 +71,7 @@ Steps that accept a Gherkin table receive it as an additional argument:
 
 ### 2. Write features
 
-Standard Gherkin. Nothing special.
+Standard [Gherkin syntax](https://cucumber.io/docs/gherkin/reference/). Nothing special.
 
 ```gherkin
 Feature: Authentication
