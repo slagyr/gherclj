@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/slagyr/gherclj/master/gherclj.png" alt="gherclj" width="200" align="right">
+<img src="https://raw.githubusercontent.com/slagyr/gherclj/master/gherclj.png" alt="gherclj" width="200" align="left">
 
 # gherclj
 
