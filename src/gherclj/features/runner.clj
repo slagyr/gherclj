@@ -3,6 +3,7 @@
             [gherclj.features.steps.template-compilation]
             [gherclj.features.steps.step-definitions]
             [gherclj.features.steps.code-generation]
+            [gherclj.features.steps.step-patterns]
             [speclj.cli :as speclj]))
 
 (defn -main [& _args]
@@ -12,7 +13,8 @@
      :output-dir "features/generated"
      :step-namespaces ['gherclj.features.steps.template-compilation
                        'gherclj.features.steps.step-definitions
-                       'gherclj.features.steps.code-generation]
+                       'gherclj.features.steps.code-generation
+                       'gherclj.features.steps.step-patterns]
      :harness-ns 'gherclj.features.harness
      :test-framework :speclj
      :verbose true})

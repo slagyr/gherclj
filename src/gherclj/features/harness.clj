@@ -52,6 +52,14 @@
 (defn find-step [step-name]
   (first (filter #(= step-name (:name %)) (registered-steps))))
 
+(defn register-real-step!
+  "Look up a step by name from the real core registry and add it to harness state."
+  [ns-sym step-name]
+  (let [steps (core/steps-in-ns ns-sym)
+        step (first (filter #(= step-name (:name %)) steps))]
+    (when step
+      (swap! state update :steps conj step))))
+
 (defn classify-text! [text]
   (swap! state assoc :classify-result (core/classify-step (registered-steps) text)))
 
