@@ -32,6 +32,9 @@
 (defn- table-line? [trimmed]
   (str/starts-with? trimmed "|"))
 
+(defn- doc-string-fence? [trimmed]
+  (= "\"\"\"" trimmed))
+
 (defn- attach-table
   "Attach parsed table data to an IR node, if table-lines are present."
   [ir-node table-lines]
@@ -44,9 +47,38 @@
 (defn- add-step [scenario ir-node]
   (update scenario :steps (fnil conj []) ir-node))
 
+(defn- attach-doc-string
+  "Attach a doc-string to the last step in the state."
+  [state]
+  (if (seq (:pending-doc-string state))
+    (let [steps (get-in state [:scenario :steps])
+          last-step (peek steps)
+          doc-str (str/join "\n" (:pending-doc-string state))
+          updated-step (assoc last-step :doc-string doc-str)
+          updated-steps (conj (pop steps) updated-step)]
+      (-> state
+          (assoc-in [:scenario :steps] updated-steps)
+          (dissoc :pending-doc-string :in-doc-string)))
+    state))
+
 (defn- process-step-entry [state entry]
-  (if (table-line? entry)
+  (cond
+    ;; Inside a doc-string: accumulate or close
+    (:in-doc-string state)
+    (if (doc-string-fence? entry)
+      (attach-doc-string state)
+      (update state :pending-doc-string (fnil conj []) entry))
+
+    ;; Opening doc-string fence
+    (doc-string-fence? entry)
+    (assoc state :in-doc-string true :pending-doc-string [])
+
+    ;; Table line
+    (table-line? entry)
     (update state :pending-table (fnil conj []) entry)
+
+    ;; Step keyword — flush pending table first
+    :else
     (let [state (if (seq (:pending-table state))
                   (let [steps (get-in state [:scenario :steps])
                         last-step (peek steps)
@@ -62,24 +94,26 @@
               ir-node {:type gherkin-type :text text}]
           (update state :scenario add-step ir-node))))))
 
-(defn- finalize-pending-table
-  "Attach any remaining pending table to the last step."
+(defn- finalize-pending-attachments
+  "Attach any remaining pending table or doc-string to the last step."
   [state]
-  (if (seq (:pending-table state))
-    (let [steps (get-in state [:scenario :steps])
-          last-step (peek steps)
-          updated-step (attach-table last-step (:pending-table state))
-          updated-steps (conj (pop steps) updated-step)]
-      (-> state
-          (assoc-in [:scenario :steps] updated-steps)
-          (dissoc :pending-table)))
-    state))
+  (cond-> state
+    (seq (:pending-table state))
+    (as-> s (let [steps (get-in s [:scenario :steps])
+                  last-step (peek steps)
+                  updated-step (attach-table last-step (:pending-table s))
+                  updated-steps (conj (pop steps) updated-step)]
+              (-> s
+                  (assoc-in [:scenario :steps] updated-steps)
+                  (dissoc :pending-table))))
+    (seq (:pending-doc-string state))
+    attach-doc-string))
 
 (defn- parse-scenario-lines [lines]
   (let [result (-> (reduce process-step-entry
                            {:scenario {:steps []}}
                            lines)
-                   finalize-pending-table)]
+                   finalize-pending-attachments)]
     (:scenario result)))
 
 (defn- tag-line? [trimmed]
@@ -88,12 +122,19 @@
 (defn- has-wip-tag? [trimmed]
   (some #(= "@wip" %) (str/split trimmed #"\s+")))
 
+(defn- append-to-current-scenario [result trimmed]
+  (let [scenarios (:scenarios result)
+        current (peek scenarios)
+        updated (update current :lines conj trimmed)]
+    (assoc result :scenarios (conj (pop scenarios) updated))))
+
 (defn- parse-sections
   "Splits feature lines into sections: feature line, description, background, and scenarios."
   [lines]
   (loop [lines lines
          state :start
          wip-pending false
+         in-doc-string false
          result {:feature-line nil
                  :description-lines []
                  :background-lines []
@@ -104,55 +145,67 @@
             trimmed (str/trim line)
             rest-lines (rest lines)]
         (cond
+          ;; Inside a doc-string: pass everything through until closing fence
+          (and in-doc-string (doc-string-fence? trimmed))
+          (let [result (if (= state :background)
+                         (update result :background-lines conj trimmed)
+                         (append-to-current-scenario result trimmed))]
+            (recur rest-lines state wip-pending false result))
+
+          in-doc-string
+          (let [result (if (= state :background)
+                         (update result :background-lines conj trimmed)
+                         (append-to-current-scenario result trimmed))]
+            (recur rest-lines state wip-pending true result))
+
+          ;; Opening doc-string fence
+          (doc-string-fence? trimmed)
+          (let [result (if (= state :background)
+                         (update result :background-lines conj trimmed)
+                         (append-to-current-scenario result trimmed))]
+            (recur rest-lines state wip-pending true result))
+
           (and (= state :start) (str/starts-with? trimmed "Feature:"))
-          (recur rest-lines :description false
+          (recur rest-lines :description false false
                  (assoc result :feature-line trimmed))
 
           (and (= state :description) (str/blank? trimmed))
-          (recur rest-lines :description false result)
+          (recur rest-lines :description false false result)
 
           (str/starts-with? trimmed "Background:")
-          (recur rest-lines :background false result)
+          (recur rest-lines :background false false result)
 
           (tag-line? trimmed)
-          (recur rest-lines state (has-wip-tag? trimmed) result)
+          (recur rest-lines state (has-wip-tag? trimmed) false result)
 
           (str/starts-with? trimmed "Scenario:")
           (let [title (str/trim (subs trimmed 9))
                 scenario-entry {:title title :lines [] :wip wip-pending}]
-            (recur rest-lines :scenario false
+            (recur rest-lines :scenario false false
                    (update result :scenarios conj scenario-entry)))
 
           (and (= state :background) (step-keyword? trimmed))
-          (recur rest-lines :background false
+          (recur rest-lines :background false false
                  (update result :background-lines conj trimmed))
 
           (and (= state :background) (table-line? trimmed))
-          (recur rest-lines :background false
+          (recur rest-lines :background false false
                  (update result :background-lines conj trimmed))
 
           (and (= state :scenario) (step-keyword? trimmed))
-          (let [scenarios (:scenarios result)
-                current (peek scenarios)
-                updated (update current :lines conj trimmed)]
-            (recur rest-lines :scenario false
-                   (assoc result :scenarios
-                          (conj (pop scenarios) updated))))
+          (recur rest-lines :scenario false false
+                 (append-to-current-scenario result trimmed))
 
           (and (= state :scenario) (table-line? trimmed))
-          (let [scenarios (:scenarios result)
-                current (peek scenarios)
-                updated (update current :lines conj trimmed)]
-            (recur rest-lines :scenario false
-                   (assoc result :scenarios
-                          (conj (pop scenarios) updated))))
+          (recur rest-lines :scenario false false
+                 (append-to-current-scenario result trimmed))
 
           (and (= state :description) (seq trimmed))
-          (recur rest-lines :description false
+          (recur rest-lines :description false false
                  (update result :description-lines conj trimmed))
 
           :else
-          (recur rest-lines state wip-pending result))))))
+          (recur rest-lines state wip-pending false result))))))
 
 (defn parse-feature
   "Parse a Gherkin feature string into an EDN IR map."
