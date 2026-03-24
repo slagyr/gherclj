@@ -39,10 +39,15 @@
 
 ;; --- Code generation ---
 
+(defn ns->alias
+  "Extract the last segment of a namespace symbol as an alias string."
+  [ns-sym]
+  (last (str/split (str ns-sym) #"\.")))
+
 (defn generate-step-call
-  "Generate a string of a qualified function call for a classified step."
+  "Generate a string of an aliased function call for a classified step."
   [{:keys [ns name args]}]
-  (let [fn-sym (str ns "/" name)
+  (let [fn-sym (str (ns->alias ns) "/" name)
         args-str (str/join " " (map pr-str args))]
     (if (seq args)
       (str "(" fn-sym " " args-str ")")
@@ -52,7 +57,7 @@
   "Generate a function call, appending the table as the last arg if present."
   [{:keys [ns name args table] :as step}]
   (if table
-    (let [fn-sym (str ns "/" name)
+    (let [fn-sym (str (ns->alias ns) "/" name)
           all-args (concat (map pr-str args) [(pr-str table)])
           args-str (str/join " " all-args)]
       (str "(" fn-sym " " args-str ")"))

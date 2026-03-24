@@ -101,9 +101,9 @@
 
           (let [content (slurp (io/file output-dir "auth_spec.clj"))]
             (should (str/includes? content "(describe \"Authentication\""))
-            (should (str/includes? content "(gherclj.pipeline-spec/setup-user \"alice\" \"admin\")"))
-            (should (str/includes? content "(gherclj.pipeline-spec/user-logs-in)"))
-            (should (str/includes? content "(gherclj.pipeline-spec/response-status 200)")))
+            (should (str/includes? content "(pipeline-spec/setup-user \"alice\" \"admin\")"))
+            (should (str/includes? content "(pipeline-spec/user-logs-in)"))
+            (should (str/includes? content "(pipeline-spec/response-status 200)")))
           (finally (cleanup features-dir edn-dir output-dir)))))
 
     (it "is silent by default"

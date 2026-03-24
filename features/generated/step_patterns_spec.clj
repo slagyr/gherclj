@@ -1,8 +1,8 @@
 (ns step-patterns-spec
   (:require [speclj.core :refer :all]
             [gherclj.features.harness :as h]
-            [gherclj.features.steps.step-definitions]
-            [gherclj.features.steps.step-patterns]))
+            [gherclj.features.steps.step-definitions :as step-definitions]
+            [gherclj.features.steps.step-patterns :as step-patterns]))
 
 (describe "Step patterns"
 
@@ -16,9 +16,9 @@
   (context "Float capture"
     (it "Float capture"
       (h/reset!)
-      (gherclj.features.steps.step-definitions/define-then-step "check-price" "the price is {amount:float}")
-      (gherclj.features.steps.step-definitions/step-should-match "check-price" "the price is 19.99")
-      (gherclj.features.steps.step-definitions/match-args-should-be "[19.99]")))
+      (step-definitions/define-then-step "check-price" "the price is {amount:float}")
+      (step-definitions/step-should-match "check-price" "the price is 19.99")
+      (step-definitions/match-args-should-be "[19.99]")))
 
   (context "Multiple captures of different types"
     (it "Multiple captures of different types"
@@ -30,9 +30,9 @@
   (context "Template escapes regex special characters"
     (it "Template escapes regex special characters"
       (h/reset!)
-      (gherclj.features.steps.step-definitions/define-given-step "parens" "call foo() with {n:int} args")
-      (gherclj.features.steps.step-definitions/step-should-match "parens" "call foo() with 3 args")
-      (gherclj.features.steps.step-definitions/match-args-should-be "[3]")))
+      (step-definitions/define-given-step "parens" "call foo() with {n:int} args")
+      (step-definitions/step-should-match "parens" "call foo() with 3 args")
+      (step-definitions/match-args-should-be "[3]")))
 
   (context "Macro accepts a raw regex pattern"
     (it "Macro accepts a raw regex pattern"
@@ -44,6 +44,6 @@
   (context "Regex captures are strings, not coerced"
     (it "Regex captures are strings, not coerced"
       (h/reset!)
-      (gherclj.features.steps.step-patterns/lookup-registered-step "raw-digit-match")
-      (gherclj.features.steps.step-definitions/step-should-match "raw-digit-match" "count is 42")
-      (gherclj.features.steps.step-definitions/match-args-should-be "[\"42\"]"))))
+      (step-patterns/lookup-registered-step "raw-digit-match")
+      (step-definitions/step-should-match "raw-digit-match" "count is 42")
+      (step-definitions/match-args-should-be "[\"42\"]"))))

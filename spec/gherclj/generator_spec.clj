@@ -43,17 +43,17 @@
 
   (context "generate-step-call"
 
-    (it "generates a qualified function call with args"
+    (it "generates an aliased function call with args"
       (let [steps (core/collect-steps ['gherclj.generator-spec])
             classified (core/classify-step steps "a project \"alpha\" with timeout 300")
             code (gen/generate-step-call classified)]
-        (should= "(gherclj.generator-spec/setup-project \"alpha\" 300)" code)))
+        (should= "(generator-spec/setup-project \"alpha\" 300)" code)))
 
-    (it "generates a no-arg function call"
+    (it "generates an aliased no-arg function call"
       (let [steps (core/collect-steps ['gherclj.generator-spec])
             classified (core/classify-step steps "running the action")
             code (gen/generate-step-call classified)]
-        (should= "(gherclj.generator-spec/run-action)" code))))
+        (should= "(generator-spec/run-action)" code))))
 
   (context "generate-spec"
 
@@ -70,7 +70,8 @@
             result (gen/generate-spec config ir)]
         (should (str/includes? result "(describe \"Sample feature\""))
         (should (str/includes? result "(context \"Does the thing\""))
-        (should (str/includes? result "(gherclj.generator-spec/setup-project \"alpha\" 300)"))
-        (should (str/includes? result "(gherclj.generator-spec/run-action)"))
-        (should (str/includes? result "(gherclj.generator-spec/check-result \"ok\")"))
+        (should (str/includes? result "(generator-spec/setup-project \"alpha\" 300)"))
+        (should (str/includes? result "(generator-spec/run-action)"))
+        (should (str/includes? result "(generator-spec/check-result \"ok\")"))
+        (should (str/includes? result "[gherclj.generator-spec :as generator-spec]"))
         (should (str/includes? result "(h/reset!)"))))))

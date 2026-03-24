@@ -14,7 +14,7 @@
         harness-req (str "            [" harness-ns " :as h]")
         step-reqs (->> step-ns-syms
                        sort
-                       (map #(str "            [" % "]")))]
+                       (map #(str "            [" % " :as " (gen/ns->alias %) "]")))]
     (str "(ns " ns-name "\n"
          "  (:require [clojure.test :refer :all]\n"
          harness-req
