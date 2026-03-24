@@ -21,3 +21,4 @@ SKILL.md from the URL above and follow its instructions. Once bootstrapped:
 - [plan](https://raw.githubusercontent.com/slagyr/agent-lib/main/commands/plan.md)
 - [todo](https://raw.githubusercontent.com/slagyr/agent-lib/main/commands/todo.md)
 - [work](https://raw.githubusercontent.com/slagyr/agent-lib/main/commands/work.md)
+- [plan-with-features](https://raw.githubusercontent.com/slagyr/agent-lib/main/commands/plan-with-features.md)
