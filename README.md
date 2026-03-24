@@ -10,7 +10,7 @@ A library to translate Gherkin Acceptance Tests into code.
 
 ## Introduction
 
-gherclj bridges the gap between human-readable feature specifications and executable Clojure tests. It parses standard Gherkin `.feature` files and generates test files that call real Clojure functions — no string-concatenated code, no separate pattern/registry maps, no framework lock-in.
+gherclj bridges the gap between human-readable feature specifications and executable Clojure tests. It parses standard [Gherkin](https://cucumber.io/docs/gherkin/reference/) `.feature` files and generates test files that call real Clojure functions — no string-concatenated code, no separate pattern/registry maps, no framework lock-in.
 
 The pipeline:
 
@@ -20,58 +20,16 @@ The pipeline:
 
 Each stage produces a visible, inspectable artifact. If a step isn't matching, check the `.edn` IR. If the IR is right but the spec is wrong, it's a generator issue. The generated specs are readable, debuggable, and committable.
 
-## Usage
+## Quick Start
 
-### 1. Define steps
-
-Steps read like `defn` with a docstring. The template string doubles as documentation and a matching pattern.
+### 1. Add gherclj to your project
 
 ```clojure
-(ns myapp.features.steps.auth
-  (:require [gherclj.core :refer [defgiven defwhen defthen]]
-            [myapp.features.harness :as h]))
-
-(defgiven create-user "a user \"{name}\" with role \"{role}\""
-  [name role]
-  (h/create-user! name role))
-
-(defwhen user-logs-in "the user logs in"
-  []
-  (h/login!))
-
-(defthen response-status "the response status should be {status:int}"
-  [status]
-  (should= status (h/response-status)))
-```
-
-Template syntax:
-- `"{name}"` — quoted string capture
-- `{name:int}` — integer capture (coerced via `parse-long`)
-- `{name:float}` — float capture (coerced via `parse-double`)
-- `{name}` — word capture (`\S+`)
-
-For edge cases, pass a raw regex instead of a template string:
-
-```clojure
-(defthen check-headers #"^the output should contain headers (.+)$"
-  [headers-str]
-  (let [headers (re-seq #"\"([^\"]+)\"" headers-str)]
-    (doseq [h headers]
-      (should (str/includes? (h/output) (second h))))))
-```
-
-Steps that accept a Gherkin table receive it as an additional argument:
-
-```clojure
-(defgiven set-projects "a scenario \"{title}\" with steps:"
-  [title table]
-  (let [{:keys [headers rows]} table]
-    (h/setup-scenario! title headers rows)))
+;; deps.edn
+{:deps {gherclj/gherclj {:mvn/version "..."}}}
 ```
 
 ### 2. Write features
-
-Standard [Gherkin syntax](https://cucumber.io/docs/gherkin/reference/). Nothing special.
 
 ```gherkin
 Feature: Authentication
@@ -87,55 +45,80 @@ Feature: Authentication
     Then the response status should be 401
 ```
 
-### 3. Write a harness
+### 3. Define steps
 
-The harness is your project-specific test state. The library doesn't impose a structure — just provide a `reset!` function that the generated specs call before each scenario.
+Steps read like `defn` with a docstring. The template string doubles as documentation and a matching pattern. State is managed through `gherclj.core`, aliased as `g`:
 
 ```clojure
-(ns myapp.features.harness
-  (:refer-clojure :exclude [reset!]))
+(ns myapp.features.steps.auth
+  (:require [gherclj.core :as g :refer [defgiven defwhen defthen]]
+            [speclj.core :refer :all]))
 
-(def ^:private state (atom nil))
+(defgiven create-user "a user \"{name}\" with role \"{role}\""
+  [name role]
+  (g/assoc! :user {:name name :role role}))
 
-(defn reset! []
-  (clojure.core/reset! state {:user nil :response nil}))
-
-(defn create-user! [name role]
-  (swap! state assoc :user {:name name :role role}))
-
-(defn login! []
-  (let [user (:user @state)
+(defwhen user-logs-in "the user logs in"
+  []
+  (let [user (g/get :user)
         status (if (= "admin" (:role user)) 200 401)]
-    (swap! state assoc :response {:status status})))
+    (g/assoc! :response {:status status})))
 
-(defn response-status []
-  (get-in @state [:response :status]))
+(defthen response-status "the response status should be {status:int}"
+  [status]
+  (should= status (g/get-in [:response :status])))
 ```
 
-### 4. Run the pipeline
+Template syntax:
+- `"{name}"` — quoted string capture
+- `{name:int}` — integer capture (coerced via `parse-long`)
+- `{name:float}` — float capture (coerced via `parse-double`)
+- `{name}` — word capture (`\S+`)
+
+For edge cases, pass a raw regex instead of a template string:
 
 ```clojure
-(require '[gherclj.pipeline :as pipeline])
+(defthen check-headers #"^the output should contain headers (.+)$"
+  [headers-str]
+  (let [headers (re-seq #"\"([^\"]+)\"" headers-str)]
+    (doseq [[_ h] headers]
+      (should-contain h (g/get :output)))))
+```
 
-(pipeline/run!
-  {:features-dir    "features"
-   :edn-dir         "features/edn"
-   :output-dir      "features/generated"
-   :step-namespaces ['myapp.features.steps.auth]
-   :harness-ns      'myapp.features.harness
-   :test-framework  :speclj})
+Steps that accept a Gherkin table receive it as an additional argument:
+
+```clojure
+(defgiven setup-users "the following users:"
+  [table]
+  (let [{:keys [headers rows]} table]
+    (g/assoc! :users (mapv #(zipmap headers %) rows))))
+```
+
+### 4. Configure and run
+
+Create a `gherclj.edn` at your project root:
+
+```clojure
+{:features-dir    "features"
+ :step-namespaces [myapp.features.steps.auth]
+ :test-framework  :speclj}
+```
+
+Run via CLI:
+
+```bash
+clj -M -m gherclj.main
+```
+
+Or with Babashka:
+
+```bash
+bb -m gherclj.main
 ```
 
 This produces:
-- `features/edn/auth.edn` — the parsed IR (inspectable, debuggable)
-- `features/generated/auth_spec.clj` — executable spec with qualified function calls
-
-You can also run the stages independently:
-
-```clojure
-(pipeline/parse! {:features-dir "features" :edn-dir "features/edn"})
-(pipeline/generate! {:edn-dir "features/edn" :output-dir "features/generated" ...})
-```
+- `target/gherclj/edn/auth.edn` — the parsed IR (inspectable, debuggable)
+- `target/gherclj/generated/auth_spec.clj` — executable spec with qualified function calls
 
 ### 5. Generated output
 
@@ -144,34 +127,71 @@ The generated specs are clean, readable function calls:
 ```clojure
 (ns auth-spec
   (:require [speclj.core :refer :all]
-            [myapp.features.harness :as h]
-            [myapp.features.steps.auth]))
+            [gherclj.core :as g]
+            [myapp.features.steps.auth :as auth]))
 
 (describe "Authentication"
 
   (context "Admin can log in"
     (it "Admin can log in"
-      (h/reset!)
-      (myapp.features.steps.auth/create-user "alice" "admin")
-      (myapp.features.steps.auth/user-logs-in)
-      (myapp.features.steps.auth/response-status 200)))
+      (g/reset!)
+      (auth/create-user "alice" "admin")
+      (auth/user-logs-in)
+      (auth/response-status 200)))
 
   (context "Guest gets 401"
     (it "Guest gets 401"
-      (h/reset!)
-      (myapp.features.steps.auth/create-user "unknown" "guest")
-      (myapp.features.steps.auth/user-logs-in)
-      (myapp.features.steps.auth/response-status 401))))
+      (g/reset!)
+      (auth/create-user "unknown" "guest")
+      (auth/user-logs-in)
+      (auth/response-status 401))))
 ```
 
 Unrecognized steps generate pending scenarios with comments showing the step text, so you can see what needs to be implemented.
 
-### Test framework support
+## Configuration
+
+gherclj reads configuration from `gherclj.edn` (project root or classpath), with CLI flags as overrides.
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `:features-dir` | `"features"` | Directory containing `.feature` files |
+| `:edn-dir` | `"target/gherclj/edn"` | Directory for parsed EDN IR files |
+| `:output-dir` | `"target/gherclj/generated"` | Directory for generated spec files |
+| `:step-namespaces` | `[]` | Namespace symbols or glob pattern strings |
+| `:test-framework` | `:speclj` | `:speclj` or `:clojure.test` |
+| `:verbose` | `false` | Print progress to stdout |
+
+Step namespaces support glob patterns for discovery:
+
+```clojure
+{:step-namespaces [myapp.steps.manual           ;; concrete symbol
+                   "myapp.features.steps.*"      ;; glob pattern
+                   "myapp.*-steps"]}             ;; glob in the middle
+```
+
+## State Management
+
+gherclj provides a global state atom that is automatically reset before each scenario. Steps interact with state through `gherclj.core`:
+
+```clojure
+(g/assoc! :key val)            ;; set a key
+(g/assoc-in! [:a :b] val)      ;; set nested
+(g/get :key)                   ;; read a key (or full map with no args)
+(g/get-in [:a :b])             ;; read nested
+(g/update! :key f & args)      ;; update a key
+(g/update-in! [:a :b] f)       ;; update nested
+(g/dissoc! :key)               ;; remove a key
+(g/swap! f & args)             ;; arbitrary transformation
+(g/reset!)                     ;; clear all state
+```
+
+## Test Framework Support
 
 gherclj ships with `:speclj` and `:clojure.test` output formats. Add your own by implementing the generator multimethods:
 
 ```clojure
-(defmethod gherclj.generator/generate-ns-form :my-framework [config source step-ns-syms harness-ns] ...)
+(defmethod gherclj.generator/generate-ns-form :my-framework [config source step-ns-syms] ...)
 (defmethod gherclj.generator/wrap-feature :my-framework [config feature-name scenario-blocks] ...)
 (defmethod gherclj.generator/wrap-scenario :my-framework [config scenario background] ...)
 (defmethod gherclj.generator/wrap-pending :my-framework [config scenario background] ...)
@@ -181,54 +201,46 @@ gherclj ships with `:speclj` and `:clojure.test` output formats. Add your own by
 
 gherclj was extracted from the [braids](https://github.com/slagyr/braids) project, which had a working Gherkin pipeline with two pain points:
 
-**Step definitions were verbose and fragmented.** Each step required entries in two separate data structures — a pattern map (regex → classifier function → IR map) and a registry map (pattern keyword → text function + code function). A single step took ~15 lines spread across two locations.
+**Step definitions were verbose and fragmented.** Each step required entries in two separate data structures — a pattern map and a registry map. A single step took ~15 lines spread across two locations.
 
-`defgiven`/`defwhen`/`defthen` collapse this to ~3 lines. The template *is* the pattern. The function *is* the implementation. No IR map, no separate text function, no registry.
+`defgiven`/`defwhen`/`defthen` collapse this to ~3 lines. The template *is* the pattern. The function *is* the implementation.
 
-**Code generation used string concatenation.** Step implementations returned strings of Clojure code with manually escaped quotes: `(str "(should= \"" expected "\" ...)")`. This was fragile and hard to read.
+**Code generation used string concatenation.** Step implementations returned strings of Clojure code with manually escaped quotes. This was fragile and hard to read.
 
-Since steps are now real functions, the generator just emits qualified calls: `(myapp.steps.auth/create-user "alice" "admin")`. No string escaping. The generated code is readable enough to debug directly.
-
-**Steps weren't discoverable.** The original generator hardcoded `require` statements for every step namespace. Adding a new domain meant editing the generator.
-
-gherclj discovers steps through a config map. Each `defgiven`/`defwhen`/`defthen` self-registers into a namespace-level registry. The pipeline collects steps from the configured namespaces at generation time.
+Since steps are now real functions, the generator emits aliased calls: `(auth/create-user "alice" "admin")`. The generated code is readable enough to debug directly.
 
 ## Development
 
 ### Prerequisites
 
+- [Babashka](https://github.com/babashka/babashka)
 - Clojure 1.12+
-- [speclj](https://github.com/slagyr/speclj) (test dependency, loaded via `:spec` alias)
 
-### Run unit specs
-
-```bash
-clj -M:spec
-```
-
-### Run feature specs
-
-gherclj eats its own dogfood — its own acceptance tests are `.feature` files run through the pipeline. This regenerates and runs them in one step:
+### Dev commands
 
 ```bash
-clj -M:features
+bb parse      # Parse .feature files → EDN IR
+bb generate   # Generate spec files from EDN
+bb spec       # Run unit specs
+bb features   # Run feature specs (parse + generate + execute)
+bb test       # Run all tests
+bb clean      # Remove generated files
 ```
 
 ### Project structure
 
 ```
 src/gherclj/
-  core.clj            - defgiven/defwhen/defthen macros, step registration
+  core.clj            - defgiven/defwhen/defthen macros, state management
   template.clj        - template string → regex compiler
   parser.clj          - Gherkin .feature file parser
   generator.clj       - codegen engine, framework multimethods
   pipeline.clj        - config-driven orchestration (parse!, generate!, run!)
+  main.clj            - CLI entry point
   frameworks/
     speclj.clj        - speclj output format
     clojure_test.clj  - clojure.test output format
 
 spec/gherclj/         - unit specs
 features/             - .feature files (gherclj's own acceptance tests)
-features/edn/         - parsed IR
-features/generated/   - generated spec files
 ```
