@@ -274,20 +274,3 @@ bb test       # Run all tests
 bb clean      # Remove generated files
 ```
 
-### Project structure
-
-```
-src/gherclj/
-  core.clj            - defgiven/defwhen/defthen macros, state management
-  template.clj        - template string → regex compiler
-  parser.clj          - Gherkin .feature file parser
-  generator.clj       - codegen engine, framework multimethods
-  pipeline.clj        - config-driven orchestration (parse!, generate!, run!)
-  main.clj            - CLI entry point
-  frameworks/
-    speclj.clj        - speclj output format
-    clojure_test.clj  - clojure.test output format
-
-spec/gherclj/         - unit specs
-features/             - .feature files (gherclj's own acceptance tests)
-```
