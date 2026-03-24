@@ -18,8 +18,8 @@
 
 (defwhen generate-spec "generating the spec with framework {framework}"
   [framework]
-  (h/generate-spec! (keyword framework)
-                     ['gherclj.features.steps.step-definitions]))
+  (let [fw (keyword (clojure.string/replace framework #"^:" ""))]
+    (h/generate-spec! fw ['gherclj.features.steps.step-definitions])))
 
 (defthen output-should-contain "the output should contain \"{expected}\""
   [expected]

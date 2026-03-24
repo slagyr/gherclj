@@ -1,4 +1,5 @@
 (ns gherclj.features.harness
+  (:refer-clojure :exclude [reset!])
   (:require [gherclj.template :as template]
             [gherclj.core :as core]
             [gherclj.generator :as gen]

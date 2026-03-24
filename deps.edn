@@ -1,5 +1,5 @@
 {:deps {org.clojure/clojure {:mvn/version "1.12.0"}}
- :paths ["src" "spec"]
+ :paths ["src" "spec" "features/generated"]
  :aliases
  {:spec {:extra-deps {speclj/speclj {:mvn/version "3.12.1"}}
-         :main-opts ["-m" "speclj.main" "-c" "spec/gherclj" "-s" "src"]}}}
+         :main-opts ["-m" "speclj.main" "-c" "spec/gherclj" "-c" "features/generated" "-s" "src"]}}}
