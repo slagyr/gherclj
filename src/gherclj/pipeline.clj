@@ -33,23 +33,27 @@
 (defn- write-edn [path data]
   (spit path (with-out-str (pprint/pprint data))))
 
+(defn- log [verbose & args]
+  (when verbose (apply println args)))
+
 (defn parse!
   "Parse .feature files into .edn IR files.
 
    Config keys:
      :features-dir - directory containing .feature files
-     :edn-dir      - directory to write .edn IR files (default: features/edn)"
+     :edn-dir      - directory to write .edn IR files (default: features/edn)
+     :verbose      - when truthy, print progress to stdout"
   [config]
-  (let [{:keys [features-dir edn-dir]
+  (let [{:keys [features-dir edn-dir verbose]
          :or {edn-dir "features/edn"}} config
         features (parser/parse-features-dir features-dir)]
     (io/make-parents (io/file edn-dir "dummy"))
     (doseq [ir features]
       (let [edn-name (source->edn-filename (:source ir))
             edn-path (str edn-dir "/" edn-name)]
-        (println (str "Parsing " (:source ir) " -> " edn-path))
+        (log verbose (str "Parsing " (:source ir) " -> " edn-path))
         (write-edn edn-path ir)
-        (println (str "  " (count (:scenarios ir)) " scenarios parsed"))))))
+        (log verbose (str "  " (count (:scenarios ir)) " scenarios parsed"))))))
 
 (defn generate!
   "Generate spec files from .edn IR files.
@@ -61,7 +65,7 @@
      :harness-ns      - namespace symbol for the test harness
      :test-framework  - :speclj or :clojure.test"
   [config]
-  (let [{:keys [edn-dir output-dir step-namespaces test-framework]
+  (let [{:keys [edn-dir output-dir step-namespaces test-framework verbose]
          :or {edn-dir "features/edn"
               output-dir "features/generated"}} config]
     (ensure-framework-loaded! test-framework)
@@ -75,9 +79,9 @@
               out-name (source->spec-filename (:source ir))
               out-path (str output-dir "/" out-name)
               spec-str (gen/generate-spec config ir)]
-          (println (str "Generating " out-path " from " (.getName f)))
+          (log verbose (str "Generating " out-path " from " (.getName f)))
           (spit out-path spec-str)
-          (println (str "  " (count (remove :wip (:scenarios ir))) " scenarios generated")))))))
+          (log verbose (str "  " (count (remove :wip (:scenarios ir))) " scenarios generated")))))))
 
 (defn run!
   "Run the full pipeline: parse .feature -> .edn -> generated specs.

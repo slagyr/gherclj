@@ -14,5 +14,6 @@
                        'gherclj.features.steps.step-definitions
                        'gherclj.features.steps.code-generation]
      :harness-ns 'gherclj.features.harness
-     :test-framework :speclj})
+     :test-framework :speclj
+     :verbose true})
   (speclj/run "-c" "features/generated" "-s" "src"))
