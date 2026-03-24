@@ -1,0 +1,182 @@
+@wip
+Feature: IR to code generation
+
+  The generator converts parsed feature IR into executable spec files.
+  It resolves steps to qualified function calls and delegates formatting
+  to framework-specific multimethods.
+
+  Scenario: Generate a speclj spec
+    Given a feature named "Login" from source "login.feature"
+    And a scenario "Valid credentials" with steps:
+      | type  | text                        |
+      | given | a user "alice"              |
+      | when  | the user logs in            |
+      | then  | the response should be 200  |
+    When generating the spec with framework :speclj
+    Then the generated code should be:
+      """
+      (ns login-spec
+        (:require [speclj.core :refer :all]
+                  [gherclj.features.harness :as h]
+                  [gherclj.features.steps.sample-app :as sample-app]))
+
+      (describe "Login"
+
+        (context "Valid credentials"
+          (it "Valid credentials"
+            (h/reset!)
+            (sample-app/create-user "alice")
+            (sample-app/user-logs-in)
+            (sample-app/response-should-be 200))))
+      """
+
+  Scenario: Generate a clojure.test spec
+    Given a feature named "Login" from source "login.feature"
+    And a scenario "Valid credentials" with steps:
+      | type  | text                        |
+      | given | a user "alice"              |
+      | when  | the user logs in            |
+      | then  | the response should be 200  |
+    When generating the spec with framework :clojure.test
+    Then the generated code should be:
+      """
+      (ns login-test
+        (:require [clojure.test :refer :all]
+                  [gherclj.features.harness :as h]
+                  [gherclj.features.steps.sample-app :as sample-app]))
+
+      (deftest valid-credentials
+        (testing "Valid credentials"
+          (h/reset!)
+          (sample-app/create-user "alice")
+          (sample-app/user-logs-in)
+          (sample-app/response-should-be 200)))
+      """
+
+  Scenario: clojure.test with multiple scenarios
+    Given a feature named "Login" from source "login.feature"
+    And a scenario "Valid credentials" with steps:
+      | type  | text                       |
+      | given | a user "alice"             |
+      | when  | the user logs in           |
+      | then  | the response should be 200 |
+    And a scenario "Invalid credentials" with steps:
+      | type  | text                       |
+      | given | a user "nobody"            |
+      | when  | the user logs in           |
+      | then  | the response should be 401 |
+    When generating the spec with framework :clojure.test
+    Then the generated code should be:
+      """
+      (ns login-test
+        (:require [clojure.test :refer :all]
+                  [gherclj.features.harness :as h]
+                  [gherclj.features.steps.sample-app :as sample-app]))
+
+      (deftest valid-credentials
+        (testing "Valid credentials"
+          (h/reset!)
+          (sample-app/create-user "alice")
+          (sample-app/user-logs-in)
+          (sample-app/response-should-be 200)))
+
+      (deftest invalid-credentials
+        (testing "Invalid credentials"
+          (h/reset!)
+          (sample-app/create-user "nobody")
+          (sample-app/user-logs-in)
+          (sample-app/response-should-be 401)))
+      """
+
+  Scenario: clojure.test with background
+    Given a feature named "Login" from source "login.feature"
+    And a background with steps:
+      | type  | text           |
+      | given | a user "alice" |
+    And a scenario "Check response" with steps:
+      | type  | text                       |
+      | when  | the user logs in           |
+      | then  | the response should be 200 |
+    When generating the spec with framework :clojure.test
+    Then the generated code should be:
+      """
+      (ns login-test
+        (:require [clojure.test :refer :all]
+                  [gherclj.features.harness :as h]
+                  [gherclj.features.steps.sample-app :as sample-app]))
+
+      (deftest check-response
+        (testing "Check response"
+          (h/reset!)
+          (sample-app/create-user "alice")
+          (sample-app/user-logs-in)
+          (sample-app/response-should-be 200)))
+      """
+
+  Scenario: clojure.test pending scenario
+    Given a feature named "Login" from source "login.feature"
+    And a scenario "Not implemented" with steps:
+      | type  | text                  |
+      | given | something undefined   |
+      | when  | doing unknown things  |
+    When generating the spec with framework :clojure.test
+    Then the generated code should be:
+      """
+      (ns login-test
+        (:require [clojure.test :refer :all]
+                  [gherclj.features.harness :as h]))
+
+      (deftest not-implemented
+        (testing "Not implemented"
+          ;; TODO: not yet implemented
+          ))
+      """
+
+  Scenario: Background steps are included in every speclj scenario
+    Given a feature named "Login" from source "login.feature"
+    And a background with steps:
+      | type  | text           |
+      | given | a user "alice" |
+    And a scenario "First" with steps:
+      | type  | text             |
+      | when  | the user logs in |
+    And a scenario "Second" with steps:
+      | type  | text                       |
+      | then  | the response should be 200 |
+    When generating the spec with framework :speclj
+    Then the output should contain "(sample-app/create-user \"alice\")"
+    And the output should contain "(sample-app/user-logs-in)"
+    And the output should contain "(sample-app/response-should-be 200)"
+
+  Scenario: Harness reset is called before each scenario
+    Given a feature named "Login" from source "login.feature"
+    And a scenario "First" with steps:
+      | type  | text             |
+      | when  | the user logs in |
+    And a scenario "Second" with steps:
+      | type  | text             |
+      | when  | the user logs in |
+    When generating the spec with framework :speclj
+    Then the output should contain "(h/reset!)"
+
+  Scenario: Unrecognized steps generate pending speclj scenarios
+    Given a feature named "Login" from source "login.feature"
+    And a scenario "Not implemented" with steps:
+      | type  | text                  |
+      | given | something undefined   |
+      | when  | doing unknown things  |
+    When generating the spec with framework :speclj
+    Then the output should contain "pending"
+    And the output should contain ";; given something undefined"
+
+  Scenario: WIP scenarios are excluded from generation
+    Given a feature named "Login" from source "login.feature"
+    And a scenario "Normal" with steps:
+      | type  | text             |
+      | when  | the user logs in |
+    And a wip scenario "Skipped" with steps:
+      | type  | text                |
+      | given | something undefined |
+    When generating the spec with framework :speclj
+    Then the output should contain "Normal"
+    And the output should not contain "Skipped"
