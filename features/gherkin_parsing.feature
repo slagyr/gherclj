@@ -132,7 +132,7 @@ Feature: Gherkin parsing
       """
       {:feature "WIP"
        :scenarios [{:scenario "Not ready"
-                    :wip true
+                    :tags ["wip"]
                     :steps [{:type :given :text "something"}]}
                    {:scenario "Ready"
                     :steps [{:type :given :text "something else"}]}]}

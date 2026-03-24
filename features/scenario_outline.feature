@@ -102,9 +102,9 @@ Feature: Scenario Outline
       """
       {:feature "WIP Outline"
        :scenarios [{:scenario "Not ready — one"
-                    :wip true
+                    :tags ["wip"]
                     :steps [{:type :given :text "value is one"}]}
                    {:scenario "Not ready — two"
-                    :wip true
+                    :tags ["wip"]
                     :steps [{:type :given :text "value is two"}]}]}
       """
