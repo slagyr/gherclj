@@ -1,20 +1,33 @@
-{:tasks
- {clean {:doc "Remove generated EDN and spec files"
+{:paths ["src" "spec" "target/gherclj/generated"]
+ :deps {com.cleancoders.c3kit/apron {:mvn/version "2.5.0"}
+        org.clojure/tools.cli {:mvn/version "1.1.230"}
+        speclj/speclj {:mvn/version "3.12.1"}}
+ :tasks
+ {:requires ([gherclj.pipeline :as p])
+
+  clean {:doc "Remove generated EDN and spec files"
          :task (do
                  (babashka.fs/delete-tree "target/gherclj")
                  (println "Cleaned target/gherclj/"))}
 
-  spec {:doc "Run unit specs"
-        :task (clojure "-M:spec")}
-
-  features {:doc "Run feature specs (parse, generate, execute)"
-            :task (clojure "-M:features")}
-
   parse {:doc "Run parse stage only"
-         :task (clojure "-M -e" "(do (require '[gherclj.pipeline :as p]) (p/parse! {:features-dir \"features\" :verbose true}))")}
+         :task (p/parse! {:features-dir "features" :verbose true})}
 
   generate {:doc "Run generate stage only (parse must have run first)"
-            :task (clojure "-M -e" "(do (require '[gherclj.pipeline :as p] '[gherclj.features.steps.sample-app]) (p/generate! {:edn-dir \"target/gherclj/edn\" :output-dir \"target/gherclj/generated\" :step-namespaces [] :harness-ns 'gherclj.features.harness :test-framework :speclj :verbose true}))")}
+            :requires ([gherclj.features.steps.sample-app])
+            :task (p/generate! {:edn-dir "target/gherclj/edn"
+                                :output-dir "target/gherclj/generated"
+                                :step-namespaces []
+                                :test-framework :speclj
+                                :verbose true})}
+
+  spec {:doc "Run unit specs"
+        :requires ([speclj.cli :as speclj])
+        :task (speclj/run "-c" "spec/gherclj" "-c" "target/gherclj/generated" "-s" "src")}
+
+  features {:doc "Run feature specs (parse, generate, execute)"
+            :requires ([gherclj.features.runner :as runner])
+            :task (runner/-main)}
 
   test {:doc "Run all tests (unit specs + feature specs)"
         :task (do (run 'spec) (run 'features))}}}
