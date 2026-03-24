@@ -4,6 +4,8 @@
 
 A Clojure library for Gherkin-based acceptance testing. Write `.feature` files, define steps with `defgiven`/`defwhen`/`defthen`, and generate executable test specs.
 
+<br clear="both">
+
 ## Introduction
 
 gherclj bridges the gap between human-readable feature specifications and executable Clojure tests. It parses standard Gherkin `.feature` files and generates test files that call real Clojure functions — no string-concatenated code, no separate pattern/registry maps, no framework lock-in.
