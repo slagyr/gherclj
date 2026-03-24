@@ -181,11 +181,21 @@
           (tag-line? trimmed)
           (recur rest-lines state (into tags-pending (parse-tags trimmed)) false result)
 
+          (str/starts-with? trimmed "Scenario Outline:")
+          (let [title (str/trim (subs trimmed 17))
+                scenario-entry {:title title :lines [] :tags tags-pending
+                                :outline? true :examples-lines []}]
+            (recur rest-lines :scenario [] false
+                   (update result :scenarios conj scenario-entry)))
+
           (str/starts-with? trimmed "Scenario:")
           (let [title (str/trim (subs trimmed 9))
                 scenario-entry {:title title :lines [] :tags tags-pending}]
             (recur rest-lines :scenario [] false
                    (update result :scenarios conj scenario-entry)))
+
+          (and (= state :scenario) (str/starts-with? trimmed "Examples:"))
+          (recur rest-lines :examples [] false result)
 
           (and (= state :background) (step-keyword? trimmed))
           (recur rest-lines :background [] false
@@ -195,9 +205,16 @@
           (recur rest-lines :background [] false
                  (update result :background-lines conj trimmed))
 
-          (and (= state :scenario) (step-keyword? trimmed))
+          (and (#{:scenario :examples} state) (step-keyword? trimmed))
           (recur rest-lines :scenario [] false
                  (append-to-current-scenario result trimmed))
+
+          (and (= state :examples) (table-line? trimmed))
+          (let [scenarios (:scenarios result)
+                current (peek scenarios)
+                updated (update current :examples-lines (fnil conj []) trimmed)]
+            (recur rest-lines :examples [] false
+                   (assoc result :scenarios (conj (pop scenarios) updated))))
 
           (and (= state :scenario) (table-line? trimmed))
           (recur rest-lines :scenario [] false
@@ -209,6 +226,29 @@
 
           :else
           (recur rest-lines state tags-pending false result))))))
+
+(defn- substitute-placeholders
+  "Replace <placeholder> in text with values from the row map."
+  [text row-map]
+  (reduce-kv (fn [s k v] (str/replace s (str "<" k ">") v))
+             text row-map))
+
+(defn- expand-outline
+  "Expand a Scenario Outline into concrete scenarios."
+  [{:keys [title lines tags examples-lines]}]
+  (let [parsed-steps (:steps (parse-scenario-lines lines))
+        examples-table (mapv parse-table-line examples-lines)
+        headers (first examples-table)
+        rows (rest examples-table)]
+    (mapv (fn [row]
+            (let [row-map (zipmap headers row)
+                  scenario-name (str title " — " (str/join ", " row))
+                  expanded-steps (mapv (fn [step]
+                                         (update step :text #(substitute-placeholders % row-map)))
+                                       parsed-steps)]
+              (cond-> {:scenario scenario-name :steps expanded-steps}
+                (seq tags) (assoc :tags tags))))
+          rows)))
 
 (defn parse-feature
   "Parse a Gherkin feature string into an EDN IR map."
@@ -223,12 +263,16 @@
         description-lines (:description-lines sections)
         background-lines (:background-lines sections)
         feature-tags (:feature-tags sections)
-        scenarios (mapv (fn [{:keys [title lines tags]}]
-                          (let [parsed (parse-scenario-lines lines)
-                                all-tags (into feature-tags tags)]
-                            (cond-> (assoc parsed :scenario title)
-                              (seq all-tags) (assoc :tags all-tags))))
-                        (:scenarios sections))]
+        scenarios (->> (:scenarios sections)
+                       (mapcat (fn [{:keys [outline?] :as entry}]
+                                 (if outline?
+                                   (expand-outline (update entry :tags #(into feature-tags %)))
+                                   (let [{:keys [title lines tags]} entry
+                                         parsed (parse-scenario-lines lines)
+                                         all-tags (into feature-tags tags)]
+                                     [(cond-> (assoc parsed :scenario title)
+                                        (seq all-tags) (assoc :tags all-tags))]))))
+                       vec)]
     (cond-> {:feature feature-name
              :scenarios scenarios}
       (seq feature-tags)

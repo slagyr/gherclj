@@ -108,4 +108,39 @@
 
     (it "throws on empty input"
       (should-throw RuntimeException
-        (parser/parse-feature "")))))
+        (parser/parse-feature ""))))
+
+  (context "scenario outlines"
+
+    (it "expands outline to concrete scenarios"
+      (let [ir (parser/parse-feature
+                 (str "Feature: Login\n"
+                      "\n"
+                      "  Scenario Outline: Login with role\n"
+                      "    Given a user \"<name>\" with role \"<role>\"\n"
+                      "\n"
+                      "    Examples:\n"
+                      "      | name  | role  |\n"
+                      "      | alice | admin |\n"
+                      "      | bob   | guest |\n"))]
+        (should= 2 (count (:scenarios ir)))
+        (should= "Login with role — alice, admin" (:scenario (first (:scenarios ir))))
+        (should= "Login with role — bob, guest" (:scenario (second (:scenarios ir))))
+        (should= "a user \"alice\" with role \"admin\""
+                 (:text (first (:steps (first (:scenarios ir))))))))
+
+    (it "applies tags to all expanded scenarios"
+      (let [ir (parser/parse-feature
+                 (str "Feature: WIP\n"
+                      "\n"
+                      "  @wip\n"
+                      "  Scenario Outline: Not ready\n"
+                      "    Given value is <val>\n"
+                      "\n"
+                      "    Examples:\n"
+                      "      | val |\n"
+                      "      | one |\n"
+                      "      | two |\n"))]
+        (should= 2 (count (:scenarios ir)))
+        (should= ["wip"] (:tags (first (:scenarios ir))))
+        (should= ["wip"] (:tags (second (:scenarios ir))))))))
