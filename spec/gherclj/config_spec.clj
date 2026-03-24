@@ -48,4 +48,27 @@
       (let [result (schema/conform config/pipeline-schema
                      {:features-dir "features"
                       :test-framework :invalid})]
-        (should (schema/error? (:test-framework result)))))))
+        (should (schema/error? (:test-framework result))))))
+
+  (context "load-config"
+
+    (it "returns defaults when no config file exists"
+      (let [result (config/load-config {:root-path "/nonexistent"})]
+        (should= "features" (:features-dir result))
+        (should= "target/gherclj/edn" (:edn-dir result))
+        (should= "target/gherclj/generated" (:output-dir result))
+        (should= [] (:step-namespaces result))
+        (should= :speclj (:test-framework result))
+        (should= false (:verbose result))))
+
+    (it "loads config from project root"
+      (let [tmp (str (System/getProperty "java.io.tmpdir") "/gherclj-config-test")]
+        (clojure.java.io/make-parents (clojure.java.io/file tmp "dummy"))
+        (spit (str tmp "/gherclj.edn") "{:features-dir \"my-features\" :test-framework :clojure.test}")
+        (try
+          (let [result (config/load-config {:root-path tmp})]
+            (should= "my-features" (:features-dir result))
+            (should= :clojure.test (:test-framework result)))
+          (finally
+            (.delete (clojure.java.io/file tmp "gherclj.edn"))
+            (.delete (clojure.java.io/file tmp))))))))
