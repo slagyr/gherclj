@@ -31,6 +31,17 @@ Each stage produces a visible, inspectable artifact. If a step isn't matching, c
 
 ### 2. Write features
 
+Create a `features/` directory at your project root and add `.feature` files using standard [Gherkin syntax](https://cucumber.io/docs/gherkin/reference/):
+
+```
+myapp/
+  features/
+    authentication.feature
+    checkout.feature
+  src/
+    ...
+```
+
 ```gherkin
 Feature: Authentication
 
@@ -44,6 +55,8 @@ Feature: Authentication
     When the user logs in
     Then the response status should be 401
 ```
+
+The `features/` directory is the default; configure a different location with `:features-dir` in `gherclj.edn`.
 
 ### 3. Define steps
 
