@@ -25,13 +25,8 @@ Each stage produces a visible, inspectable artifact. If a step isn't matching, c
 ### 1. Add gherclj to your project
 
 ```clojure
-;; deps.edn
-{:deps {gherclj/gherclj {:mvn/version "..."}}}
-```
-
-```clojure
-;; bb.edn
-{:deps {gherclj/gherclj {:mvn/version "..."}}}
+;; deps.edn or bb.edn
+{:deps {io.github.slagyr/gherclj {:git/tag "v0.1.0" :git/sha "..."}}}
 ```
 
 ### 2. Write features
