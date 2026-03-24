@@ -87,10 +87,10 @@
 (defn generate-spec
   "Generate a complete spec file string from a config and feature IR."
   [config ir]
-  (let [{:keys [step-namespaces exclude-tags include-tags]
+  (let [{:keys [step-namespaces extra-steps exclude-tags include-tags]
          :or {exclude-tags ["wip"]}} config
         {:keys [source feature scenarios background]} ir
-        steps (core/collect-steps step-namespaces)
+        steps (into (core/collect-steps step-namespaces) extra-steps)
         filtered (cond->> scenarios
                    (seq exclude-tags) (remove #(some (set exclude-tags) (:tags %)))
                    (seq include-tags) (filter #(some (set include-tags) (:tags %))))

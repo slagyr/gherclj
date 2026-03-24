@@ -6,15 +6,15 @@ Feature: Code generation
   Scenario: Generate a spec from a simple feature
     Given a feature named "Authentication" from source "auth.feature"
     And a scenario "User can log in" with steps:
-      | type  | text                        |
-      | given | timeout is 300              |
-      | when  | running the action          |
-      | then  | the status should be active |
+      | type  | text                       |
+      | given | a user "alice"             |
+      | when  | the user logs in           |
+      | then  | the response should be 200 |
     When generating the spec with framework :speclj
     Then the output should contain "Authentication"
     And the output should contain "User can log in"
-    And the output should contain "add-timeout 300"
-    And the output should contain "run-action"
+    And the output should contain "create-user"
+    And the output should contain "user-logs-in"
 
   Scenario: Unrecognized steps generate pending scenarios
     Given a feature named "Pending" from source "pending.feature"

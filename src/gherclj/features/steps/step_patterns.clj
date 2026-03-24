@@ -1,6 +1,5 @@
 (ns gherclj.features.steps.step-patterns
-  (:require [gherclj.core :refer [defgiven defwhen defthen]]
-            [gherclj.features.harness :as h]))
+  (:require [gherclj.core :as g :refer [defgiven defwhen defthen]]))
 
 ;; --- Regex-based test subjects ---
 
@@ -16,4 +15,7 @@
 
 (defgiven lookup-registered-step "the registered step \"{name}\""
   [name]
-  (h/register-real-step! 'gherclj.features.steps.step-patterns name))
+  (let [steps (g/steps-in-ns 'gherclj.features.steps.step-patterns)
+        step (first (filter #(= name (:name %)) steps))]
+    (when step
+      (g/update! :steps (fnil conj []) step))))

@@ -1,88 +1,102 @@
 (ns gherclj.features.steps.pipeline
-  (:require [gherclj.core :refer [defgiven defwhen defthen]]
-            [gherclj.features.harness :as h]
+  (:require [gherclj.core :as g :refer [defgiven defwhen defthen]]
             [gherclj.pipeline :as pipeline]
             [clojure.java.io :as io]
             [clojure.edn :as edn]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [speclj.core :refer [should should= should-not]]))
+
+(def ^:private base-dir
+  (str (System/getProperty "java.io.tmpdir") "/gherclj-pipeline-test"))
+
+(defn- edn-dir [] (str base-dir "/target/gherclj/edn"))
+(defn- output-dir [] (str base-dir "/target/gherclj/generated"))
+
+(defn- pipeline-config [& {:keys [verbose framework]}]
+  (cond-> {:features-dir (g/get :pipeline-dir)
+           :edn-dir (edn-dir)
+           :output-dir (output-dir)}
+    verbose (assoc :verbose true)
+    framework (assoc :test-framework framework
+                     :step-namespaces [])))
 
 ;; --- Given steps ---
 
 (defgiven setup-features-dir "a features directory containing:"
   [table]
-  (let [dir (str (System/getProperty "java.io.tmpdir") "/gherclj-pipeline-test/features")]
+  (let [dir (str base-dir "/features")]
     (io/make-parents (io/file dir "dummy"))
     (doseq [row (:rows table)]
       (let [filename (first row)]
         (spit (io/file dir filename) "")))
-    (h/set-pipeline-dir! dir)))
+    (g/assoc! :pipeline-dir dir)))
 
 (defgiven write-feature-content "the feature \"{name}\" contains:"
   [name doc-string]
-  (let [dir (h/pipeline-dir)]
-    (spit (io/file dir name) doc-string)))
+  (spit (io/file (g/get :pipeline-dir) name) doc-string))
 
 (defgiven parse-stage-has-run "the parse stage has run"
   []
-  (h/run-parse-stage!))
+  (let [output (with-out-str (pipeline/parse! (pipeline-config)))]
+    (g/assoc! :pipeline-output output)))
 
 ;; --- When steps ---
 
 (defwhen run-parse-stage "the parse stage runs"
   []
-  (h/run-parse-stage!))
+  (let [output (with-out-str (pipeline/parse! (pipeline-config)))]
+    (g/assoc! :pipeline-output output)))
 
 (defwhen run-parse-stage-verbose "the parse stage runs with :verbose"
   []
-  (h/run-parse-stage-verbose!))
+  (let [output (with-out-str (pipeline/parse! (pipeline-config :verbose true)))]
+    (g/assoc! :pipeline-output output)))
 
 (defwhen run-generate-stage "the generate stage runs with framework {fw}"
   [fw]
-  (let [framework (keyword (str/replace fw #"^:" ""))]
-    (h/run-generate-stage! framework)))
+  (let [framework (keyword (str/replace fw #"^:" ""))
+        output (with-out-str (pipeline/generate! (pipeline-config :framework framework)))]
+    (g/assoc! :pipeline-output output)))
 
 (defwhen run-generate-stage-verbose "the generate stage runs with framework {fw} and :verbose"
   [fw]
-  (let [framework (keyword (str/replace fw #"^:" ""))]
-    (h/run-generate-stage-verbose! framework)))
+  (let [framework (keyword (str/replace fw #"^:" ""))
+        output (with-out-str (pipeline/generate! (pipeline-config :framework framework :verbose true)))]
+    (g/assoc! :pipeline-output output)))
 
 (defwhen run-full-pipeline "the full pipeline runs with framework {fw}"
   [fw]
-  (let [framework (keyword (str/replace fw #"^:" ""))]
-    (h/run-full-pipeline! framework)))
+  (let [framework (keyword (str/replace fw #"^:" ""))
+        output (with-out-str (pipeline/run! (pipeline-config :framework framework)))]
+    (g/assoc! :pipeline-output output)))
 
 ;; --- Then steps ---
 
 (defthen file-should-exist "\"{path}\" should exist"
   [path]
-  (let [base (h/pipeline-base-dir)]
-    (.exists (io/file base path))))
+  (should (.exists (io/file base-dir path))))
 
 (defthen file-should-contain-ir "\"{path}\" should contain IR:"
   [path doc-string]
-  (let [base (h/pipeline-base-dir)
-        actual (edn/read-string (slurp (io/file base path)))
+  (let [actual (edn/read-string (slurp (io/file base-dir path)))
         expected (edn/read-string doc-string)]
-    [actual expected]))
+    (should= expected actual)))
 
 (defthen file-should-contain "\"{path}\" should contain \"{text}\""
   [path text]
-  (let [base (h/pipeline-base-dir)
-        content (slurp (io/file base path))]
-    (str/includes? content text)))
+  (let [content (slurp (io/file base-dir path))]
+    (should (str/includes? content text))))
 
 (defthen file-should-not-contain "\"{path}\" should not contain \"{text}\""
   [path text]
-  (let [base (h/pipeline-base-dir)
-        content (slurp (io/file base path))]
-    (not (str/includes? content text))))
+  (let [content (slurp (io/file base-dir path))]
+    (should-not (str/includes? content text))))
 
 (defthen file-should-contain-ir-with-n-scenarios "\"{path}\" should contain IR with {n:int} scenarios"
   [path n]
-  (let [base (h/pipeline-base-dir)
-        ir (edn/read-string (slurp (io/file base path)))]
-    (count (:scenarios ir))))
+  (let [ir (edn/read-string (slurp (io/file base-dir path)))]
+    (should= n (count (:scenarios ir)))))
 
 (defthen pipeline-output-should-be-empty "the output should be empty"
   []
-  (h/pipeline-output))
+  (should= "" (g/get :pipeline-output)))

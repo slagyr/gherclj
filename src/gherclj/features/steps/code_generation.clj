@@ -1,12 +1,18 @@
 (ns gherclj.features.steps.code-generation
-  (:require [gherclj.core :refer [defgiven defwhen defthen]]
-            [gherclj.features.harness :as h]
+  (:require [gherclj.core :as g :refer [defgiven defwhen defthen]]
+            [gherclj.generator :as gen]
             [gherclj.features.steps.sample-app]
-            [clojure.string :as str]))
+            [gherclj.frameworks.speclj]
+            [gherclj.frameworks.clojure-test]
+            [clojure.string :as str]
+            [speclj.core :refer [should should= should-not]]))
+
+(def ^:private pipeline-base-dir
+  (str (System/getProperty "java.io.tmpdir") "/gherclj-pipeline-test"))
 
 (defgiven setup-feature "a feature named \"{name}\" from source \"{source}\""
   [name source]
-  (h/set-feature! name source))
+  (g/assoc! :feature-ir {:feature name :source source :scenarios []}))
 
 (defgiven add-scenario "a scenario \"{title}\" with steps:"
   [title table]
@@ -16,7 +22,8 @@
                         {:type (keyword (get m "type"))
                          :text (get m "text")}))
                     rows)]
-    (h/add-scenario! title steps)))
+    (g/update-in! [:feature-ir :scenarios] conj
+                  {:scenario title :steps steps})))
 
 (defgiven add-background "a background with steps:"
   [table]
@@ -26,7 +33,7 @@
                         {:type (keyword (get m "type"))
                          :text (get m "text")}))
                     rows)]
-    (h/set-background! steps)))
+    (g/assoc-in! [:feature-ir :background] {:steps steps})))
 
 (defgiven add-wip-scenario "a wip scenario \"{title}\" with steps:"
   [title table]
@@ -36,21 +43,27 @@
                         {:type (keyword (get m "type"))
                          :text (get m "text")}))
                     rows)]
-    (h/add-wip-scenario! title steps)))
+    (g/update-in! [:feature-ir :scenarios] conj
+                  {:scenario title :steps steps :tags ["wip"]})))
 
 (defwhen generate-spec "generating the spec with framework {framework}"
   [framework]
-  (let [fw (keyword (str/replace framework #"^:" ""))]
-    (h/generate-spec! fw ['gherclj.features.steps.sample-app])))
+  (let [fw (keyword (str/replace framework #"^:" ""))
+        config {:step-namespaces ['gherclj.features.steps.sample-app]
+                :extra-steps (g/get :steps)
+                :test-framework fw}]
+    (g/assoc! :generated-output (gen/generate-spec config (g/get :feature-ir)))))
 
 (defthen output-should-contain "the output should contain \"{expected}\""
   [expected]
-  (or (h/generated-output) (h/pipeline-output)))
+  (let [raw-output (or (g/get :generated-output) (g/get :pipeline-output))
+        output (str/replace raw-output (str pipeline-base-dir "/") "")]
+    (should (str/includes? output expected))))
 
 (defthen output-should-not-contain "the output should not contain \"{text}\""
   [text]
-  (h/generated-output))
+  (should-not (str/includes? (g/get :generated-output) text)))
 
 (defthen generated-code-should-be "the generated code should be:"
   [doc-string]
-  (h/generated-output))
+  (should= (str/trim doc-string) (str/trim (g/get :generated-output))))
