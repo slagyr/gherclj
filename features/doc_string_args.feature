@@ -1,4 +1,3 @@
-@wip
 Feature: Doc-string step arguments
 
   Gherkin steps can have a doc-string argument, delimited by
