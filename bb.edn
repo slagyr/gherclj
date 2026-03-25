@@ -24,10 +24,8 @@
                                 :verbose true})}
 
   spec {:doc "Run unit specs"
-        :requires ([speclj.cli :as speclj])
-        :task (let [failures (speclj/run "-c" "spec/gherclj" "-s" "src")]
-                (when (pos? failures)
-                  (throw (ex-info (str failures " spec failures") {:failures failures}))))}
+        :requires ([speclj.main :as speclj])
+        :task (speclj/-main "-c" "spec/gherclj" "-s" "src")}
 
   features {:doc "Run feature specs (parse, generate, execute)"
             :extra-paths ["target/gherclj/generated"]
