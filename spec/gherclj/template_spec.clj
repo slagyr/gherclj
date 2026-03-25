@@ -63,6 +63,20 @@
             result (match-step compiled "a user \"alice\"")]
         (should= ["alice"] result)))
 
+    (it "strips both leading and trailing quotes from string captures"
+      (let [compiled (compile-template "value is {v:string}")
+            coerce-fn (:coerce (first (:bindings compiled)))]
+        (should= "alice" (coerce-fn "\"alice\""))
+        (should= "x" (coerce-fn "\"x\""))
+        (should= "hello" (coerce-fn "hello"))))
+
+    (it "string coerce does not include surrounding quotes"
+      (let [compiled (compile-template "value is {v:string}")
+            coerce-fn (:coerce (first (:bindings compiled)))
+            result (coerce-fn "\"test\"")]
+        (should-not (clojure.string/starts-with? result "\""))
+        (should-not (clojure.string/ends-with? result "\""))))
+
     (it "returns nil on no match"
       (let [compiled (compile-template "a project {slug:string}")
             result (match-step compiled "something else entirely")]
