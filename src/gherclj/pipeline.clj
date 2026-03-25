@@ -5,7 +5,8 @@
             [clojure.string :as str]
             [clojure.edn :as edn]
             [gherclj.parser :as parser]
-            [gherclj.generator :as gen]))
+            [gherclj.generator :as gen]
+            [gherclj.discovery :as discovery]))
 
 (defn- ensure-framework-loaded!
   "Load the framework namespace for the given test-framework keyword."
@@ -16,11 +17,35 @@
                 (symbol (str "gherclj.frameworks." (name test-framework))))]
     (require fw-ns)))
 
+(defn- scan-namespaces
+  "Scan source directories for .clj files and derive namespace symbols."
+  [dirs]
+  (->> dirs
+       (mapcat (fn [dir]
+                 (let [root (io/file dir)]
+                   (when (.exists root)
+                     (->> (file-seq root)
+                          (filter #(str/ends-with? (.getName %) ".clj"))
+                          (map (fn [f]
+                                 (let [rel (.relativize (.toPath root) (.toPath f))]
+                                   (-> (str rel)
+                                       (str/replace #"\.clj$" "")
+                                       (str/replace "/" ".")
+                                       (str/replace "_" "-")
+                                       symbol)))))))))
+       vec))
+
 (defn- ensure-steps-loaded!
-  "Require all step namespaces."
+  "Resolve glob patterns and require all step namespaces."
   [step-namespaces]
-  (doseq [ns-sym step-namespaces]
-    (require ns-sym)))
+  (let [has-globs? (some string? step-namespaces)
+        resolved (if has-globs?
+                   (let [available (scan-namespaces ["src"])]
+                     (discovery/resolve-step-namespaces step-namespaces available))
+                   (vec step-namespaces))]
+    (doseq [ns-sym resolved]
+      (require ns-sym))
+    resolved))
 
 (defn- source->edn-filename [source]
   (str/replace source #"\.feature$" ".edn"))
@@ -68,8 +93,9 @@
          :or {edn-dir "target/gherclj/edn"
               output-dir "target/gherclj/generated"}} config]
     (ensure-framework-loaded! test-framework)
-    (ensure-steps-loaded! step-namespaces)
-    (let [edn-files (->> (.listFiles (io/file edn-dir))
+    (let [resolved-steps (ensure-steps-loaded! step-namespaces)
+          config (assoc config :step-namespaces resolved-steps)
+          edn-files (->> (.listFiles (io/file edn-dir))
                          (filter #(str/ends-with? (.getName %) ".edn"))
                          (sort-by #(.getName %)))]
       (io/make-parents (io/file output-dir "dummy"))
