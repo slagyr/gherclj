@@ -42,4 +42,14 @@
       (let [text (main/usage-message)]
         (should (clojure.string/includes? text "Usage: gherclj [options]"))
         (should (clojure.string/includes? text "--features-dir"))
-        (should (clojure.string/includes? text "--help"))))))
+        (should (clojure.string/includes? text "--help")))))
+
+  (context "-main"
+
+    (it "prints usage for --help"
+      (let [output (with-out-str (main/-main "--help"))]
+        (should (clojure.string/includes? output "Usage: gherclj [options]"))))
+
+    (it "prints usage for -h"
+      (let [output (with-out-str (main/-main "-h"))]
+        (should (clojure.string/includes? output "Usage: gherclj [options]"))))))

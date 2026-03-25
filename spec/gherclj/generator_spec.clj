@@ -82,4 +82,30 @@
       (let [steps (core/collect-steps ['gherclj.generator-spec])
             classified (core/classify-step steps "a project alpha with timeout 300")
             code (gen/generate-step-call classified)]
-        (should= "(generator-spec/setup-project \"alpha\" 300)" code)))))
+        (should= "(generator-spec/setup-project \"alpha\" 300)" code))))
+
+  (context "generate-spec with tables and doc-strings"
+
+    (it "generates spec with table step"
+      (let [config {:step-namespaces ['gherclj.generator-spec]
+                    :test-framework :speclj}
+            ir {:feature "Tables"
+                :source "tables.feature"
+                :scenarios [{:scenario "With table"
+                             :steps [{:type :given :text "a table of projects:"
+                                      :table {:headers ["name"] :rows [["alpha"]]}}]}]}
+            result (gen/generate-spec config ir)]
+        (should (str/includes? result "setup-table"))
+        (should (str/includes? result ":headers"))))
+
+    (it "generates spec with doc-string step"
+      (let [config {:step-namespaces ['gherclj.generator-spec]
+                    :test-framework :speclj}
+            ir {:feature "Docs"
+                :source "docs.feature"
+                :scenarios [{:scenario "With doc"
+                             :steps [{:type :then :text "the result should be ok"
+                                      :doc-string "some content"}]}]}
+            result (gen/generate-spec config ir)]
+        (should (str/includes? result "check-result"))
+        (should (str/includes? result "some content"))))))
