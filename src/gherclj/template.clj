@@ -1,14 +1,19 @@
+;; mutation-tested: 2026-03-25
 (ns gherclj.template
   (:require [clojure.string :as str]))
+
+(defn- coerce-string
+  "Strip surrounding quotes from a string value, if present."
+  [s]
+  (if (and (str/starts-with? s "\"")
+           (str/ends-with? s "\""))
+    (subs s 1 (dec (count s)))
+    s))
 
 (def ^:private type-patterns
   {"int"    {:regex "\\d+" :coerce parse-long}
    "float"  {:regex "[\\d.]+" :coerce parse-double}
-   "string" {:regex ".+" :coerce (fn [s]
-                                        (if (and (str/starts-with? s "\"")
-                                                 (str/ends-with? s "\""))
-                                          (subs s 1 (dec (count s)))
-                                          s))}})
+   "string" {:regex ".+" :coerce coerce-string}})
 
 (def ^:private regex-special-chars
   #{\. \^ \$ \* \+ \? \( \) \[ \] \{ \} \\ \|})
