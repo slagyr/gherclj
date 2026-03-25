@@ -1,0 +1,3 @@
+{:features-dir "features"
+ :step-namespaces ["gherclj.features.steps.*"]
+ :test-framework :speclj}
