@@ -3,8 +3,7 @@
             [gherclj.pipeline :as pipeline]
             [clojure.java.io :as io]
             [clojure.edn :as edn]
-            [clojure.string :as str]
-            [speclj.core :refer [should should= should-not]]))
+            [clojure.string :as str]))
 
 (def ^:private base-dir
   (str (System/getProperty "java.io.tmpdir") "/gherclj-pipeline-test"))
@@ -19,6 +18,11 @@
     verbose (assoc :verbose true)
     framework (assoc :test-framework framework
                      :step-namespaces [])))
+
+(defn- strip-quotes [s]
+  (if (and (str/starts-with? s "\"") (str/ends-with? s "\""))
+    (subs s 1 (dec (count s)))
+    s))
 
 ;; --- Given steps ---
 
@@ -72,37 +76,32 @@
 
 ;; --- Then steps ---
 
-(defn- strip-quotes [s]
-  (if (and (str/starts-with? s "\"") (str/ends-with? s "\""))
-    (subs s 1 (dec (count s)))
-    s))
-
 (defthen file-should-exist "{path} should exist"
   [path]
-  (should (.exists (io/file base-dir (strip-quotes path)))))
+  (g/should (.exists (io/file base-dir (strip-quotes path)))))
 
 (defthen file-should-contain-ir "{path} should contain IR:"
   [path doc-string]
   (let [p (strip-quotes path)
         actual (edn/read-string (slurp (io/file base-dir p)))
         expected (edn/read-string doc-string)]
-    (should= expected actual)))
+    (g/should= expected actual)))
 
 (defthen file-should-contain "{path} should contain {text:string}"
   [path text]
   (let [content (slurp (io/file base-dir (strip-quotes path)))]
-    (should (str/includes? content text))))
+    (g/should (str/includes? content text))))
 
 (defthen file-should-not-contain "{path} should not contain {text:string}"
   [path text]
   (let [content (slurp (io/file base-dir (strip-quotes path)))]
-    (should-not (str/includes? content text))))
+    (g/should-not (str/includes? content text))))
 
 (defthen file-should-contain-ir-with-n-scenarios "{path} should contain IR with {n:int} scenarios"
   [path n]
   (let [ir (edn/read-string (slurp (io/file base-dir (strip-quotes path))))]
-    (should= n (count (:scenarios ir)))))
+    (g/should= n (count (:scenarios ir)))))
 
 (defthen pipeline-output-should-be-empty "the output should be empty"
   []
-  (should= "" (g/get :pipeline-output)))
+  (g/should= "" (g/get :pipeline-output)))

@@ -4,8 +4,7 @@
             [gherclj.features.steps.sample-app]
             [gherclj.frameworks.speclj]
             [gherclj.frameworks.clojure-test]
-            [clojure.string :as str]
-            [speclj.core :refer [should should= should-not]]))
+            [clojure.string :as str]))
 
 (def ^:private pipeline-base-dir
   (str (System/getProperty "java.io.tmpdir") "/gherclj-pipeline-test"))
@@ -58,12 +57,12 @@
   [expected]
   (let [raw-output (or (g/get :generated-output) (g/get :pipeline-output))
         output (str/replace raw-output (str pipeline-base-dir "/") "")]
-    (should (str/includes? output expected))))
+    (g/should (str/includes? output expected))))
 
 (defthen output-should-not-contain "the output should not contain {text:string}"
   [text]
-  (should-not (str/includes? (g/get :generated-output) text)))
+  (g/should-not (str/includes? (g/get :generated-output) text)))
 
 (defthen generated-code-should-be "the generated code should be:"
   [doc-string]
-  (should= (str/trim doc-string) (str/trim (g/get :generated-output))))
+  (g/should= (str/trim doc-string) (str/trim (g/get :generated-output))))
