@@ -73,6 +73,16 @@
             (.delete (clojure.java.io/file tmp "gherclj.edn"))
             (.delete (clojure.java.io/file tmp))))))
 
+    (it "rejects invalid values via resolve-config"
+      (let [result (config/resolve-config {:test-framework :banana})]
+        (should (config/invalid? result))
+        (should (clojure.string/includes? (config/error-message result) "banana"))))
+
+    (it "rejects invalid types via resolve-config"
+      (let [result (config/resolve-config {:features-dir 42})]
+        (should (config/invalid? result))
+        (should (clojure.string/includes? (config/error-message result) "features-dir"))))
+
     (it "rejects unknown keys"
       (let [result (config/resolve-config {:turbo-mode true})]
         (should (config/invalid? result))
