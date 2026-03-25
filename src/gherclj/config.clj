@@ -5,8 +5,9 @@
             [clojure.string :as str]))
 
 (def pipeline-schema
-  {:features-dir    {:type   :string
-                     :coerce (fn [v] (or v "features"))}
+  {:features-dir    {:type     :string
+                     :coerce   (fn [v] (or v "features"))
+                     :validate string?}
    :edn-dir         {:type   :string
                      :coerce (fn [v] (or v "target/gherclj/edn"))}
    :output-dir      {:type   :string
@@ -34,13 +35,18 @@
     (if (seq unknown-keys)
       {:_invalid true
        :_message (str "Unknown config keys: " (str/join ", " (map name unknown-keys)))}
-      (let [result (schema/conform pipeline-schema config)
-            errors (filter (fn [[_ v]] (schema/error? v)) result)]
-        (if (seq errors)
+      (let [;; Validate only keys present in input (before coercion changes types)
+            present-schema (select-keys pipeline-schema (keys config))
+            validated (when (seq present-schema) (schema/validate present-schema config))
+            val-errors (filter (fn [[_ v]] (schema/error? v)) validated)]
+        (if (seq val-errors)
           {:_invalid true
            :_message (str "Invalid config: "
-                          (str/join ", " (map (fn [[k v]] (str (name k) " " (schema/error-message v))) errors)))}
-          result)))))
+                          (str/join ", " (map (fn [[k v]]
+                                                (str (name k) " — " (pr-str (clojure.core/get config k))
+                                                     " " (schema/error-message v)))
+                                              val-errors)))}
+          (schema/conform pipeline-schema config))))))
 
 (defn invalid? [result]
   (:_invalid result))
