@@ -53,7 +53,8 @@
   (if (seq (:pending-doc-string state))
     (let [steps (get-in state [:scenario :steps])
           last-step (peek steps)
-          doc-str (str/join "\n" (:pending-doc-string state))
+          doc-str (-> (str/join "\n" (:pending-doc-string state))
+                      (str/replace "\\\"\\\"\\\"" "\"\"\""))
           updated-step (assoc last-step :doc-string doc-str)
           updated-steps (conj (pop steps) updated-step)]
       (-> state
@@ -137,6 +138,7 @@
          state :start
          tags-pending []
          in-doc-string false
+         doc-string-indent 0
          result {:feature-line nil
                  :feature-tags []
                  :description-lines []
@@ -153,79 +155,83 @@
           (let [result (if (= state :background)
                          (update result :background-lines conj trimmed)
                          (append-to-current-scenario result trimmed))]
-            (recur rest-lines state tags-pending false result))
+            (recur rest-lines state tags-pending false 0 result))
 
           in-doc-string
-          (let [result (if (= state :background)
-                         (update result :background-lines conj trimmed)
-                         (append-to-current-scenario result trimmed))]
-            (recur rest-lines state tags-pending true result))
+          (let [content (if (> (count line) doc-string-indent)
+                          (subs line doc-string-indent)
+                          (str/trim line))
+                result (if (= state :background)
+                         (update result :background-lines conj content)
+                         (append-to-current-scenario result content))]
+            (recur rest-lines state tags-pending true doc-string-indent result))
 
           ;; Opening doc-string fence
           (doc-string-fence? trimmed)
-          (let [result (if (= state :background)
+          (let [indent (- (count line) (count (str/triml line)))
+                result (if (= state :background)
                          (update result :background-lines conj trimmed)
                          (append-to-current-scenario result trimmed))]
-            (recur rest-lines state tags-pending true result))
+            (recur rest-lines state tags-pending true indent result))
 
           (and (= state :start) (str/starts-with? trimmed "Feature:"))
-          (recur rest-lines :description [] false
+          (recur rest-lines :description [] false 0
                  (assoc result :feature-line trimmed :feature-tags tags-pending))
 
           (and (= state :description) (str/blank? trimmed))
-          (recur rest-lines :description [] false result)
+          (recur rest-lines :description [] false 0 result)
 
           (str/starts-with? trimmed "Background:")
-          (recur rest-lines :background [] false result)
+          (recur rest-lines :background [] false 0 result)
 
           (tag-line? trimmed)
-          (recur rest-lines state (into tags-pending (parse-tags trimmed)) false result)
+          (recur rest-lines state (into tags-pending (parse-tags trimmed)) false 0 result)
 
           (str/starts-with? trimmed "Scenario Outline:")
           (let [title (str/trim (subs trimmed 17))
                 scenario-entry {:title title :lines [] :tags tags-pending
                                 :outline? true :examples-lines []}]
-            (recur rest-lines :scenario [] false
+            (recur rest-lines :scenario [] false 0
                    (update result :scenarios conj scenario-entry)))
 
           (str/starts-with? trimmed "Scenario:")
           (let [title (str/trim (subs trimmed 9))
                 scenario-entry {:title title :lines [] :tags tags-pending}]
-            (recur rest-lines :scenario [] false
+            (recur rest-lines :scenario [] false 0
                    (update result :scenarios conj scenario-entry)))
 
           (and (= state :scenario) (str/starts-with? trimmed "Examples:"))
-          (recur rest-lines :examples [] false result)
+          (recur rest-lines :examples [] false 0 result)
 
           (and (= state :background) (step-keyword? trimmed))
-          (recur rest-lines :background [] false
+          (recur rest-lines :background [] false 0
                  (update result :background-lines conj trimmed))
 
           (and (= state :background) (table-line? trimmed))
-          (recur rest-lines :background [] false
+          (recur rest-lines :background [] false 0
                  (update result :background-lines conj trimmed))
 
           (and (#{:scenario :examples} state) (step-keyword? trimmed))
-          (recur rest-lines :scenario [] false
+          (recur rest-lines :scenario [] false 0
                  (append-to-current-scenario result trimmed))
 
           (and (= state :examples) (table-line? trimmed))
           (let [scenarios (:scenarios result)
                 current (peek scenarios)
                 updated (update current :examples-lines (fnil conj []) trimmed)]
-            (recur rest-lines :examples [] false
+            (recur rest-lines :examples [] false 0
                    (assoc result :scenarios (conj (pop scenarios) updated))))
 
           (and (= state :scenario) (table-line? trimmed))
-          (recur rest-lines :scenario [] false
+          (recur rest-lines :scenario [] false 0
                  (append-to-current-scenario result trimmed))
 
           (and (= state :description) (seq trimmed))
-          (recur rest-lines :description [] false
+          (recur rest-lines :description [] false 0
                  (update result :description-lines conj trimmed))
 
           :else
-          (recur rest-lines state tags-pending false result))))))
+          (recur rest-lines state tags-pending false 0 result))))))
 
 (defn- substitute-placeholders
   "Replace <placeholder> in text with values from the row map."
