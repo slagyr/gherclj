@@ -1,5 +1,7 @@
 (ns gherclj.frameworks.clojure-test
   (:require [clojure.string :as str]
+            [clojure.test :as ct]
+            [gherclj.core :as g]
             [gherclj.generator :as gen]))
 
 (defn- slugify [title]
@@ -61,7 +63,7 @@
 
 (defmethod gen/run-specs :clojure.test
   [config]
-  (require 'clojure.test)
+  (g/set-test-framework! :clojure.test)
   (let [output-dir (or (:output-dir config) "target/gherclj/generated")
         dir (clojure.java.io/file output-dir)
         test-files (->> (.listFiles dir)
@@ -72,3 +74,25 @@
     (let [test-nses (keep read-ns-name test-files)
           loaded (keep find-ns test-nses)]
       (apply (resolve 'clojure.test/run-tests) loaded))))
+
+(defn- ct-assert [pass? msg]
+  (ct/do-report (if pass?
+                  {:type :pass :message msg}
+                  {:type :fail :message msg})))
+
+(defmethod g/should= :clojure.test [expected actual]
+  (ct-assert (= expected actual)
+             (when (not= expected actual)
+               (str "Expected: " (pr-str expected) "\n  Actual: " (pr-str actual)))))
+
+(defmethod g/should :clojure.test [value]
+  (ct-assert value (str "Expected truthy but was: " (pr-str value))))
+
+(defmethod g/should-not :clojure.test [value]
+  (ct-assert (not value) (str "Expected falsy but was: " (pr-str value))))
+
+(defmethod g/should-be-nil :clojure.test [value]
+  (ct-assert (nil? value) (str "Expected nil but was: " (pr-str value))))
+
+(defmethod g/should-not-be-nil :clojure.test [value]
+  (ct-assert (some? value) "Expected not nil but was: nil"))
