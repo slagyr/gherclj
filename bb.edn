@@ -36,4 +36,19 @@
                :task (main/-main "-t" "clojure.test")}
 
   test {:doc "Run all tests (unit specs + feature specs)"
-        :task (do (run 'spec) (run 'features))}}}
+        :task (do (run 'spec) (run 'features))}
+
+  test-all {:doc "Run all tests across bb and clj, all frameworks"
+            :task (do
+                    (println "\n=== bb spec ===")
+                    (run 'spec)
+                    (println "\n=== clj -M:spec ===")
+                    (clojure "-M:spec")
+                    (println "\n=== bb features ===")
+                    (run 'features)
+                    (println "\n=== clj -M:features ===")
+                    (clojure "-M:features")
+                    (println "\n=== bb features-ct ===")
+                    (run 'features-ct)
+                    (println "\n=== clj -M:features-ct ===")
+                    (clojure "-M:features-ct"))}}}
