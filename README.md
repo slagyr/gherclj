@@ -111,7 +111,7 @@ Steps that accept a Gherkin table receive it as an additional argument:
 
 There are several ways to configure and run the pipeline.
 
-**Option A: bb/deps task with CLI flags (recommended)**
+**Option A: Task/alias with CLI flags (recommended)**
 
 ```clojure
 ;; bb.edn
@@ -126,8 +126,20 @@ There are several ways to configure and run the pipeline.
                       (speclj/run "-c" "target/gherclj/generated"))}}}
 ```
 
+```clojure
+;; deps.edn
+{:deps {io.github.slagyr/gherclj {:git/tag "v0.1.0" :git/sha "..."}}
+ :aliases
+ {:features {:main-opts ["-m" "gherclj.main"
+                         "-s" "myapp.features.steps.auth"
+                         "-s" "myapp.features.steps.cart"
+                         "-t" "speclj" "--verbose"]}}}
+```
+
 ```bash
 bb features
+# or
+clj -M:features
 ```
 
 **Option B: Config file with CLI runner**
