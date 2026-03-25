@@ -52,17 +52,17 @@
 
   (context "run"
 
-    (it "returns :help and prints usage for --help"
+    (it "returns 0 and prints usage for --help"
       (let [output (with-out-str
-                     (should= :help (main/run ["--help"])))]
+                     (should= 0 (main/run ["--help"])))]
         (should (str/includes? output "Usage: gherclj [options]"))))
 
-    (it "returns :help for -h"
+    (it "returns 0 for -h"
       (with-out-str
-        (should= :help (main/run ["-h"]))))
+        (should= 0 (main/run ["-h"]))))
 
-    (it "returns :error and prints message for unknown flags"
+    (it "returns 1 and prints message for unknown flags"
       (let [output (with-out-str
-                     (should= :error (main/run ["--turbo-mode"])))]
+                     (should= 1 (main/run ["--turbo-mode"])))]
         (should (str/includes? output "Unknown option"))
         (should (str/includes? output "turbo-mode"))))))
