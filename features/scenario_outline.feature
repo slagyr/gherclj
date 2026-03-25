@@ -1,4 +1,3 @@
-@wip
 Feature: Scenario Outline
 
   Scenario Outlines are parameterized scenarios. Each row in
