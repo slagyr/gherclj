@@ -1,8 +1,7 @@
 (ns gherclj.features.steps.gherkin-parsing
   (:require [gherclj.core :as g :refer [defgiven defwhen defthen]]
             [gherclj.parser :as parser]
-            [clojure.edn :as edn]
-            [speclj.core :refer [should=]]))
+            [clojure.edn :as edn]))
 
 (defgiven feature-file-containing "a feature file containing:"
   [doc-string]
@@ -14,4 +13,4 @@
 
 (defthen ir-should-be "the IR should be:"
   [doc-string]
-  (should= (edn/read-string doc-string) (g/get :parsed-ir)))
+  (g/should= (edn/read-string doc-string) (g/get :parsed-ir)))

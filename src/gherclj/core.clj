@@ -56,6 +56,29 @@
   [keys f & args]
   (apply clojure.core/swap! state clojure.core/update-in keys f args))
 
+;; --- Assertions ---
+;; Framework-agnostic matchers for use in step definitions.
+
+(defn should= [expected actual]
+  (when (not= expected actual)
+    (throw (AssertionError. (str "Expected: " (pr-str expected) "\n     got: " (pr-str actual))))))
+
+(defn should [value]
+  (when-not value
+    (throw (AssertionError. (str "Expected truthy but was: " (pr-str value))))))
+
+(defn should-not [value]
+  (when value
+    (throw (AssertionError. (str "Expected falsy but was: " (pr-str value))))))
+
+(defn should-be-nil [value]
+  (when (some? value)
+    (throw (AssertionError. (str "Expected nil but was: " (pr-str value))))))
+
+(defn should-not-be-nil [value]
+  (when (nil? value)
+    (throw (AssertionError. "Expected not nil but was: nil"))))
+
 ;; --- Step registry ---
 ;; Each namespace that uses defgiven/defwhen/defthen accumulates steps here,
 ;; keyed by namespace symbol.
