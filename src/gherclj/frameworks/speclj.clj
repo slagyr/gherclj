@@ -1,7 +1,9 @@
 (ns gherclj.frameworks.speclj
   (:require [clojure.string :as str]
+            [gherclj.core :as g]
             [gherclj.generator :as gen]
-            [speclj.cli :as speclj]))
+            [speclj.cli :as speclj]
+            [speclj.core :as sc]))
 
 (defmethod gen/generate-ns-form :speclj
   [_config source step-ns-syms]
@@ -55,5 +57,12 @@
 
 (defmethod gen/run-specs :speclj
   [config]
+  (g/set-test-framework! :speclj)
   (let [output-dir (or (:output-dir config) "target/gherclj/generated")]
     (speclj/run "-c" output-dir "-s" "src")))
+
+(defmethod g/should= :speclj [expected actual] (sc/should= expected actual))
+(defmethod g/should :speclj [value] (sc/should value))
+(defmethod g/should-not :speclj [value] (sc/should-not value))
+(defmethod g/should-be-nil :speclj [value] (sc/should-be-nil value))
+(defmethod g/should-not-be-nil :speclj [value] (sc/should-not-be-nil value))

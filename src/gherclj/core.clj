@@ -10,14 +10,14 @@
 (defonce ^:private state (atom {}))
 
 (defn reset!
-  "Clear all state, preserving only the internal :_gherclj key."
+  "Clear user state, preserving internal keys."
   []
-  (clojure.core/swap! state (fn [_] {:_gherclj {}})))
+  (clojure.core/swap! state (fn [s] {:_gherclj {} :_test-framework (:_test-framework s)})))
 
 (defn get
   "Access state. No args returns user-visible state (excludes internal keys),
    with key returns value, with key+default returns value or default."
-  ([] (clojure.core/dissoc @state :_gherclj))
+  ([] (clojure.core/dissoc @state :_gherclj :_test-framework))
   ([key] (clojure.core/get @state key))
   ([key default] (clojure.core/get @state key default)))
 
@@ -57,25 +57,34 @@
   (apply clojure.core/swap! state clojure.core/update-in keys f args))
 
 ;; --- Assertions ---
-;; Framework-agnostic matchers for use in step definitions.
+;; Delegate to the active test framework via multimethods.
 
-(defn should= [expected actual]
+(defn- active-framework []
+  (clojure.core/get @state :_test-framework))
+
+(defn set-test-framework! [fw]
+  (clojure.core/swap! state clojure.core/assoc :_test-framework fw))
+
+(defmulti should=           (fn [_ _] (active-framework)))
+(defmulti should            (fn [_]   (active-framework)))
+(defmulti should-not        (fn [_]   (active-framework)))
+(defmulti should-be-nil     (fn [_]   (active-framework)))
+(defmulti should-not-be-nil (fn [_]   (active-framework)))
+
+;; Default implementations — fallback when no framework is set
+(defmethod should= :default [expected actual]
   (when (not= expected actual)
     (throw (AssertionError. (str "Expected: " (pr-str expected) "\n     got: " (pr-str actual))))))
-
-(defn should [value]
+(defmethod should :default [value]
   (when-not value
     (throw (AssertionError. (str "Expected truthy but was: " (pr-str value))))))
-
-(defn should-not [value]
+(defmethod should-not :default [value]
   (when value
     (throw (AssertionError. (str "Expected falsy but was: " (pr-str value))))))
-
-(defn should-be-nil [value]
+(defmethod should-be-nil :default [value]
   (when (some? value)
     (throw (AssertionError. (str "Expected nil but was: " (pr-str value))))))
-
-(defn should-not-be-nil [value]
+(defmethod should-not-be-nil :default [value]
   (when (nil? value)
     (throw (AssertionError. "Expected not nil but was: nil"))))
 
