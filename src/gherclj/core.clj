@@ -1,3 +1,4 @@
+;; mutation-tested: 2026-03-25
 (ns gherclj.core
   (:refer-clojure :exclude [get get-in swap! dissoc update update-in reset! assoc! dissoc!])
   (:require [clojure.string :as str]

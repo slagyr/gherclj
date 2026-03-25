@@ -1,3 +1,4 @@
+;; mutation-tested: 2026-03-25
 (ns gherclj.discovery
   (:require [clojure.string :as str]))
 
