@@ -27,8 +27,10 @@
 
   features {:doc "Run feature specs (parse, generate, execute)"
             :extra-paths ["target/gherclj/generated"]
-            :requires ([gherclj.features.runner :as runner])
-            :task (runner/-main)}
+            :requires ([gherclj.main :as main]
+                       [speclj.cli :as speclj])
+            :task (do (main/-main)
+                      (speclj/run "-c" "target/gherclj/generated" "-s" "src"))}
 
   test {:doc "Run all tests (unit specs + feature specs)"
         :task (do (run 'spec) (run 'features))}}}
