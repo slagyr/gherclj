@@ -134,8 +134,23 @@ Feature: Pipeline
     Then "target/gherclj/generated/auth_spec.clj" should contain "describe"
     And "target/gherclj/generated/auth_spec.clj" should contain "speclj.core"
     When the full pipeline runs with framework :clojure.test
-    Then "target/gherclj/generated/auth_spec.clj" should contain "deftest"
-    And "target/gherclj/generated/auth_spec.clj" should contain "clojure.test"
+    Then "target/gherclj/generated/auth_test.clj" should contain "deftest"
+    And "target/gherclj/generated/auth_test.clj" should contain "clojure.test"
+
+  Scenario: clojure.test generates _test files
+    Given a features directory containing:
+      | file          |
+      | auth.feature  |
+    And the feature "auth.feature" contains:
+      """
+      Feature: Auth
+
+        Scenario: Login
+          Given a valid user
+      """
+    When the full pipeline runs with framework :clojure.test
+    Then "target/gherclj/edn/auth.edn" should exist
+    And "target/gherclj/generated/auth_test.clj" should exist
 
   Scenario: WIP scenarios are parsed but not generated
     Given a features directory containing:
