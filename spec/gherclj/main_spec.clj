@@ -1,5 +1,6 @@
 (ns gherclj.main-spec
   (:require [speclj.core :refer :all]
+            [clojure.string :as str]
             [gherclj.main :as main]))
 
 (describe "Main"
@@ -34,22 +35,34 @@
 
     (it "reports unknown flags"
       (let [result (main/parse-args ["--turbo-mode"])]
-        (should (seq (:errors result))))))
+        (should (seq (:errors result)))))
+
+    (it "leaves nil for unspecified options"
+      (let [result (main/parse-args ["-v"])]
+        (should-be-nil (get-in result [:options :step-namespaces]))
+        (should-be-nil (get-in result [:options :features-dir])))))
 
   (context "usage"
 
     (it "contains expected content"
       (let [text (main/usage-message)]
-        (should (clojure.string/includes? text "Usage: gherclj [options]"))
-        (should (clojure.string/includes? text "--features-dir"))
-        (should (clojure.string/includes? text "--help")))))
+        (should (str/includes? text "Usage: gherclj [options]"))
+        (should (str/includes? text "--features-dir"))
+        (should (str/includes? text "--help")))))
 
-  (context "-main"
+  (context "run"
 
-    (it "prints usage for --help"
-      (let [output (with-out-str (main/-main "--help"))]
-        (should (clojure.string/includes? output "Usage: gherclj [options]"))))
+    (it "returns :help and prints usage for --help"
+      (let [output (with-out-str
+                     (should= :help (main/run ["--help"])))]
+        (should (str/includes? output "Usage: gherclj [options]"))))
 
-    (it "prints usage for -h"
-      (let [output (with-out-str (main/-main "-h"))]
-        (should (clojure.string/includes? output "Usage: gherclj [options]"))))))
+    (it "returns :help for -h"
+      (with-out-str
+        (should= :help (main/run ["-h"]))))
+
+    (it "returns :error and prints message for unknown flags"
+      (let [output (with-out-str
+                     (should= :error (main/run ["--turbo-mode"])))]
+        (should (str/includes? output "Unknown option"))
+        (should (str/includes? output "turbo-mode"))))))

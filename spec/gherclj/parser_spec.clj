@@ -62,6 +62,35 @@
                       "    Given something\n"))]
         (should= "This is a description.\nSecond line." (:description ir))))
 
+    (it "parses a step followed by a table then another step"
+      (let [ir (parser/parse-feature
+                 (str "Feature: TableFlush\n"
+                      "\n"
+                      "  Scenario: Table then step\n"
+                      "    Given users:\n"
+                      "      | name  |\n"
+                      "      | alice |\n"
+                      "    Then something happens\n"))]
+        (should= 2 (count (:steps (first (:scenarios ir)))))
+        (should= {:headers ["name"] :rows [["alice"]]}
+                 (:table (first (:steps (first (:scenarios ir))))))
+        (should= "something happens"
+                 (:text (second (:steps (first (:scenarios ir))))))))
+
+    (it "parses background with table line"
+      (let [ir (parser/parse-feature
+                 (str "Feature: BG Table\n"
+                      "\n"
+                      "  Background:\n"
+                      "    Given users:\n"
+                      "      | name  |\n"
+                      "      | alice |\n"
+                      "\n"
+                      "  Scenario: Test\n"
+                      "    When action\n"))]
+        (should= {:headers ["name"] :rows [["alice"]]}
+                 (:table (first (:steps (:background ir)))))))
+
     (it "parses multiple scenarios"
       (let [ir (parser/parse-feature
                  (str "Feature: Multi\n"
@@ -74,6 +103,17 @@
         (should= 2 (count (:scenarios ir)))
         (should= "First" (:scenario (first (:scenarios ir))))
         (should= "Second" (:scenario (second (:scenarios ir)))))))
+
+  (context "step keyword edge cases"
+
+    (it "parses But keyword"
+      (let [ir (parser/parse-feature
+                 (str "Feature: But\n"
+                      "\n"
+                      "  Scenario: Test\n"
+                      "    Given precondition\n"
+                      "    But not this\n"))]
+        (should= :but (:type (second (:steps (first (:scenarios ir)))))))))
 
   (context "doc-strings"
 

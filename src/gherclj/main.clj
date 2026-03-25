@@ -31,19 +31,28 @@
   (let [{:keys [summary]} (cli/parse-opts [] cli-options)]
     (str "Usage: gherclj [options]\n\n" summary)))
 
-(defn -main [& args]
+(defn run
+  "Execute gherclj with the given args. Returns :ok, :help, or :error.
+   Prints output to stdout."
+  [args]
   (let [{:keys [options help errors]} (parse-args args)]
     (cond
       (seq errors)
       (do (doseq [e errors] (println e))
-          (System/exit 1))
+          :error)
 
       help
-      (println (usage-message))
+      (do (println (usage-message))
+          :help)
 
       :else
       (let [file-config (config/load-config)
             cli-overrides (into {} (filter (fn [[_ v]] (some? v))) options)
             merged (merge file-config cli-overrides)]
         (pipeline/run! merged)
-        (gen/run-specs merged)))))
+        (gen/run-specs merged)
+        :ok))))
+
+(defn -main [& args]
+  (when (= :error (run args))
+    (System/exit 1)))

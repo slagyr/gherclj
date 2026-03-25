@@ -143,4 +143,50 @@
                             :verbose true}))]
             (should (str/includes? output "Parsing"))
             (should (str/includes? output "Generating")))
+          (finally (cleanup features-dir edn-dir output-dir)))))
+
+    (it "resolves glob patterns in step-namespaces"
+      (let [features-dir (tmp "features")
+            edn-dir (tmp "edn")
+            output-dir (tmp "output")
+            feature-file (io/file features-dir "auth.feature")]
+        (io/make-parents feature-file)
+        (spit feature-file
+              (str "Feature: Auth\n"
+                   "\n"
+                   "  Scenario: Login\n"
+                   "    Given a user \"alice\"\n"
+                   "    When the user logs in\n"))
+        (try
+          (pipeline/run!
+            {:features-dir features-dir
+             :edn-dir edn-dir
+             :output-dir output-dir
+             :step-namespaces ["gherclj.features.steps.sample-*"]
+             :test-framework :speclj})
+
+          (should (.exists (io/file output-dir "auth_spec.clj")))
+          (let [content (slurp (io/file output-dir "auth_spec.clj"))]
+            (should (str/includes? content "sample-app/create-user")))
+          (finally (cleanup features-dir edn-dir output-dir)))))
+
+    (it "generates clojure.test files with _test suffix"
+      (let [features-dir (tmp "features")
+            edn-dir (tmp "edn")
+            output-dir (tmp "output")
+            feature-file (io/file features-dir "auth.feature")]
+        (io/make-parents feature-file)
+        (spit feature-file feature-content)
+        (try
+          (pipeline/run!
+            {:features-dir features-dir
+             :edn-dir edn-dir
+             :output-dir output-dir
+             :step-namespaces ['gherclj.pipeline-spec]
+             :test-framework :clojure.test})
+
+          (should (.exists (io/file output-dir "auth_test.clj")))
+          (let [content (slurp (io/file output-dir "auth_test.clj"))]
+            (should (str/includes? content "deftest"))
+            (should (str/includes? content "clojure.test")))
           (finally (cleanup features-dir edn-dir output-dir)))))))
