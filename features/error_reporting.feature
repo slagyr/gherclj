@@ -1,4 +1,3 @@
-@wip
 Feature: Error reporting
 
   gherclj provides clear error messages when it encounters

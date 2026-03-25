@@ -133,20 +133,12 @@
                                        groups)]
                             (assoc step :args args))))
                       steps)]
-    (if (> (count matches) 1)
-      ;; Prefer the most specific match (most literal characters in template)
-      (let [literal-len (fn [step]
-                          (count (str/replace (or (:template step) "") #"\{[^}]+\}" "")))
-            sorted (sort-by literal-len > matches)
-            best (first sorted)
-            runner-up (second sorted)]
-        (if (> (literal-len best) (literal-len runner-up))
-          best
-          (let [names (mapv :name matches)]
-            (throw (RuntimeException.
-                     (str "Ambiguous step match — \"" text "\" matches: "
-                          (str/join ", " names)))))))
-      (first matches))))
+    (when (> (count matches) 1)
+      (let [names (mapv :name matches)]
+        (throw (RuntimeException.
+                 (str "ambiguous step match: \"" text "\" matches: "
+                      (str/join ", " names))))))
+    (first matches)))
 
 ;; --- Macros ---
 
