@@ -80,19 +80,19 @@
   [path]
   (g/should (.exists (io/file base-dir (strip-quotes path)))))
 
-(defthen file-should-contain-ir "{path} should contain IR:"
+(defthen file-should-contain-ir #"^(\S+) should contain IR:$"
   [path doc-string]
   (let [p (strip-quotes path)
         actual (edn/read-string (slurp (io/file base-dir p)))
         expected (edn/read-string doc-string)]
     (g/should= expected actual)))
 
-(defthen file-should-contain "{path} should contain {text:string}"
+(defthen file-should-contain #"^(\S+) should contain \"(.+)\"$"
   [path text]
   (let [content (slurp (io/file base-dir (strip-quotes path)))]
     (g/should (str/includes? content text))))
 
-(defthen file-should-not-contain "{path} should not contain {text:string}"
+(defthen file-should-not-contain #"^(\S+) should not contain \"(.+)\"$"
   [path text]
   (let [content (slurp (io/file base-dir (strip-quotes path)))]
     (g/should-not (str/includes? content text))))

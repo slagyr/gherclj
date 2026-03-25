@@ -44,7 +44,10 @@
 
 (defwhen classify-text "classifying {text:string}"
   [text]
-  (g/assoc! :classify-result (g/classify-step (g/get :steps) text)))
+  (try
+    (g/assoc! :classify-result (g/classify-step (g/get :steps) text))
+    (catch Exception e
+      (g/assoc! :error (.getMessage e)))))
 
 (defthen no-step-should-match "no step should match"
   []
