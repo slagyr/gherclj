@@ -1,7 +1,7 @@
 (ns gherclj.features.steps.sample-app
   (:require [gherclj.core :refer [defgiven defwhen defthen]]))
 
-(defgiven create-user "a user \"{name}\""
+(defgiven create-user "a user {name:string}"
   [name]
   :created)
 

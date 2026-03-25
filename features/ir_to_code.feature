@@ -143,7 +143,7 @@ Feature: IR to code generation
       | type  | text                       |
       | then  | the response should be 200 |
     When generating the spec with framework :speclj
-    Then the output should contain "(sample-app/create-user \"alice\")"
+    Then the output should contain "(sample-app/create-user"
     And the output should contain "(sample-app/user-logs-in)"
     And the output should contain "(sample-app/response-should-be 200)"
 

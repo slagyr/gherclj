@@ -10,11 +10,11 @@
 (def ^:private pipeline-base-dir
   (str (System/getProperty "java.io.tmpdir") "/gherclj-pipeline-test"))
 
-(defgiven setup-feature "a feature named \"{name}\" from source \"{source}\""
+(defgiven setup-feature "a feature named {name:string} from source {source:string}"
   [name source]
   (g/assoc! :feature-ir {:feature name :source source :scenarios []}))
 
-(defgiven add-scenario "a scenario \"{title}\" with steps:"
+(defgiven add-scenario "a scenario {title:string} with steps:"
   [title table]
   (let [{:keys [headers rows]} table
         steps (mapv (fn [row]
@@ -35,7 +35,7 @@
                     rows)]
     (g/assoc-in! [:feature-ir :background] {:steps steps})))
 
-(defgiven add-wip-scenario "a wip scenario \"{title}\" with steps:"
+(defgiven add-wip-scenario "a wip scenario {title:string} with steps:"
   [title table]
   (let [{:keys [headers rows]} table
         steps (mapv (fn [row]
@@ -54,13 +54,13 @@
                 :test-framework fw}]
     (g/assoc! :generated-output (gen/generate-spec config (g/get :feature-ir)))))
 
-(defthen output-should-contain "the output should contain \"{expected}\""
+(defthen output-should-contain "the output should contain {expected:string}"
   [expected]
   (let [raw-output (or (g/get :generated-output) (g/get :pipeline-output))
         output (str/replace raw-output (str pipeline-base-dir "/") "")]
     (should (str/includes? output expected))))
 
-(defthen output-should-not-contain "the output should not contain \"{text}\""
+(defthen output-should-not-contain "the output should not contain {text:string}"
   [text]
   (should-not (str/includes? (g/get :generated-output) text)))
 

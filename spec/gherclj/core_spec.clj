@@ -5,7 +5,7 @@
 
 ;; Sample step definitions — must be defined before the describe block
 
-(defgiven sample-given-step "a project \"{slug}\" with timeout {timeout:int}"
+(defgiven sample-given-step "a project {slug:string} with timeout {timeout:int}"
   [slug timeout]
   :setup-result)
 
@@ -13,7 +13,7 @@
   []
   :action-result)
 
-(defthen sample-then-step "session \"{session-id}\" should be a zombie with reason \"{reason}\""
+(defthen sample-then-step "session {session-id:string} should be a zombie with reason {reason:string}"
   [session-id reason]
   :assert-result)
 
@@ -34,7 +34,7 @@
             step (first (filter #(= "sample-given-step" (:name %)) steps))]
         (should-not-be-nil step)
         (should= :given (:type step))
-        (should= "a project \"{slug}\" with timeout {timeout:int}" (:template step)))))
+        (should= "a project {slug:string} with timeout {timeout:int}" (:template step)))))
 
   (context "defwhen"
 

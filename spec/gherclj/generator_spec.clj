@@ -8,7 +8,7 @@
 
 ;; Sample steps for generation tests
 
-(defgiven setup-project "a project \"{slug}\" with timeout {timeout:int}"
+(defgiven setup-project "a project {slug:string} with timeout {timeout:int}"
   [slug timeout]
   :setup)
 
@@ -16,7 +16,7 @@
   []
   :action)
 
-(defthen check-result "the result should be \"{expected}\""
+(defthen check-result "the result should be {expected:string}"
   [expected]
   :check)
 
@@ -63,9 +63,9 @@
             ir {:feature "Sample feature"
                 :source "sample.feature"
                 :scenarios [{:scenario "Does the thing"
-                             :steps [{:type :given :text "a project \"alpha\" with timeout 300"}
+                             :steps [{:type :given :text "a project alpha with timeout 300"}
                                      {:type :when :text "running the action"}
-                                     {:type :then :text "the result should be \"ok\""}]}]}
+                                     {:type :then :text "the result should be ok"}]}]}
             result (gen/generate-spec config ir)]
         (should (str/includes? result "(describe \"Sample feature\""))
         (should (str/includes? result "(context \"Does the thing\""))
@@ -74,4 +74,12 @@
         (should (str/includes? result "(generator-spec/check-result \"ok\")"))
         (should (str/includes? result "[gherclj.generator-spec :as generator-spec]"))
         (should (str/includes? result "[gherclj.core :as g]"))
-        (should (str/includes? result "(g/reset!)"))))))
+        (should (str/includes? result "(g/reset!)")))))
+
+  (context "generate-step-call with string args"
+
+    (it "properly escapes string args containing quotes"
+      (let [steps (core/collect-steps ['gherclj.generator-spec])
+            classified (core/classify-step steps "a project alpha with timeout 300")
+            code (gen/generate-step-call classified)]
+        (should= "(generator-spec/setup-project \"alpha\" 300)" code)))))

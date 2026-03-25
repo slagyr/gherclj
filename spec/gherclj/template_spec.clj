@@ -11,10 +11,20 @@
         (should= "^checking for zombies$" (str regex))
         (should= [] bindings)))
 
-    (it "compiles a quoted string capture"
-      (let [{:keys [regex bindings]} (compile-template "a project \"{slug}\"")]
-        (should= "^a project \"([^\"]+)\"$" (str regex))
-        (should= [{:name "slug" :coerce identity}] bindings)))
+    (it "compiles a string capture"
+      (let [{:keys [regex bindings]} (compile-template "a project {slug:string}")]
+        (should= 1 (count bindings))
+        (should= "slug" (:name (first bindings)))))
+
+    (it "string capture matches greedily bounded by surrounding literal"
+      (let [compiled (compile-template "a project {slug:string} with timeout {t:int}")
+            result (match-step compiled "a project alpha beta with timeout 300")]
+        (should= ["alpha beta" 300] result)))
+
+    (it "string capture at end matches rest of string"
+      (let [compiled (compile-template "the value is {val:string}")
+            result (match-step compiled "the value is hello world")]
+        (should= ["hello world"] result)))
 
     (it "compiles an int capture"
       (let [{:keys [regex bindings]} (compile-template "timeout is {seconds:int}")]
@@ -32,8 +42,7 @@
         (should= [{:name "status" :coerce identity}] bindings)))
 
     (it "compiles multiple captures"
-      (let [{:keys [regex bindings]} (compile-template "a project \"{slug}\" with worker-timeout {timeout:int}")]
-        (should= "^a project \"([^\"]+)\" with worker-timeout (\\d+)$" (str regex))
+      (let [{:keys [regex bindings]} (compile-template "a project {slug:string} with worker-timeout {timeout:int}")]
         (should= 2 (count bindings))
         (should= "slug" (:name (first bindings)))
         (should= "timeout" (:name (second bindings)))))
@@ -45,12 +54,17 @@
   (context "match-step"
 
     (it "matches and extracts with coercion"
-      (let [compiled (compile-template "a project \"{slug}\" with worker-timeout {timeout:int}")
-            result (match-step compiled "a project \"alpha\" with worker-timeout 300")]
+      (let [compiled (compile-template "a project {slug:string} with worker-timeout {timeout:int}")
+            result (match-step compiled "a project alpha with worker-timeout 300")]
         (should= ["alpha" 300] result)))
 
+    (it "matches string capture with quotes in text, strips quotes"
+      (let [compiled (compile-template "a user {name:string}")
+            result (match-step compiled "a user \"alice\"")]
+        (should= ["alice"] result)))
+
     (it "returns nil on no match"
-      (let [compiled (compile-template "a project \"{slug}\"")
+      (let [compiled (compile-template "a project {slug:string}")
             result (match-step compiled "something else entirely")]
         (should-be-nil result)))
 
