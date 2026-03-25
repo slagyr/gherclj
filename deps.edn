@@ -7,4 +7,5 @@
          :main-opts ["-m" "speclj.main" "-c" "spec/gherclj" "-c" "target/gherclj/generated" "-s" "src"]}
   :features {:extra-deps {speclj/speclj {:mvn/version "3.12.1"}}
              :main-opts ["-m" "gherclj.main"]}
-  :features-ct {:main-opts ["-m" "gherclj.main" "-t" "clojure.test"]}}}
+  :features-ct {:extra-deps {speclj/speclj {:mvn/version "3.12.1"}}
+                :main-opts ["-m" "gherclj.main" "-t" "clojure.test"]}}}

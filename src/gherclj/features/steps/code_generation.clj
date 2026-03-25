@@ -2,8 +2,6 @@
   (:require [gherclj.core :as g :refer [defgiven defwhen defthen]]
             [gherclj.generator :as gen]
             [gherclj.features.steps.sample-app]
-            [gherclj.frameworks.speclj]
-            [gherclj.frameworks.clojure-test]
             [clojure.string :as str]))
 
 (def ^:private pipeline-base-dir
@@ -45,13 +43,21 @@
     (g/update-in! [:feature-ir :scenarios] conj
                   {:scenario title :steps steps :tags ["wip"]})))
 
+(defn- ensure-framework-loaded! [fw]
+  (let [fw-ns (case fw
+                :speclj 'gherclj.frameworks.speclj
+                :clojure.test 'gherclj.frameworks.clojure-test
+                (symbol (str "gherclj.frameworks." (name fw))))]
+    (require fw-ns)))
+
 (defwhen generate-spec "generating the spec with framework {framework}"
   [framework]
-  (let [fw (keyword (str/replace framework #"^:" ""))
-        config {:step-namespaces ['gherclj.features.steps.sample-app]
-                :extra-steps (g/get :steps)
-                :test-framework fw}]
-    (g/assoc! :generated-output (gen/generate-spec config (g/get :feature-ir)))))
+  (let [fw (keyword (str/replace framework #"^:" ""))]
+    (ensure-framework-loaded! fw)
+    (let [config {:step-namespaces ['gherclj.features.steps.sample-app]
+                  :extra-steps (g/get :steps)
+                  :test-framework fw}]
+      (g/assoc! :generated-output (gen/generate-spec config (g/get :feature-ir))))))
 
 (defthen output-should-contain "the output should contain {expected:string}"
   [expected]
