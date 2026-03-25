@@ -58,4 +58,4 @@
                         (when-let [r (io/resource "gherclj.edn")]
                           (edn/read-string (slurp r)))
                         {})]
-    (schema/conform pipeline-schema file-config)))
+    (resolve-config file-config)))
