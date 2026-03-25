@@ -10,8 +10,8 @@
    ["-o" "--output-dir DIR" "Generated spec output directory"]
    ["-s" "--step-namespaces NS" "Step namespace (repeatable, supports globs)"
     :multi true
-    :default []
-    :update-fn (fn [acc v] (conj acc (symbol v)))]
+    :default nil
+    :update-fn (fn [acc v] (conj (or acc []) (symbol v)))]
    ["-t" "--test-framework FRAMEWORK" "Test framework (speclj, clojure.test)"
     :parse-fn keyword]
    ["-v" "--verbose" "Print progress to stdout"]
@@ -42,5 +42,6 @@
 
       :else
       (let [file-config (config/load-config)
-            merged (merge file-config options)]
+            cli-overrides (into {} (filter (fn [[_ v]] (some? v))) options)
+            merged (merge file-config cli-overrides)]
         (pipeline/run! merged)))))
