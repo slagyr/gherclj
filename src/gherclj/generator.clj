@@ -20,6 +20,10 @@
   "Generate a pending/skipped scenario."
   (fn [config & _] (:test-framework config)))
 
+(defmulti run-specs
+  "Execute generated spec files. Dispatched on :test-framework."
+  (fn [config] (:test-framework config)))
+
 ;; --- Step classification ---
 
 (defn classify-scenario

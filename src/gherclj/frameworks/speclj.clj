@@ -1,6 +1,7 @@
 (ns gherclj.frameworks.speclj
   (:require [clojure.string :as str]
-            [gherclj.generator :as gen]))
+            [gherclj.generator :as gen]
+            [speclj.cli :as speclj]))
 
 (defmethod gen/generate-ns-form :speclj
   [_config source step-ns-syms]
@@ -51,3 +52,8 @@
          "    (it \"" title "\"\n"
          step-comments "\n"
          "      (pending \"not yet implemented\")))")))
+
+(defmethod gen/run-specs :speclj
+  [config]
+  (let [output-dir (or (:output-dir config) "target/gherclj/generated")]
+    (speclj/run "-c" output-dir "-s" "src")))

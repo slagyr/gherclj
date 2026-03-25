@@ -2,7 +2,8 @@
   (:require [clojure.tools.cli :as cli]
             [clojure.string :as str]
             [gherclj.config :as config]
-            [gherclj.pipeline :as pipeline]))
+            [gherclj.pipeline :as pipeline]
+            [gherclj.generator :as gen]))
 
 (def ^:private cli-options
   [["-f" "--features-dir DIR" "Features directory"]
@@ -44,4 +45,5 @@
       (let [file-config (config/load-config)
             cli-overrides (into {} (filter (fn [[_ v]] (some? v))) options)
             merged (merge file-config cli-overrides)]
-        (pipeline/run! merged)))))
+        (pipeline/run! merged)
+        (gen/run-specs merged)))))

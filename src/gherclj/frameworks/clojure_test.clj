@@ -51,3 +51,18 @@
          "  (testing \"" title "\"\n"
          "    ;; TODO: not yet implemented\n"
          "    ))")))
+
+(defmethod gen/run-specs :clojure.test
+  [config]
+  (require 'clojure.test)
+  (let [output-dir (or (:output-dir config) "target/gherclj/generated")
+        dir (clojure.java.io/file output-dir)
+        test-nses (->> (.listFiles dir)
+                       (filter #(str/ends-with? (.getName %) ".clj"))
+                       (map #(-> (.getName %)
+                                 (str/replace #"\.clj$" "")
+                                 (str/replace #"_" "-")
+                                 symbol)))]
+    (doseq [ns-sym test-nses]
+      (require ns-sym))
+    (apply (resolve 'clojure.test/run-tests) test-nses)))
