@@ -1,4 +1,3 @@
-@wip
 Feature: Config file loading
 
   gherclj reads configuration from a gherclj.edn file.
