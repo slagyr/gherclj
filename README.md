@@ -64,10 +64,9 @@ Steps read like `defn` with a docstring. The template string doubles as document
 
 ```clojure
 (ns myapp.features.steps.auth
-  (:require [gherclj.core :as g :refer [defgiven defwhen defthen]]
-            [speclj.core :refer :all]))
+  (:require [gherclj.core :as g :refer [defgiven defwhen defthen]]))
 
-(defgiven create-user "a user \"{name}\" with role \"{role}\""
+(defgiven create-user "a user {name:string} with role {role:string}"
   [name role]
   (g/assoc! :user {:name name :role role}))
 
@@ -79,11 +78,11 @@ Steps read like `defn` with a docstring. The template string doubles as document
 
 (defthen response-status "the response status should be {status:int}"
   [status]
-  (should= status (g/get-in [:response :status])))
+  (g/should= status (g/get-in [:response :status])))
 ```
 
 Template syntax:
-- `"{name}"` — quoted string capture
+- `{name:string}` — greedy string capture (bounded by surrounding literal text)
 - `{name:int}` — integer capture (coerced via `parse-long`)
 - `{name:float}` — float capture (coerced via `parse-double`)
 - `{name}` — word capture (`\S+`)
@@ -95,7 +94,7 @@ For edge cases, pass a raw regex instead of a template string:
   [headers-str]
   (let [headers (re-seq #"\"([^\"]+)\"" headers-str)]
     (doseq [[_ h] headers]
-      (should-contain h (g/get :output)))))
+      (g/should (clojure.string/includes? (g/get :output) h)))))
 ```
 
 Steps that accept a Gherkin table receive it as an additional argument:
@@ -118,12 +117,10 @@ There are several ways to configure and run the pipeline.
 {:deps {io.github.slagyr/gherclj {:git/tag "v0.1.0" :git/sha "..."}}
  :tasks
  {features {:doc "Run feature specs"
-            :requires ([gherclj.main :as main]
-                       [speclj.cli :as speclj])
-            :task (do (main/-main "-s" "myapp.features.steps.auth"
-                                  "-s" "myapp.features.steps.cart"
-                                  "-t" "speclj" "--verbose")
-                      (speclj/run "-c" "target/gherclj/generated"))}}}
+            :requires ([gherclj.main :as main])
+            :task (main/-main "-s" "myapp.features.steps.auth"
+                              "-s" "myapp.features.steps.cart"
+                              "-t" "speclj")}}}
 
 ;; deps.edn
 {:deps {io.github.slagyr/gherclj {:git/tag "v0.1.0" :git/sha "..."}}
@@ -131,7 +128,7 @@ There are several ways to configure and run the pipeline.
  {:features {:main-opts ["-m" "gherclj.main"
                          "-s" "myapp.features.steps.auth"
                          "-s" "myapp.features.steps.cart"
-                         "-t" "speclj" "--verbose"]}}}
+                         "-t" "speclj"]}}}
 ```
 
 ```bash
@@ -160,8 +157,7 @@ bb -m gherclj.main --verbose
 
 ```clojure
 (ns myapp.features.runner
-  (:require [gherclj.pipeline :as pipeline]
-            [speclj.cli :as speclj]))
+  (:require [gherclj.pipeline :as pipeline]))
 
 (defn -main [& _]
   (pipeline/run!
@@ -169,8 +165,7 @@ bb -m gherclj.main --verbose
      :step-namespaces ['myapp.features.steps.auth
                        'myapp.features.steps.cart]
      :test-framework  :speclj
-     :verbose         true})
-  (speclj/run "-c" "target/gherclj/generated"))
+     :verbose         true}))
 ```
 
 All options produce:
@@ -182,7 +177,7 @@ All options produce:
 The generated specs are clean, readable function calls:
 
 ```clojure
-(ns auth-spec
+(ns authentication-spec
   (:require [speclj.core :refer :all]
             [gherclj.core :as g]
             [myapp.features.steps.auth :as auth]))
@@ -266,6 +261,7 @@ gherclj ships with `:speclj` and `:clojure.test` output formats. Add your own by
 (defmethod gherclj.generator/wrap-feature :my-framework [config feature-name scenario-blocks] ...)
 (defmethod gherclj.generator/wrap-scenario :my-framework [config scenario background] ...)
 (defmethod gherclj.generator/wrap-pending :my-framework [config scenario background] ...)
+(defmethod gherclj.generator/run-specs :my-framework [config] ...)
 ```
 
 ## Rationale
