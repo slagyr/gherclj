@@ -25,17 +25,23 @@
 
   spec {:doc "Run unit specs"
         :requires ([speclj.cli :as speclj])
-        :task (System/exit (speclj/run "-c" "spec/gherclj" "-s" "src"))}
+        :task (let [failures (speclj/run "-c" "spec/gherclj" "-s" "src")]
+                (when (pos? failures)
+                  (throw (ex-info (str failures " spec failures") {:failures failures}))))}
 
   features {:doc "Run feature specs (parse, generate, execute)"
             :extra-paths ["target/gherclj/generated"]
             :requires ([gherclj.main :as main])
-            :task (main/-main)}
+            :task (let [exit-code (main/run [])]
+                    (when (pos? exit-code)
+                      (throw (ex-info "Feature specs failed" {:exit-code exit-code}))))}
 
   features-ct {:doc "Run feature specs with clojure.test"
                :extra-paths ["target/gherclj/generated"]
                :requires ([gherclj.main :as main])
-               :task (main/-main "-t" "clojure.test")}
+               :task (let [exit-code (main/run ["-t" "clojure.test"])]
+                       (when (pos? exit-code)
+                         (throw (ex-info "Feature specs failed" {:exit-code exit-code}))))}
 
   test {:doc "Run all tests (unit specs + feature specs)"
         :task (do (run 'spec) (run 'features))}
