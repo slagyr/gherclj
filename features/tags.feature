@@ -1,4 +1,3 @@
-@wip
 Feature: Tags
 
   Scenarios can be tagged for filtering. Tags are preserved
