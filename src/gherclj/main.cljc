@@ -62,4 +62,5 @@
 (defn -main [& args]
   (let [exit-code (run args)]
     (when (pos? exit-code)
-      (System/exit exit-code))))
+      #?(:clj (System/exit exit-code)
+         :bb (throw (ex-info "gherclj failed" {:babashka/exit exit-code}))))))
