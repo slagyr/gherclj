@@ -2,7 +2,7 @@
  :deps {com.cleancoders.c3kit/apron {:mvn/version "2.5.0"}
         org.clojure/tools.cli {:mvn/version "1.1.230"}
         speclj/speclj {:mvn/version "3.12.1"}
-        io.github.slagyr/clj-mutate {:git/sha "a970794fc362fe0e8124fa82c23195208657f0b8"}
+        io.github.slagyr/clj-mutate {:git/sha "f592881f30291bd73c12e055ba810f78c0e1b01a"}
         org.clojure/tools.reader {:mvn/version "1.4.2"}}
  :tasks
  {:requires ([gherclj.pipeline :as p])
