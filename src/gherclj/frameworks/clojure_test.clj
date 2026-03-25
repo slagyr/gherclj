@@ -52,17 +52,23 @@
          "    ;; TODO: not yet implemented\n"
          "    ))")))
 
+(defn- read-ns-name
+  "Read the namespace name from a Clojure source file."
+  [f]
+  (let [forms (read-string (str "[" (slurp f) "]"))
+        ns-form (first (filter #(and (seq? %) (= 'ns (first %))) forms))]
+    (when ns-form (second ns-form))))
+
 (defmethod gen/run-specs :clojure.test
   [config]
   (require 'clojure.test)
   (let [output-dir (or (:output-dir config) "target/gherclj/generated")
         dir (clojure.java.io/file output-dir)
-        test-nses (->> (.listFiles dir)
-                       (filter #(str/ends-with? (.getName %) ".clj"))
-                       (map #(-> (.getName %)
-                                 (str/replace #"\.clj$" "")
-                                 (str/replace #"_" "-")
-                                 symbol)))]
-    (doseq [ns-sym test-nses]
-      (require ns-sym))
-    (apply (resolve 'clojure.test/run-tests) test-nses)))
+        test-files (->> (.listFiles dir)
+                        (filter #(str/ends-with? (.getName %) ".clj"))
+                        (sort-by #(.getName %)))]
+    (doseq [f test-files]
+      (load-file (.getPath f)))
+    (let [test-nses (keep read-ns-name test-files)
+          loaded (keep find-ns test-nses)]
+      (apply (resolve 'clojure.test/run-tests) loaded))))
