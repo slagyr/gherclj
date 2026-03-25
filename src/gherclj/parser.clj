@@ -64,21 +64,17 @@
 
 (defn- process-step-entry [state entry]
   (cond
-    ;; Inside a doc-string: accumulate or close
     (:in-doc-string state)
     (if (doc-string-fence? entry)
       (attach-doc-string state)
       (update state :pending-doc-string (fnil conj []) entry))
 
-    ;; Opening doc-string fence
     (doc-string-fence? entry)
     (assoc state :in-doc-string true :pending-doc-string [])
 
-    ;; Table line
     (table-line? entry)
     (update state :pending-table (fnil conj []) entry)
 
-    ;; Step keyword — flush pending table first
     :else
     (let [state (if (seq (:pending-table state))
                   (let [steps (get-in state [:scenario :steps])
@@ -125,113 +121,169 @@
        (filter #(str/starts-with? % "@"))
        (mapv #(subs % 1))))
 
+;; --- parse-sections helpers ---
+
 (defn- append-to-current-scenario [result trimmed]
   (let [scenarios (:scenarios result)
         current (peek scenarios)
         updated (update current :lines conj trimmed)]
     (assoc result :scenarios (conj (pop scenarios) updated))))
 
+(defn- append-examples-line [result trimmed]
+  (let [scenarios (:scenarios result)
+        current (peek scenarios)
+        updated (update current :examples-lines (fnil conj []) trimmed)]
+    (assoc result :scenarios (conj (pop scenarios) updated))))
+
+(defn- append-line-to-section [{:keys [section] :as ctx} content]
+  (if (= section :background)
+    (update ctx :result update :background-lines conj content)
+    (update ctx :result append-to-current-scenario content)))
+
+(defn- doc-string-indent [line]
+  (- (count line) (count (str/triml line))))
+
+(defn- doc-string-content [line indent]
+  (if (> (count line) indent)
+    (subs line indent)
+    (str/trim line)))
+
+;; --- Line processors ---
+;; Each returns an updated ctx map, or nil to fall through.
+
+(defn- process-doc-string-close [ctx trimmed]
+  (when (and (:in-doc-string ctx) (doc-string-fence? trimmed))
+    (-> ctx
+        (append-line-to-section trimmed)
+        (assoc :in-doc-string false :doc-string-indent 0))))
+
+(defn- process-doc-string-content [ctx line]
+  (when (:in-doc-string ctx)
+    (let [content (doc-string-content line (:doc-string-indent ctx))]
+      (append-line-to-section ctx content))))
+
+(defn- process-doc-string-open [ctx trimmed line]
+  (when (doc-string-fence? trimmed)
+    (-> ctx
+        (append-line-to-section trimmed)
+        (assoc :in-doc-string true
+               :doc-string-indent (doc-string-indent line)))))
+
+(defn- process-feature-line [ctx trimmed]
+  (when (and (= :start (:section ctx))
+             (str/starts-with? trimmed "Feature:"))
+    (-> ctx
+        (assoc :section :description :tags-pending [])
+        (update :result assoc
+                :feature-line trimmed
+                :feature-tags (:tags-pending ctx)))))
+
+(defn- process-blank-in-description [ctx trimmed]
+  (when (and (= :description (:section ctx))
+             (str/blank? trimmed))
+    (assoc ctx :tags-pending [])))
+
+(defn- process-description-text [ctx trimmed]
+  (when (and (= :description (:section ctx))
+             (seq trimmed))
+    (-> ctx
+        (assoc :tags-pending [])
+        (update :result update :description-lines conj trimmed))))
+
+(defn- process-background [ctx trimmed]
+  (when (str/starts-with? trimmed "Background:")
+    (assoc ctx :section :background :tags-pending [])))
+
+(defn- process-tag-line [ctx trimmed]
+  (when (tag-line? trimmed)
+    (update ctx :tags-pending into (parse-tags trimmed))))
+
+(defn- process-scenario-outline [ctx trimmed]
+  (when (str/starts-with? trimmed "Scenario Outline:")
+    (let [title (str/trim (subs trimmed 17))
+          entry {:title title :lines [] :tags (:tags-pending ctx)
+                 :outline? true :examples-lines []}]
+      (-> ctx
+          (assoc :section :scenario :tags-pending [])
+          (update :result update :scenarios conj entry)))))
+
+(defn- process-scenario [ctx trimmed]
+  (when (str/starts-with? trimmed "Scenario:")
+    (let [title (str/trim (subs trimmed 9))
+          entry {:title title :lines [] :tags (:tags-pending ctx)}]
+      (-> ctx
+          (assoc :section :scenario :tags-pending [])
+          (update :result update :scenarios conj entry)))))
+
+(defn- process-examples [ctx trimmed]
+  (when (and (= :scenario (:section ctx))
+             (str/starts-with? trimmed "Examples:"))
+    (assoc ctx :section :examples :tags-pending [])))
+
+(defn- process-background-line [ctx trimmed]
+  (when (and (= :background (:section ctx))
+             (or (step-keyword? trimmed) (table-line? trimmed)))
+    (-> ctx
+        (assoc :tags-pending [])
+        (update :result update :background-lines conj trimmed))))
+
+(defn- process-scenario-step [ctx trimmed]
+  (when (and (#{:scenario :examples} (:section ctx))
+             (step-keyword? trimmed))
+    (-> ctx
+        (assoc :section :scenario :tags-pending [])
+        (update :result append-to-current-scenario trimmed))))
+
+(defn- process-examples-table [ctx trimmed]
+  (when (and (= :examples (:section ctx))
+             (table-line? trimmed))
+    (-> ctx
+        (assoc :tags-pending [])
+        (update :result append-examples-line trimmed))))
+
+(defn- process-scenario-table [ctx trimmed]
+  (when (and (= :scenario (:section ctx))
+             (table-line? trimmed))
+    (-> ctx
+        (assoc :tags-pending [])
+        (update :result append-to-current-scenario trimmed))))
+
+(defn- process-line
+  "Classify and process a single line. Returns updated ctx."
+  [ctx line]
+  (let [trimmed (str/trim line)]
+    (or (process-doc-string-close ctx trimmed)
+        (process-doc-string-content ctx line)
+        (process-doc-string-open ctx trimmed line)
+        (process-feature-line ctx trimmed)
+        (process-blank-in-description ctx trimmed)
+        (process-background ctx trimmed)
+        (process-tag-line ctx trimmed)
+        (process-scenario-outline ctx trimmed)
+        (process-scenario ctx trimmed)
+        (process-examples ctx trimmed)
+        (process-background-line ctx trimmed)
+        (process-scenario-step ctx trimmed)
+        (process-examples-table ctx trimmed)
+        (process-scenario-table ctx trimmed)
+        (process-description-text ctx trimmed)
+        ctx)))
+
 (defn- parse-sections
   "Splits feature lines into sections: feature line, description, background, and scenarios."
   [lines]
-  (loop [lines lines
-         state :start
-         tags-pending []
-         in-doc-string false
-         doc-string-indent 0
-         result {:feature-line nil
-                 :feature-tags []
-                 :description-lines []
-                 :background-lines []
-                 :scenarios []}]
-    (if (empty? lines)
-      result
-      (let [line (first lines)
-            trimmed (str/trim line)
-            rest-lines (rest lines)]
-        (cond
-          ;; Inside a doc-string: pass everything through until closing fence
-          (and in-doc-string (doc-string-fence? trimmed))
-          (let [result (if (= state :background)
-                         (update result :background-lines conj trimmed)
-                         (append-to-current-scenario result trimmed))]
-            (recur rest-lines state tags-pending false 0 result))
+  (let [initial {:section :start
+                 :tags-pending []
+                 :in-doc-string false
+                 :doc-string-indent 0
+                 :result {:feature-line nil
+                          :feature-tags []
+                          :description-lines []
+                          :background-lines []
+                          :scenarios []}}]
+    (:result (reduce process-line initial lines))))
 
-          in-doc-string
-          (let [content (if (> (count line) doc-string-indent)
-                          (subs line doc-string-indent)
-                          (str/trim line))
-                result (if (= state :background)
-                         (update result :background-lines conj content)
-                         (append-to-current-scenario result content))]
-            (recur rest-lines state tags-pending true doc-string-indent result))
-
-          ;; Opening doc-string fence
-          (doc-string-fence? trimmed)
-          (let [indent (- (count line) (count (str/triml line)))
-                result (if (= state :background)
-                         (update result :background-lines conj trimmed)
-                         (append-to-current-scenario result trimmed))]
-            (recur rest-lines state tags-pending true indent result))
-
-          (and (= state :start) (str/starts-with? trimmed "Feature:"))
-          (recur rest-lines :description [] false 0
-                 (assoc result :feature-line trimmed :feature-tags tags-pending))
-
-          (and (= state :description) (str/blank? trimmed))
-          (recur rest-lines :description [] false 0 result)
-
-          (str/starts-with? trimmed "Background:")
-          (recur rest-lines :background [] false 0 result)
-
-          (tag-line? trimmed)
-          (recur rest-lines state (into tags-pending (parse-tags trimmed)) false 0 result)
-
-          (str/starts-with? trimmed "Scenario Outline:")
-          (let [title (str/trim (subs trimmed 17))
-                scenario-entry {:title title :lines [] :tags tags-pending
-                                :outline? true :examples-lines []}]
-            (recur rest-lines :scenario [] false 0
-                   (update result :scenarios conj scenario-entry)))
-
-          (str/starts-with? trimmed "Scenario:")
-          (let [title (str/trim (subs trimmed 9))
-                scenario-entry {:title title :lines [] :tags tags-pending}]
-            (recur rest-lines :scenario [] false 0
-                   (update result :scenarios conj scenario-entry)))
-
-          (and (= state :scenario) (str/starts-with? trimmed "Examples:"))
-          (recur rest-lines :examples [] false 0 result)
-
-          (and (= state :background) (step-keyword? trimmed))
-          (recur rest-lines :background [] false 0
-                 (update result :background-lines conj trimmed))
-
-          (and (= state :background) (table-line? trimmed))
-          (recur rest-lines :background [] false 0
-                 (update result :background-lines conj trimmed))
-
-          (and (#{:scenario :examples} state) (step-keyword? trimmed))
-          (recur rest-lines :scenario [] false 0
-                 (append-to-current-scenario result trimmed))
-
-          (and (= state :examples) (table-line? trimmed))
-          (let [scenarios (:scenarios result)
-                current (peek scenarios)
-                updated (update current :examples-lines (fnil conj []) trimmed)]
-            (recur rest-lines :examples [] false 0
-                   (assoc result :scenarios (conj (pop scenarios) updated))))
-
-          (and (= state :scenario) (table-line? trimmed))
-          (recur rest-lines :scenario [] false 0
-                 (append-to-current-scenario result trimmed))
-
-          (and (= state :description) (seq trimmed))
-          (recur rest-lines :description [] false 0
-                 (update result :description-lines conj trimmed))
-
-          :else
-          (recur rest-lines state tags-pending false 0 result))))))
+;; --- Outline expansion ---
 
 (defn- substitute-placeholders
   "Replace <placeholder> in text with values from the row map."
@@ -255,6 +307,8 @@
               (cond-> {:scenario scenario-name :steps expanded-steps}
                 (seq tags) (assoc :tags tags))))
           rows)))
+
+;; --- Public API ---
 
 (defn parse-feature
   "Parse a Gherkin feature string into an EDN IR map."
