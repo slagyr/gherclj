@@ -25,7 +25,7 @@
 
   spec {:doc "Run unit specs"
         :requires ([speclj.cli :as speclj])
-        :task (speclj/run "-c" "spec/gherclj" "-s" "src")}
+        :task (System/exit (speclj/run "-c" "spec/gherclj" "-s" "src"))}
 
   features {:doc "Run feature specs (parse, generate, execute)"
             :extra-paths ["target/gherclj/generated"]
