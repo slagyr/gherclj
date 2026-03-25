@@ -1,66 +1,68 @@
 {:paths ["src" "spec"]
- :deps {com.cleancoders.c3kit/apron {:mvn/version "2.5.0"}
-        org.clojure/tools.cli {:mvn/version "1.1.230"}
-        speclj/speclj {:mvn/version "3.12.2"}
-        io.github.slagyr/clj-mutate {:git/sha "edf0362dee919f75541ce173ca7144c1230cd4de"}
-        org.clojure/tools.reader {:mvn/version "1.4.2"}}
+ :deps  {com.cleancoders.c3kit/apron {:mvn/version "2.5.0"}
+         org.clojure/tools.cli       {:mvn/version "1.1.230"}
+         speclj/speclj               {:mvn/version "3.12.2"}
+         io.github.slagyr/clj-mutate {:git/sha "edf0362dee919f75541ce173ca7144c1230cd4de"}
+         org.clojure/tools.reader    {:mvn/version "1.4.2"}}
  :tasks
- {:requires ([gherclj.pipeline :as p])
+ {:requires   ([gherclj.pipeline :as p])
 
-  clean {:doc "Remove generated EDN and spec files"
-         :task (do
-                 (babashka.fs/delete-tree "target/gherclj")
-                 (println "Cleaned target/gherclj/"))}
+  clean       {:doc  "Remove generated EDN and spec files"
+               :task (do
+                       (babashka.fs/delete-tree "target/gherclj")
+                       (println "Cleaned target/gherclj/"))}
 
-  parse {:doc "Run parse stage only"
-         :task (p/parse! {:features-dir "features" :verbose true})}
+  parse       {:doc  "Run parse stage only"
+               :task (p/parse! {:features-dir "features" :verbose true})}
 
-  generate {:doc "Run generate stage only (parse must have run first)"
-            :requires ([gherclj.features.steps.sample-app])
-            :task (p/generate! {:edn-dir "target/gherclj/edn"
-                                :output-dir "target/gherclj/generated"
-                                :step-namespaces []
-                                :test-framework :speclj
-                                :verbose true})}
+  generate    {:doc      "Run generate stage only (parse must have run first)"
+               :requires ([gherclj.features.steps.sample-app])
+               :task     (p/generate! {:edn-dir         "target/gherclj/edn"
+                                       :output-dir      "target/gherclj/generated"
+                                       :step-namespaces []
+                                       :test-framework  :speclj
+                                       :verbose         true})}
 
-  spec {:doc "Run unit specs"
-        :requires ([speclj.cli :as speclj])
-        :task (let [failures (speclj/run "-c" "spec/gherclj" "-s" "src")]
-                (when (pos? failures)
-                  (throw (ex-info (str failures " spec failures") {:failures failures}))))}
+  spec        {:doc      "Run unit specs"
+               :requires ([speclj.main :as speclj])
+               :task     (speclj/-main "-c" "spec/gherclj" "-s" "src")}
 
-  features {:doc "Run feature specs (parse, generate, execute)"
-            :extra-paths ["target/gherclj/generated"]
-            :requires ([gherclj.main :as main])
-            :task (let [exit-code (main/run [])]
-                    (when (pos? exit-code)
-                      (throw (ex-info "Feature specs failed" {:exit-code exit-code}))))}
-
-  features-ct {:doc "Run feature specs with clojure.test"
+  features    {:doc         "Run feature specs (parse, generate, execute)"
                :extra-paths ["target/gherclj/generated"]
-               :requires ([gherclj.main :as main])
-               :task (let [exit-code (main/run ["-t" "clojure.test"])]
-                       (when (pos? exit-code)
-                         (throw (ex-info "Feature specs failed" {:exit-code exit-code}))))}
+               :requires    ([gherclj.main :as main])
+               :task        (let [exit-code (main/run [])]
+                              (when (pos? exit-code)
+                                (throw (ex-info "Feature specs failed" {:exit-code exit-code}))))}
 
-  test {:doc "Run all tests (unit specs + feature specs)"
-        :task (do (run 'spec) (run 'features))}
+  features-ct {:doc         "Run feature specs with clojure.test"
+               :extra-paths ["target/gherclj/generated"]
+               :requires    ([gherclj.main :as main])
+               :task        (let [exit-code (main/run ["-t" "clojure.test"])]
+                              (when (pos? exit-code)
+                                (throw (ex-info "Feature specs failed" {:exit-code exit-code}))))}
 
-  mutate {:doc "Run mutation testing"
-          :requires ([clj-mutate.core])
-          :task (apply clj-mutate.core/-main *command-line-args*)}
+  test        {:doc  "Run all tests (unit specs + feature specs)"
+               :task (do (run 'spec) (run 'features))}
 
-  test-all {:doc "Run all tests across bb and clj, all frameworks"
-            :task (do
-                    (println "\n=== bb spec ===")
-                    (run 'spec)
-                    (println "\n=== clj -M:spec ===")
-                    (clojure "-M:spec")
-                    (println "\n=== bb features ===")
-                    (run 'features)
-                    (println "\n=== clj -M:features ===")
-                    (clojure "-M:features")
-                    (println "\n=== bb features-ct ===")
-                    (run 'features-ct)
-                    (println "\n=== clj -M:features-ct ===")
-                    (clojure "-M:features-ct"))}}}
+  mutate      {:doc      "Run mutation testing"
+               :requires ([clj-mutate.core])
+               :task     (apply clj-mutate.core/-main *command-line-args*)}
+
+  test-all    {:doc  "Run all tests across bb and clj, all frameworks"
+               :task (let [failed (atom [])
+                           run! (fn [label task-fn]
+                                  (println (str "\n=== " label " ==="))
+                                  (try (task-fn)
+                                       (catch Throwable e
+                                         (when-not (= 0 (:babashka/exit (ex-data e)))
+                                           (swap! failed conj label)))))]
+                       (run! "bb spec" (fn [] (run 'spec)))
+                       (run! "clj -M:spec" (fn [] (clojure "-M:spec")))
+                       (run! "bb features" (fn [] (run 'features)))
+                       (run! "clj -M:features" (fn [] (clojure "-M:features")))
+                       (run! "bb features-ct" (fn [] (run 'features-ct)))
+                       (run! "clj -M:features-ct" (fn [] (clojure "-M:features-ct")))
+                       (if (seq (deref failed))
+                         (do (println (str "\nFAILED: " (clojure.string/join ", " (deref failed))))
+                             (throw (ex-info "test-all failed" {:failed (deref failed)})))
+                         (println "\nAll passed.")))}}}
