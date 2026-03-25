@@ -1,4 +1,3 @@
-@wip
 Feature: CLI
 
   gherclj can be invoked from the command line. CLI flags

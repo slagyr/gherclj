@@ -61,7 +61,7 @@
 
 (defthen output-should-contain "the output should contain {expected:string}"
   [expected]
-  (let [raw-output (or (g/get :generated-output) (g/get :pipeline-output))
+  (let [raw-output (or (g/get :cli-output) (g/get :generated-output) (g/get :pipeline-output) "")
         output (str/replace raw-output (str pipeline-base-dir "/") "")]
     (g/should (str/includes? output expected))))
 
