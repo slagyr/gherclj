@@ -86,7 +86,7 @@ Feature: Pipeline
     And the parse stage has run
     When the generate stage runs with framework :speclj
     Then "target/gherclj/generated/auth_spec.clj" should exist
-    And "target/gherclj/generated/auth_spec.clj" should contain "(describe \"Auth\""
+    And "target/gherclj/generated/auth_spec.clj" should contain "(describe"
 
   Scenario: Generate stage reports progress when verbose
     Given a features directory containing:

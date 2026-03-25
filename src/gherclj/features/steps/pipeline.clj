@@ -31,7 +31,7 @@
         (spit (io/file dir filename) "")))
     (g/assoc! :pipeline-dir dir)))
 
-(defgiven write-feature-content "the feature \"{name}\" contains:"
+(defgiven write-feature-content "the feature {name:string} contains:"
   [name doc-string]
   (spit (io/file (g/get :pipeline-dir) name) doc-string))
 
@@ -72,29 +72,35 @@
 
 ;; --- Then steps ---
 
-(defthen file-should-exist "\"{path}\" should exist"
-  [path]
-  (should (.exists (io/file base-dir path))))
+(defn- strip-quotes [s]
+  (if (and (str/starts-with? s "\"") (str/ends-with? s "\""))
+    (subs s 1 (dec (count s)))
+    s))
 
-(defthen file-should-contain-ir "\"{path}\" should contain IR:"
+(defthen file-should-exist "{path} should exist"
+  [path]
+  (should (.exists (io/file base-dir (strip-quotes path)))))
+
+(defthen file-should-contain-ir "{path} should contain IR:"
   [path doc-string]
-  (let [actual (edn/read-string (slurp (io/file base-dir path)))
+  (let [p (strip-quotes path)
+        actual (edn/read-string (slurp (io/file base-dir p)))
         expected (edn/read-string doc-string)]
     (should= expected actual)))
 
-(defthen file-should-contain "\"{path}\" should contain \"{text}\""
+(defthen file-should-contain "{path} should contain {text:string}"
   [path text]
-  (let [content (slurp (io/file base-dir path))]
+  (let [content (slurp (io/file base-dir (strip-quotes path)))]
     (should (str/includes? content text))))
 
-(defthen file-should-not-contain "\"{path}\" should not contain \"{text}\""
+(defthen file-should-not-contain "{path} should not contain {text:string}"
   [path text]
-  (let [content (slurp (io/file base-dir path))]
+  (let [content (slurp (io/file base-dir (strip-quotes path)))]
     (should-not (str/includes? content text))))
 
-(defthen file-should-contain-ir-with-n-scenarios "\"{path}\" should contain IR with {n:int} scenarios"
+(defthen file-should-contain-ir-with-n-scenarios "{path} should contain IR with {n:int} scenarios"
   [path n]
-  (let [ir (edn/read-string (slurp (io/file base-dir path)))]
+  (let [ir (edn/read-string (slurp (io/file base-dir (strip-quotes path))))]
     (should= n (count (:scenarios ir)))))
 
 (defthen pipeline-output-should-be-empty "the output should be empty"

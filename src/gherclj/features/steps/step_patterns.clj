@@ -13,7 +13,7 @@
 
 ;; --- Steps ---
 
-(defgiven lookup-registered-step "the registered step \"{name}\""
+(defgiven lookup-registered-step "the registered step {name:string}"
   [name]
   (let [steps (g/steps-in-ns 'gherclj.features.steps.step-patterns)
         step (first (filter #(= name (:name %)) steps))]

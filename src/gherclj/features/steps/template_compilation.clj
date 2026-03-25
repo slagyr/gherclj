@@ -1,9 +1,10 @@
 (ns gherclj.features.steps.template-compilation
   (:require [gherclj.core :as g :refer [defgiven defwhen defthen]]
             [gherclj.template :as template]
+            [clojure.edn :as edn]
             [speclj.core :refer [should= should-not-be-nil]]))
 
-(defgiven set-template "a template \"{template}\""
+(defgiven set-template "a template {template:string}"
   [template]
   (g/assoc! :template-str template))
 
@@ -11,11 +12,11 @@
   []
   (g/assoc! :compiled (template/compile-template (g/get :template-str))))
 
-(defthen regex-should-be "the regex should be \"{expected}\""
+(defthen regex-should-be "the regex should be {expected:string}"
   [expected]
   (should= expected (str (:regex (g/get :compiled)))))
 
-(defthen regex-should-match "the regex should match \"{text}\""
+(defthen regex-should-match "the regex should match {text:string}"
   [text]
   (let [result (template/match-step (g/get :compiled) text)]
     (g/assoc! :match-result result)
@@ -25,10 +26,10 @@
   [count]
   (should= count (clojure.core/count (:bindings (g/get :compiled)))))
 
-(defthen captured-value-string "the captured value should be \"{expected}\""
+(defthen captured-value-should-be "the captured value should be {expected:string}"
   [expected]
-  (should= [expected] (g/get :match-result)))
-
-(defthen captured-value-int "the captured value should be {expected:int}"
-  [expected]
-  (should= [expected] (g/get :match-result)))
+  (let [match-result (g/get :match-result)
+        actual (first match-result)]
+    (if (number? actual)
+      (should= (parse-long expected) actual)
+      (should= expected actual))))

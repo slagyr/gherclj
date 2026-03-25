@@ -8,7 +8,7 @@
 
 ;; Sample steps for pipeline test
 
-(defgiven setup-user "a user \"{name}\" with role \"{role}\""
+(defgiven setup-user "a user {name:string} with role {role:string}"
   [name role]
   :setup)
 

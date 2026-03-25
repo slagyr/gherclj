@@ -4,9 +4,9 @@ Feature: Step patterns
   Templates offer convenience with typed captures; regexes offer
   full control without coercion.
 
-  Scenario: Quoted string capture
-    Given a given step named "greet" with template "hello \"{name}\""
-    Then the step "greet" should match "hello \"Alice\""
+  Scenario: String capture
+    Given a given step named "greet" with template "hello {name:string}"
+    Then the step "greet" should match "hello Alice"
     And the match args should be ["Alice"]
 
   Scenario: Float capture
@@ -15,8 +15,8 @@ Feature: Step patterns
     And the match args should be [19.99]
 
   Scenario: Multiple captures of different types
-    Given a given step named "set-config" with template "set \"{key}\" to {value:int}"
-    Then the step "set-config" should match "set \"timeout\" to 300"
+    Given a given step named "set-config" with template "set {key:string} to {value:int}"
+    Then the step "set-config" should match "set timeout to 300"
     And the match args should be ["timeout" 300]
 
   Scenario: Template escapes regex special characters

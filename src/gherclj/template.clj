@@ -2,8 +2,13 @@
   (:require [clojure.string :as str]))
 
 (def ^:private type-patterns
-  {"int"   {:regex "\\d+" :coerce parse-long}
-   "float" {:regex "[\\d.]+" :coerce parse-double}})
+  {"int"    {:regex "\\d+" :coerce parse-long}
+   "float"  {:regex "[\\d.]+" :coerce parse-double}
+   "string" {:regex ".+" :coerce (fn [s]
+                                        (if (and (str/starts-with? s "\"")
+                                                 (str/ends-with? s "\""))
+                                          (subs s 1 (dec (count s)))
+                                          s))}})
 
 (def ^:private regex-special-chars
   #{\. \^ \$ \* \+ \? \( \) \[ \] \{ \} \\ \|})
@@ -23,23 +28,16 @@
       {:name name :regex (:regex type-info) :coerce (:coerce type-info)}
       {:name name :regex "\\S+" :coerce identity})))
 
-(defn- parse-quoted-capture
-  "Parse a \"{name}\" capture. Returns {:name str :coerce fn :regex str}."
-  [expr]
-  {:name expr :regex "[^\"]+" :coerce identity})
-
 (defn compile-template
   "Compile a step template string into {:regex Pattern :bindings [{:name str :coerce fn}]}.
 
    Template syntax:
-     \"{name}\"  → quoted string capture
-     {name:int}  → integer capture
-     {name:float} → float capture
-     {name}      → word capture (\\S+)"
+     {name:string} → greedy string capture (bounded by surrounding literal)
+     {name:int}    → integer capture
+     {name:float}  → float capture
+     {name}        → word capture (\\S+)"
   [template]
-  (let [;; Tokenize: split into literal text, quoted captures, and bare captures
-        ;; Pattern matches: \"{...}\" or {...}
-        token-re #"\"?\{([^}]+)\}\"?"
+  (let [token-re #"\{([^}]+)\}"
         matcher (re-matcher token-re template)
         result (loop [pos 0
                       regex-parts []
@@ -47,23 +45,14 @@
                  (if (.find matcher)
                    (let [match-start (.start matcher)
                          match-end (.end matcher)
-                         full-match (.group matcher)
                          inner (.group matcher 1)
-                         ;; literal text before this match
                          literal (subs template pos match-start)
                          escaped-literal (apply str (map escape-regex-char literal))
-                         quoted? (and (str/starts-with? full-match "\"")
-                                      (str/ends-with? full-match "\""))
-                         capture (if quoted?
-                                   (parse-quoted-capture inner)
-                                   (parse-capture inner))
-                         capture-regex (if quoted?
-                                         (str "\"(" (:regex capture) ")\"")
-                                         (str "(" (:regex capture) ")"))]
+                         capture (parse-capture inner)
+                         capture-regex (str "(" (:regex capture) ")")]
                      (recur match-end
                             (conj regex-parts escaped-literal capture-regex)
                             (conj bindings {:name (:name capture) :coerce (:coerce capture)})))
-                   ;; No more matches — append remaining literal
                    (let [remaining (subs template pos)
                          escaped-remaining (apply str (map escape-regex-char remaining))]
                      {:regex-str (str "^" (apply str (conj regex-parts escaped-remaining)) "$")
