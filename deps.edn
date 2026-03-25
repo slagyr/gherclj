@@ -3,9 +3,16 @@
         org.clojure/tools.cli {:mvn/version "1.1.230"}}
  :paths ["src" "spec" "target/gherclj/generated"]
  :aliases
- {:spec {:extra-deps {speclj/speclj {:mvn/version "3.12.1"}}
+ {:spec {:extra-deps {speclj/speclj {:mvn/version "3.12.2"}}
          :main-opts ["-m" "speclj.main" "-c" "spec/gherclj" "-c" "target/gherclj/generated" "-s" "src"]}
-  :features {:extra-deps {speclj/speclj {:mvn/version "3.12.1"}}
+  :features {:extra-deps {speclj/speclj {:mvn/version "3.12.2"}}
              :main-opts ["-m" "gherclj.main"]}
-  :features-ct {:extra-deps {speclj/speclj {:mvn/version "3.12.1"}}
-                :main-opts ["-m" "gherclj.main" "-t" "clojure.test"]}}}
+  :features-ct {:extra-deps {speclj/speclj {:mvn/version "3.12.2"}}
+                :main-opts ["-m" "gherclj.main" "-t" "clojure.test"]}
+  :cov {:extra-deps {cloverage/cloverage {:mvn/version "1.2.4"}
+                     speclj/speclj {:mvn/version "3.12.2"}}
+        :main-opts ["-m" "speclj.cloverage" "--" "-p" "src" "-s" "spec"]}
+  :crap {:extra-deps {io.github.unclebob/crap4clj
+                       {:git/url "https://github.com/unclebob/crap4clj"
+                        :git/sha "992a5dd41bb337a843c02fb4829a69af7bfcf595"}}
+         :main-opts ["-m" "crap4clj.core"]}}}
