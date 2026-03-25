@@ -1,4 +1,3 @@
-@wip
 Feature: Step namespace discovery
 
   Step namespaces can be specified as concrete symbols or
