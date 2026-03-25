@@ -50,10 +50,13 @@
 (defn- source->edn-filename [source]
   (str/replace source #"\.feature$" ".edn"))
 
-(defn- source->spec-filename [source]
-  (-> source
-      (str/replace #"\.(feature|edn)$" "")
-      (str "_spec.clj")))
+(defn- source->spec-filename [source test-framework]
+  (let [suffix (case test-framework
+                 :clojure.test "_test.clj"
+                 "_spec.clj")]
+    (-> source
+        (str/replace #"\.(feature|edn)$" "")
+        (str suffix))))
 
 (defn- write-edn [path data]
   (spit path (with-out-str (pprint/pprint data))))
@@ -101,7 +104,7 @@
       (io/make-parents (io/file output-dir "dummy"))
       (doseq [f edn-files]
         (let [ir (edn/read-string (slurp f))
-              out-name (source->spec-filename (:source ir))
+              out-name (source->spec-filename (:source ir) test-framework)
               out-path (str output-dir "/" out-name)
               spec-str (gen/generate-spec config ir)]
           (log verbose (str "Generating " out-path " from " (.getName f)))
