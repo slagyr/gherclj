@@ -27,10 +27,13 @@
 
   features {:doc "Run feature specs (parse, generate, execute)"
             :extra-paths ["target/gherclj/generated"]
-            :requires ([gherclj.main :as main]
-                       [speclj.cli :as speclj])
-            :task (do (main/-main)
-                      (speclj/run "-c" "target/gherclj/generated" "-s" "src"))}
+            :requires ([gherclj.main :as main])
+            :task (main/-main)}
+
+  features-ct {:doc "Run feature specs with clojure.test"
+               :extra-paths ["target/gherclj/generated"]
+               :requires ([gherclj.main :as main])
+               :task (main/-main "-t" "clojure.test")}
 
   test {:doc "Run all tests (unit specs + feature specs)"
         :task (do (run 'spec) (run 'features))}}}
