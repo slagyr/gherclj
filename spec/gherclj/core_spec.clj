@@ -1,7 +1,6 @@
 (ns gherclj.core-spec
   (:require [speclj.core :refer :all]
-            [gherclj.core :refer :all]
-            [gherclj.core :as core]))
+            [gherclj.core :as core :refer [defgiven defwhen defthen]]))
 
 ;; Sample step definitions — must be defined before the describe block
 
