@@ -1,3 +1,4 @@
+;; mutation-tested: 2026-03-25
 (ns gherclj.pipeline
   (:refer-clojure :exclude [run!])
   (:require [clojure.java.io :as io]

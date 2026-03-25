@@ -1,3 +1,4 @@
+;; mutation-tested: 2026-03-25
 (ns gherclj.config
   (:require [c3kit.apron.schema :as schema]
             [clojure.edn :as edn]
