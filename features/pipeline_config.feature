@@ -1,4 +1,3 @@
-@wip
 Feature: Pipeline configuration
 
   The pipeline accepts a configuration map with options for
