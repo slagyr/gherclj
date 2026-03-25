@@ -124,9 +124,7 @@ There are several ways to configure and run the pipeline.
                                   "-s" "myapp.features.steps.cart"
                                   "-t" "speclj" "--verbose")
                       (speclj/run "-c" "target/gherclj/generated"))}}}
-```
 
-```clojure
 ;; deps.edn
 {:deps {io.github.slagyr/gherclj {:git/tag "v0.1.0" :git/sha "..."}}
  :aliases
@@ -244,6 +242,20 @@ gherclj provides a global state atom that is automatically reset before each sce
 (g/swap! f & args)             ;; arbitrary transformation
 (g/reset!)                     ;; clear all state
 ```
+
+## Assertions
+
+gherclj provides framework-agnostic assertion functions that delegate to the active test framework:
+
+```clojure
+(g/should= expected actual)
+(g/should value)
+(g/should-not value)
+(g/should-be-nil value)
+(g/should-not-be-nil value)
+```
+
+These work under both `:speclj` and `:clojure.test`. If your project uses a single framework, you can use its native assertions directly (e.g., speclj's `should=`). Use `g/should=` when your steps need to be framework-agnostic.
 
 ## Test Framework Support
 
