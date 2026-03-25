@@ -1,4 +1,3 @@
-@wip
 Feature: Shared state
 
   gherclj provides a global state atom for step definitions
