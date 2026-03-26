@@ -10,7 +10,7 @@ Translates Gherkin acceptance tests into code.
 
 ## Introduction
 
-gherclj bridges the gap between human-readable feature specifications and executable Clojure tests. It parses standard [Gherkin](https://cucumber.io/docs/gherkin/reference/) `.feature` files and generates test files that call real Clojure functions — no string-concatenated code, no separate pattern/registry maps, no framework lock-in.
+gherclj bridges the gap between human-readable feature specifications and executable tests. It parses standard [Gherkin](https://cucumber.io/docs/gherkin/reference/) `.feature` files and generates test files that call real code.
 
 The pipeline:
 
