@@ -276,6 +276,13 @@ gherclj was extracted from the [braids](https://github.com/slagyr/braids) projec
 
 Since steps are now real functions, the generator emits aliased calls: `(auth/create-user "alice" "admin")`. The generated code is readable enough to debug directly.
 
+## AI Agent Skills
+
+gherclj ships with skills for AI coding agents:
+
+- [`gherkin`](https://raw.githubusercontent.com/slagyr/agent-lib/main/skills/gherkin/SKILL.md) — Gherkin writing guide: scenario design, step conventions, anti-patterns
+- [`gherclj`](https://raw.githubusercontent.com/slagyr/agent-lib/main/skills/gherclj/SKILL.md) — Step implementation conventions: assertions, state management, definition of done
+
 ## Development
 
 ### Prerequisites
