@@ -264,24 +264,12 @@ gherclj ships with `:speclj` and `:clojure.test` output formats. Add your own by
 (defmethod gherclj.generator/run-specs :my-framework [config] ...)
 ```
 
-## Rationale
-
-gherclj was extracted from the [braids](https://github.com/slagyr/braids) project, which had a working Gherkin pipeline with two pain points:
-
-**Step definitions were verbose and fragmented.** Each step required entries in two separate data structures — a pattern map and a registry map. A single step took ~15 lines spread across two locations.
-
-`defgiven`/`defwhen`/`defthen` collapse this to ~3 lines. The template *is* the pattern. The function *is* the implementation.
-
-**Code generation used string concatenation.** Step implementations returned strings of Clojure code with manually escaped quotes. This was fragile and hard to read.
-
-Since steps are now real functions, the generator emits aliased calls: `(auth/create-user "alice" "admin")`. The generated code is readable enough to debug directly.
-
 ## AI Agent Skills
 
 The following skills are available for AI coding agents working with gherclj:
 
-- [`gherkin`](https://raw.githubusercontent.com/slagyr/agent-lib/main/skills/gherkin/SKILL.md) — Gherkin writing guide: scenario design, step conventions, anti-patterns
-- [`gherclj`](https://raw.githubusercontent.com/slagyr/agent-lib/main/skills/gherclj/SKILL.md) — Step implementation conventions: assertions, state management, definition of done
+- [`gherkin`](https://raw.githubusercontent.com/slagyr/agent-lib/main/skills/gherkin/SKILL.md) — How to specify features. Gherkin writing guide: scenario design, step conventions, anti-patterns 
+- [`gherclj`](https://raw.githubusercontent.com/slagyr/agent-lib/main/skills/gherclj/SKILL.md) — How to implement features. Step implementation conventions: assertions, state management, definition of done
 
 ## Development
 
