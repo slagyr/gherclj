@@ -278,7 +278,7 @@ Since steps are now real functions, the generator emits aliased calls: `(auth/cr
 
 ## AI Agent Skills
 
-gherclj ships with skills for AI coding agents:
+The following skills are available for AI coding agents working with gherclj:
 
 - [`gherkin`](https://raw.githubusercontent.com/slagyr/agent-lib/main/skills/gherkin/SKILL.md) — Gherkin writing guide: scenario design, step conventions, anti-patterns
 - [`gherclj`](https://raw.githubusercontent.com/slagyr/agent-lib/main/skills/gherclj/SKILL.md) — Step implementation conventions: assertions, state management, definition of done
