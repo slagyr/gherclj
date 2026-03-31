@@ -184,19 +184,17 @@ The generated specs are clean, readable function calls:
 
 (describe "Authentication"
 
-  (context "Admin can log in"
-    (it "Admin can log in"
-      (g/reset!)
-      (auth/create-user "alice" "admin")
-      (auth/user-logs-in)
-      (auth/response-status 200)))
+  (it "Admin can log in"
+    (g/reset!)
+    (auth/create-user "alice" "admin")
+    (auth/user-logs-in)
+    (auth/response-status 200))
 
-  (context "Guest gets 401"
-    (it "Guest gets 401"
-      (g/reset!)
-      (auth/create-user "unknown" "guest")
-      (auth/user-logs-in)
-      (auth/response-status 401))))
+  (it "Guest gets 401"
+    (g/reset!)
+    (auth/create-user "unknown" "guest")
+    (auth/user-logs-in)
+    (auth/response-status 401)))
 ```
 
 Unrecognized steps generate pending scenarios with comments showing the step text, so you can see what needs to be implemented.
