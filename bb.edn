@@ -33,7 +33,7 @@
 
   feature-docs {:doc      "Run feature specs with documentation reporter"
                 :requires ([gherclj.main :as main])
-                :task     (main/-main "--" "-f" "documentation" "-c" "target/gherclj/generated" "-s" "src")}
+                :task     (main/-main "--" "-f" "documentation" "-c")}
 
   features-ct {:doc      "Run feature specs with clojure.test"
                :requires ([gherclj.main :as main])
