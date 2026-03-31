@@ -39,5 +39,5 @@
   [list]
   (let [expected (mapv str/trim (str/split list #","))
         output (g/get :generated-output)
-        found (mapv second (re-seq #"\(context \"([^\"]+)\"" output))]
+        found (mapv second (re-seq #"\(it \"([^\"]+)\"" output))]
     (g/should= expected found)))

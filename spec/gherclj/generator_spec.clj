@@ -68,7 +68,7 @@
                                      {:type :then :text "the result should be ok"}]}]}
             result (gen/generate-spec config ir)]
         (should (str/includes? result "(describe \"Sample feature\""))
-        (should (str/includes? result "(context \"Does the thing\""))
+        (should (str/includes? result "(it \"Does the thing\""))
         (should (str/includes? result "(generator-spec/setup-project \"alpha\" 300)"))
         (should (str/includes? result "(generator-spec/run-action)"))
         (should (str/includes? result "(generator-spec/check-result \"ok\")"))

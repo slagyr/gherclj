@@ -34,11 +34,10 @@
                         (map #'gen/generate-step-call-with-extras))
         all-calls (concat ["(g/reset!)"] bg-calls step-calls)
         body (->> all-calls
-                  (map #(str "      " %))
+                  (map #(str "    " %))
                   (str/join "\n"))]
-    (str "  (context \"" title "\"\n"
-         "    (it \"" title "\"\n"
-         body "))")))
+    (str "  (it \"" title "\"\n"
+         body ")")))
 
 (defmethod gen/wrap-pending :speclj
   [_config scenario background]
@@ -48,12 +47,11 @@
                                           (:steps background)))
                                    (map (fn [s] (str ";; " (name (:type s)) " " (:text s)))
                                         (:steps scenario)))
-                           (map #(str "      " %))
+                           (map #(str "    " %))
                            (str/join "\n"))]
-    (str "  (context \"" title "\"\n"
-         "    (it \"" title "\"\n"
+    (str "  (it \"" title "\"\n"
          step-comments "\n"
-         "      (pending \"not yet implemented\")))")))
+         "    (pending \"not yet implemented\"))")))
 
 (defmethod gen/run-specs :speclj
   [config]
