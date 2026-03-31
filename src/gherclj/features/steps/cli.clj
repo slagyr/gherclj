@@ -26,3 +26,6 @@
             merged (merge (config/resolve-config file-config) cli-overrides)]
         (g/assoc! :loaded-config merged)))))
 
+(defthen framework-should-receive "the framework should receive options {opts:string}"
+  [opts]
+  (g/should= (edn/read-string opts) (:framework-opts (g/get :loaded-config))))

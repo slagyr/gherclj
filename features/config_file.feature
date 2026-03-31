@@ -52,7 +52,8 @@ Feature: Config file loading
        :output-dir "target/gherclj/generated"
        :step-namespaces []
        :test-framework :speclj
-       :verbose false}
+       :verbose false
+       :framework-opts []}
       """
 
   Scenario: Config file is validated

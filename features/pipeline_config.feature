@@ -14,7 +14,8 @@ Feature: Pipeline configuration
        :output-dir "target/gherclj/generated"
        :step-namespaces []
        :test-framework :speclj
-       :verbose false}
+       :verbose false
+       :framework-opts []}
       """
 
   Scenario: Explicit values override defaults
@@ -32,7 +33,8 @@ Feature: Pipeline configuration
        :output-dir "target/gherclj/generated"
        :step-namespaces []
        :test-framework :clojure.test
-       :verbose true}
+       :verbose true
+       :framework-opts []}
       """
 
   Scenario: Invalid test framework is rejected

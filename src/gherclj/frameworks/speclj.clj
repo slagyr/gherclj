@@ -58,8 +58,12 @@
 (defmethod gen/run-specs :speclj
   [config]
   (g/set-test-framework! :speclj)
-  (let [output-dir (or (:output-dir config) "target/gherclj/generated")]
-    (speclj/run "-c" output-dir "-s" "src")))
+  (let [output-dir (or (:output-dir config) "target/gherclj/generated")
+        fw-opts (or (:framework-opts config) [])
+        args (if (seq fw-opts)
+               fw-opts
+               ["-c" output-dir "-s" "src"])]
+    (apply speclj/run args)))
 
 (defmethod g/should= :speclj [expected actual] (sc/should= expected actual))
 (defmethod g/should :speclj [value] (sc/should value))
