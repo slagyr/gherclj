@@ -30,24 +30,17 @@
   features    {:doc         "Run feature specs (parse, generate, execute)"
                :extra-paths ["target/gherclj/generated"]
                :requires    ([gherclj.main :as main])
-               :task        (let [exit-code (main/run [])]
-                              (when (pos? exit-code)
-                                (throw (ex-info "Feature specs failed" {:exit-code exit-code}))))}
+               :task        (main/-main)}
 
   feature-docs {:doc         "Run feature specs with documentation reporter"
                 :extra-paths ["target/gherclj/generated"]
-                :requires    ([gherclj.pipeline :as pipeline]
-                              [gherclj.config :as config]
-                              [speclj.main :as speclj])
-                :task        (do (pipeline/run! (config/load-config))
-                                 (speclj/-main "-f" "documentation" "-c" "target/gherclj/generated" "-s" "src"))}
+                :requires    ([gherclj.main :as main])
+                :task        (main/-main "--" "-f" "documentation" "-c" "target/gherclj/generated" "-s" "src")}
 
   features-ct {:doc         "Run feature specs with clojure.test"
                :extra-paths ["target/gherclj/generated"]
                :requires    ([gherclj.main :as main])
-               :task        (let [exit-code (main/run ["-t" "clojure.test"])]
-                              (when (pos? exit-code)
-                                (throw (ex-info "Feature specs failed" {:exit-code exit-code}))))}
+               :task        (main/-main "-t" "clojure.test")}
 
   test        {:doc  "Run all tests (unit specs + feature specs)"
                :task (do (run 'spec) (run 'features))}
