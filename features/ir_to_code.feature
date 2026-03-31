@@ -21,12 +21,11 @@ Feature: IR to code generation
 
       (describe "Login"
 
-        (context "Valid credentials"
-          (it "Valid credentials"
-            (g/reset!)
-            (sample-app/create-user "alice")
-            (sample-app/user-logs-in)
-            (sample-app/response-should-be 200))))
+        (it "Valid credentials"
+          (g/reset!)
+          (sample-app/create-user "alice")
+          (sample-app/user-logs-in)
+          (sample-app/response-should-be 200)))
       """
 
   Scenario: Generate a clojure.test spec
