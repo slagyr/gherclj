@@ -34,6 +34,14 @@
                               (when (pos? exit-code)
                                 (throw (ex-info "Feature specs failed" {:exit-code exit-code}))))}
 
+  feature-docs {:doc         "Run feature specs with documentation reporter"
+                :extra-paths ["target/gherclj/generated"]
+                :requires    ([gherclj.pipeline :as pipeline]
+                              [gherclj.config :as config]
+                              [speclj.main :as speclj])
+                :task        (do (pipeline/run! (config/load-config))
+                                 (speclj/-main "-f" "documentation" "-c" "target/gherclj/generated" "-s" "src"))}
+
   features-ct {:doc         "Run feature specs with clojure.test"
                :extra-paths ["target/gherclj/generated"]
                :requires    ([gherclj.main :as main])
