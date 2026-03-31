@@ -19,7 +19,9 @@
                      :coerce   (fn [v] (or v :speclj))
                      :validate #(contains? #{:speclj :clojure.test} %)}
    :verbose         {:type   :boolean
-                     :coerce (fn [v] (boolean v))}})
+                     :coerce (fn [v] (boolean v))}
+   :framework-opts  {:type   :seq
+                     :coerce (fn [v] (or v []))}})
 
 (defn- read-config-file
   "Read a gherclj.edn file, returning nil if not found."

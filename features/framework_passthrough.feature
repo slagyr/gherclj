@@ -1,4 +1,3 @@
-@wip
 Feature: Framework passthrough options
 
   Framework-specific options can be passed to the test runner

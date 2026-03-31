@@ -21,11 +21,12 @@
 (defn parse-args
   "Parse CLI arguments. Returns {:options map :help bool :errors seq}."
   [args]
-  (let [{:keys [options errors summary]} (cli/parse-opts args cli-options)]
-    {:options (dissoc options :help)
-     :help (:help options)
-     :errors errors
-     :summary summary}))
+  (let [{:keys [options errors summary arguments]} (cli/parse-opts args cli-options)]
+    (cond-> {:options (dissoc options :help)
+             :help (:help options)
+             :errors errors
+             :summary summary}
+      (seq arguments) (assoc-in [:options :framework-opts] (vec arguments)))))
 
 (defn usage-message []
   (let [{:keys [summary]} (cli/parse-opts [] cli-options)]
