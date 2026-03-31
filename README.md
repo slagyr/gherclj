@@ -211,6 +211,7 @@ gherclj reads configuration from `gherclj.edn` (project root or classpath), with
 | `:step-namespaces` | `[]` | Namespace symbols or glob pattern strings |
 | `:test-framework` | `:speclj` | `:speclj` or `:clojure.test` |
 | `:verbose` | `false` | Print progress to stdout |
+| `:framework-opts` | `[]` | Options passed to the test runner |
 
 Step namespaces support glob patterns for discovery:
 
@@ -219,6 +220,20 @@ Step namespaces support glob patterns for discovery:
                    "myapp.features.steps.*"      ;; glob pattern
                    "myapp.*-steps"]}             ;; glob in the middle
 ```
+
+### Framework passthrough options
+
+Pass framework-specific options to the test runner via `--` on the CLI or `:framework-opts` in config. When provided, these replace the default runner arguments entirely.
+
+```bash
+# Pass options to speclj after --
+clj -M -m gherclj.main -- -c spec/myapp -s src --no-color
+
+# Or in gherclj.edn
+{:framework-opts ["-c" "spec/myapp" "-s" "src"]}
+```
+
+CLI `--` arguments override `:framework-opts` from the config file.
 
 ## State Management
 
