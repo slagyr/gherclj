@@ -82,3 +82,27 @@ Feature: Recursive feature discovery
     When the full pipeline runs with framework :speclj
     Then "target/gherclj/generated/session/keys_spec.clj" should exist
     And "target/gherclj/generated/cli/cli_spec.clj" should exist
+
+  Scenario: clojure.test finds specs in subdirectories
+    Given a features directory containing:
+      | file                          |
+      | session/keys.feature          |
+      | auth.feature                  |
+    And the feature "session/keys.feature" contains:
+      """
+      Feature: Session keys
+
+        Scenario: Generate key
+          Given a valid user
+      """
+    And the feature "auth.feature" contains:
+      """
+      Feature: Auth
+
+        Scenario: Login
+          Given a valid user
+      """
+    When the full pipeline runs with framework :clojure.test
+    Then "target/gherclj/generated/session/keys_test.clj" should exist
+    And "target/gherclj/generated/session/keys_test.clj" should contain "(ns session.keys-test"
+    And "target/gherclj/generated/auth_test.clj" should exist
