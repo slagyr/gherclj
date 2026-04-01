@@ -5,19 +5,21 @@ Feature: CLI
 
   Scenario: Display usage message
     When running gherclj with "--help"
-    Then the output should contain "Usage: gherclj [options]"
+    Then the output should contain "Gherclj"
+    And the output should contain "Gherkin -> test code transducer"
     And the output should contain "-f, --features-dir DIR"
     And the output should contain "-e, --edn-dir DIR"
     And the output should contain "-o, --output-dir DIR"
     And the output should contain "-s, --step-namespaces NS"
     And the output should contain "-t, --tag TAG"
+    And the output should contain "prefix the tag with ~"
     And the output should contain "-T, --test-framework FRAMEWORK"
     And the output should contain "-v, --verbose"
     And the output should contain "-h, --help"
 
   Scenario: Short flag for help
     When running gherclj with "-h"
-    Then the output should contain "Usage: gherclj [options]"
+    Then the output should contain "Gherclj"
 
   Scenario: CLI flags override config file
     Given a config file:
