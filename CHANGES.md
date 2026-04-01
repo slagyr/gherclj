@@ -1,5 +1,12 @@
 # Changes
 
+## v0.5.0
+
+- `@wip` tag always excluded unless explicitly included via `-t wip`
+- Persists when other exclude tags are used (e.g. `-t ~slow` still excludes wip)
+- Tag filtering documented in README
+- Release process documented in AGENTS.md
+
 ## v0.4.0
 
 - **Breaking**: `-t` is now tag filter, `-T` is test framework

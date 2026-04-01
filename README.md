@@ -26,7 +26,7 @@ Each stage produces a visible, inspectable artifact. If a step isn't matching, c
 
 ```clojure
 ;; deps.edn or bb.edn
-{:deps {io.github.slagyr/gherclj {:git/tag "v0.4.0" :git/sha "bdc281a"}}}
+{:deps {io.github.slagyr/gherclj {:git/tag "v0.5.0" :git/sha "PENDING"}}}
 ```
 
 ### 2. Write features
@@ -114,7 +114,7 @@ There are several ways to configure and run the pipeline.
 
 ```clojure
 ;; bb.edn
-{:deps {io.github.slagyr/gherclj {:git/tag "v0.4.0" :git/sha "bdc281a"}}
+{:deps {io.github.slagyr/gherclj {:git/tag "v0.5.0" :git/sha "PENDING"}}
  :tasks
  {features {:doc "Run feature specs"
             :requires ([gherclj.main :as main])
@@ -123,7 +123,7 @@ There are several ways to configure and run the pipeline.
                               "-t" "speclj")}}}
 
 ;; deps.edn
-{:deps {io.github.slagyr/gherclj {:git/tag "v0.4.0" :git/sha "bdc281a"}}
+{:deps {io.github.slagyr/gherclj {:git/tag "v0.5.0" :git/sha "PENDING"}}
  :aliases
  {:features {:main-opts ["-m" "gherclj.main"
                          "-s" "myapp.features.steps.auth"
@@ -219,6 +219,16 @@ Step namespaces support glob patterns for discovery:
 {:step-namespaces [myapp.steps.manual           ;; concrete symbol
                    "myapp.features.steps.*"      ;; glob pattern
                    "myapp.*-steps"]}             ;; glob in the middle
+```
+
+### Tag filtering
+
+Scenarios tagged `@wip` are always excluded from generation unless explicitly included. Use `-t` to filter by additional tags:
+
+```bash
+gherclj -t smoke          # only @smoke scenarios
+gherclj -t '~slow'        # exclude @slow (wip still excluded)
+gherclj -t smoke -t '~slow'  # combine include and exclude
 ```
 
 ### Framework passthrough options
