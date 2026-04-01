@@ -76,10 +76,10 @@
   (let [{:keys [features-dir edn-dir verbose]
          :or {edn-dir "target/gherclj/edn"}} config
         features (parser/parse-features-dir features-dir)]
-    (io/make-parents (io/file edn-dir "dummy"))
     (doseq [ir features]
       (let [edn-name (source->edn-filename (:source ir))
             edn-path (str edn-dir "/" edn-name)]
+        (io/make-parents (io/file edn-path))
         (log verbose (str "Parsing " (:source ir) " -> " edn-path))
         (write-edn edn-path ir)
         (log verbose (str "  " (count (:scenarios ir)) " scenarios parsed"))))))
@@ -99,18 +99,18 @@
     (ensure-framework-loaded! test-framework)
     (let [resolved-steps (ensure-steps-loaded! step-namespaces)
           config (assoc config :step-namespaces resolved-steps)
-          edn-files (->> (.listFiles (io/file edn-dir))
+          edn-files (->> (file-seq (io/file edn-dir))
                          (filter #(str/ends-with? (.getName %) ".edn"))
-                         (sort-by #(.getName %)))]
-      (io/make-parents (io/file output-dir "dummy"))
+                         (sort-by #(str (.toPath %))))]
       (doseq [f edn-files]
         (let [ir (edn/read-string (slurp f))
               out-name (source->spec-filename (:source ir) test-framework)
               out-path (str output-dir "/" out-name)
               spec-str (gen/generate-spec config ir)]
+          (io/make-parents (io/file out-path))
           (log verbose (str "Generating " out-path " from " (.getName f)))
           (spit out-path spec-str)
-          (log verbose (str "  " (count (remove :wip (:scenarios ir))) " scenarios generated")))))))
+          (log verbose (str "  " (count (:scenarios ir)) " scenarios generated")))))))
 
 (defn run!
   "Run the full pipeline: parse .feature -> .edn -> generated specs.
