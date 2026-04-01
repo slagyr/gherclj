@@ -1,5 +1,14 @@
 # Changes
 
+## v0.4.0
+
+- **Breaking**: `-t` is now tag filter, `-T` is test framework
+- Tag CLI flag: `-t smoke` to include, `-t ~slow` to exclude (repeatable)
+- `@smoke` and `@slow` tags on feature scenarios
+- `bb gherclj` task for direct CLI access with passthrough args
+- CLI help header with pronunciation and copyright
+- LICENSE file (MIT)
+
 ## v0.3.0
 
 - Recursive feature discovery — parser finds `.feature` files in subdirectories
