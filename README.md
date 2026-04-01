@@ -237,20 +237,20 @@ CLI `--` arguments override `:framework-opts` from the config file.
 
 ### Useful speclj options
 
-The documentation reporter gives a readable overview of all feature scenarios:
+The documentation reporter (`-f documentation`) with profiling (`-P`) and color (`-c`) gives a readable, timed overview of all scenarios:
 
 ```bash
-gherclj -- -f documentation -c target/gherclj/generated -s src
+gherclj -- -f documentation -c -P
 ```
 
 ```
 Authentication
-- Admin can log in
-- Guest gets 401
+[0.00003s] - Admin can log in
+[0.00002s] - Guest gets 401
 
 Checkout
-- Empty cart shows error
-- Valid cart creates order
+[0.00005s] - Empty cart shows error
+[0.00003s] - Valid cart creates order
 ```
 
 Add a bb task for easy access:
@@ -258,7 +258,7 @@ Add a bb task for easy access:
 ```clojure
 ;; bb.edn
 feature-docs {:requires ([gherclj.main :as main])
-              :task     (main/-main "--" "-f" "documentation" "-c")}
+              :task     (main/-main "--" "-f" "documentation" "-c" "-P")}
 ```
 
 ## State Management
