@@ -21,7 +21,11 @@
    :verbose         {:type   :boolean
                      :coerce (fn [v] (boolean v))}
    :framework-opts  {:type   :seq
-                     :coerce (fn [v] (or v []))}})
+                     :coerce (fn [v] (or v []))}
+   :include-tags    {:type   :seq
+                     :coerce (fn [v] (or v []))}
+   :exclude-tags    {:type   :seq
+                     :coerce (fn [v] (or v ["wip"]))}})
 
 (defn- read-config-file
   "Read a gherclj.edn file, returning nil if not found."

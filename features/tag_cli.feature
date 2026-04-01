@@ -1,4 +1,3 @@
-@wip
 Feature: Tag CLI flag
 
   Tags can be specified on the command line with -t. Prefix

@@ -53,7 +53,9 @@ Feature: Config file loading
        :step-namespaces []
        :test-framework :speclj
        :verbose false
-       :framework-opts []}
+       :framework-opts []
+       :include-tags []
+       :exclude-tags ["wip"]}
       """
 
   Scenario: Config file is validated

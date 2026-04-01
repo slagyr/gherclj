@@ -24,9 +24,22 @@
         (should= :clojure.test (get-in result [:options :test-framework]))))
 
     (it "parses short flags"
-      (let [result (main/parse-args ["-t" "speclj" "-v"])]
+      (let [result (main/parse-args ["-T" "speclj" "-v"])]
         (should= :speclj (get-in result [:options :test-framework]))
         (should= true (get-in result [:options :verbose]))))
+
+    (it "parses -t as tag include"
+      (let [result (main/parse-args ["-t" "smoke"])]
+        (should= ["smoke"] (get-in result [:options :include-tags]))))
+
+    (it "parses -t ~prefix as tag exclude"
+      (let [result (main/parse-args ["-t" "~slow"])]
+        (should= ["slow"] (get-in result [:options :exclude-tags]))))
+
+    (it "parses multiple -t flags"
+      (let [result (main/parse-args ["-t" "smoke" "-t" "~slow" "-t" "~wip"])]
+        (should= ["smoke"] (get-in result [:options :include-tags]))
+        (should= ["slow" "wip"] (get-in result [:options :exclude-tags]))))
 
     (it "accumulates step-namespaces"
       (let [result (main/parse-args ["-s" "myapp.steps.auth" "-s" "myapp.steps.cart"])]

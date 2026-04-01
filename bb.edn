@@ -33,11 +33,11 @@
 
   feature-docs {:doc      "Run feature specs with documentation reporter"
                 :requires ([gherclj.main :as main])
-                :task     (main/-main "--" "-f" "documentation" "-c")}
+                :task     (main/-main "--" "-f" "documentation" "-c" "-P")}
 
   features-ct {:doc      "Run feature specs with clojure.test"
                :requires ([gherclj.main :as main])
-               :task     (main/-main "-t" "clojure.test")}
+               :task     (main/-main "-T" "clojure.test")}
 
   test        {:doc  "Run all tests (unit specs + feature specs)"
                :task (do (run 'spec) (run 'features))}

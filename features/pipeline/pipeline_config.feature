@@ -15,7 +15,9 @@ Feature: Pipeline configuration
        :step-namespaces []
        :test-framework :speclj
        :verbose false
-       :framework-opts []}
+       :framework-opts []
+       :include-tags []
+       :exclude-tags ["wip"]}
       """
 
   Scenario: Explicit values override defaults
@@ -34,7 +36,9 @@ Feature: Pipeline configuration
        :step-namespaces []
        :test-framework :clojure.test
        :verbose true
-       :framework-opts []}
+       :framework-opts []
+       :include-tags []
+       :exclude-tags ["wip"]}
       """
 
   Scenario: Invalid test framework is rejected
