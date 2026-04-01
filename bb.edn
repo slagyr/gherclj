@@ -7,6 +7,10 @@
  :tasks
  {:requires   ([gherclj.pipeline :as p])
 
+  gherclj     {:doc      "Run gherclj with any options"
+               :requires ([gherclj.main :as main])
+               :task     (apply main/-main *command-line-args*)}
+
   clean       {:doc  "Remove generated EDN and spec files"
                :task (do
                        (babashka.fs/delete-tree "target/gherclj")
