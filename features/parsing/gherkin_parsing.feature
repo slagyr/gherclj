@@ -3,6 +3,7 @@ Feature: Gherkin parsing
   The parser converts .feature file text into an EDN intermediate
   representation that drives code generation.
 
+  @smoke
   Scenario: Parse a minimal feature
     Given a feature file containing:
       """

@@ -4,6 +4,7 @@ Feature: Shared state
   to share data across steps within a scenario. State is
   reset before each scenario.
 
+  @smoke
   Scenario: State starts empty after reset
     When the state is reset
     Then the state should be:

@@ -3,6 +3,7 @@ Feature: CLI
   gherclj can be invoked from the command line. CLI flags
   override config file values which override defaults.
 
+  @smoke
   Scenario: Display usage message
     When running gherclj with "--help"
     Then the output should contain "Gherclj"
