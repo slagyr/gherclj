@@ -7,6 +7,7 @@ Feature: CLI
     When running gherclj with "--help"
     Then the output should contain "Gherclj"
     And the output should contain "Gherkin -> test code transducer"
+    And the output should contain "Copyright (c) 2026 Micah Martin under The MIT License."
     And the output should contain "-f, --features-dir DIR"
     And the output should contain "-e, --edn-dir DIR"
     And the output should contain "-o, --output-dir DIR"
