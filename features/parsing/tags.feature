@@ -97,6 +97,31 @@ Feature: Tags
     When generating with exclude tags "slow"
     Then the generated scenarios should be "Fast test, Untagged"
 
+  Scenario: wip tag is excluded by default
+    Given a feature with tagged scenarios:
+      | scenario    | tags       |
+      | Ready       |            |
+      | Not ready   | wip        |
+    When generating with no tag filters
+    Then the generated scenarios should be "Ready"
+
+  Scenario: wip exclusion persists with other exclude tags
+    Given a feature with tagged scenarios:
+      | scenario    | tags       |
+      | Fast test   | smoke      |
+      | Slow test   | slow       |
+      | Not ready   | wip        |
+    When generating with exclude tags "slow"
+    Then the generated scenarios should be "Fast test"
+
+  Scenario: wip can be explicitly included
+    Given a feature with tagged scenarios:
+      | scenario    | tags       |
+      | Ready       |            |
+      | Not ready   | wip        |
+    When generating with include tags "wip"
+    Then the generated scenarios should be "Ready, Not ready"
+
   Scenario: WIP is just a tag
     Given a feature file containing:
       """
