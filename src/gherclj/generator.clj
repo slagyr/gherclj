@@ -93,13 +93,17 @@
 (defn generate-spec
   "Generate a complete spec file string from a config and feature IR."
   [config ir]
-  (let [{:keys [step-namespaces extra-steps exclude-tags include-tags]
-         :or {exclude-tags ["wip"]}} config
+  (let [{:keys [step-namespaces extra-steps exclude-tags include-tags]} config
         {:keys [source feature scenarios background]} ir
+        wip-included? (some #{"wip"} include-tags)
+        effective-excludes (if wip-included?
+                             (vec (remove #{"wip"} (or exclude-tags [])))
+                             (vec (distinct (concat ["wip"] (or exclude-tags [])))))
+        effective-includes (vec (remove #{"wip"} (or include-tags [])))
         steps (into (core/collect-steps step-namespaces) extra-steps)
         filtered (cond->> scenarios
-                   (seq exclude-tags) (remove #(some (set exclude-tags) (:tags %)))
-                   (seq include-tags) (filter #(some (set include-tags) (:tags %))))
+                   (seq effective-excludes) (remove #(some (set effective-excludes) (:tags %)))
+                   (seq effective-includes) (filter #(some (set effective-includes) (:tags %))))
         classified-scenarios (mapv #(classify-scenario steps %) filtered)
         classified-bg (when background (classify-scenario steps background))
         ns-form (generate-ns-form config source

@@ -35,6 +35,12 @@
                 :test-framework :speclj}]
     (g/assoc! :generated-output (gen/generate-spec config (g/get :feature-ir)))))
 
+(defwhen generate-with-no-filters "generating with no tag filters"
+  []
+  (let [config {:step-namespaces []
+                :test-framework :speclj}]
+    (g/assoc! :generated-output (gen/generate-spec config (g/get :feature-ir)))))
+
 (defthen generated-scenarios-should-be "the generated scenarios should be {list:string}"
   [list]
   (let [expected (mapv str/trim (str/split list #","))
