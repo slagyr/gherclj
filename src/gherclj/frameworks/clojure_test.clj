@@ -66,9 +66,9 @@
   (g/set-test-framework! :clojure.test)
   (let [output-dir (or (:output-dir config) "target/gherclj/generated")
         dir (clojure.java.io/file output-dir)
-        test-files (->> (.listFiles dir)
+        test-files (->> (file-seq dir)
                         (filter #(str/ends-with? (.getName %) ".clj"))
-                        (sort-by #(.getName %)))]
+                        (sort-by #(str (.toPath %))))]
     (doseq [f test-files]
       (load-file (.getPath f)))
     (let [test-nses (keep read-ns-name test-files)
