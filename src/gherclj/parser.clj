@@ -346,17 +346,17 @@
       (assoc :background (parse-scenario-lines background-lines))))))
 
 (defn parse-feature-file
-  "Parse a .feature file into an EDN IR map with :source."
-  [path]
-  (let [content (slurp path)
-        filename (last (str/split path #"/"))]
-    (assoc (parse-feature content) :source filename)))
+  "Parse a .feature file into an EDN IR map with :source (relative path)."
+  [root-dir file]
+  (let [content (slurp file)
+        rel-path (str (.relativize (.toPath (io/file root-dir)) (.toPath file)))]
+    (assoc (parse-feature content) :source rel-path)))
 
 (defn parse-features-dir
-  "Parse all .feature files in a directory. Returns a seq of IR maps."
+  "Parse all .feature files in a directory, recursively. Returns a seq of IR maps."
   [dir-path]
   (let [dir (io/file dir-path)]
-    (->> (.listFiles dir)
+    (->> (file-seq dir)
          (filter #(str/ends-with? (.getName %) ".feature"))
-         (sort-by #(.getName %))
-         (mapv #(parse-feature-file (.getPath %))))))
+         (sort-by #(str (.toPath %)))
+         (mapv #(parse-feature-file dir-path %)))))

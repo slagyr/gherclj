@@ -31,8 +31,10 @@
   (let [dir (str base-dir "/features")]
     (io/make-parents (io/file dir "dummy"))
     (doseq [row (:rows table)]
-      (let [filename (first row)]
-        (spit (io/file dir filename) "")))
+      (let [filename (first row)
+            f (io/file dir filename)]
+        (io/make-parents f)
+        (spit f "")))
     (g/assoc! :pipeline-dir dir)))
 
 (defgiven write-feature-content "the feature {name:string} contains:"

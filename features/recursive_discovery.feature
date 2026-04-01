@@ -1,4 +1,3 @@
-@wip
 Feature: Recursive feature discovery
 
   The parser finds .feature files recursively in subdirectories,
