@@ -8,7 +8,7 @@
   :features {:extra-deps {speclj/speclj {:mvn/version "3.12.2"}}
              :main-opts ["-m" "gherclj.main"]}
   :features-ct {:extra-deps {speclj/speclj {:mvn/version "3.12.2"}}
-                :main-opts ["-m" "gherclj.main" "-t" "clojure.test"]}
+                :main-opts ["-m" "gherclj.main" "-T" "clojure.test"]}
   :cov {:extra-deps {cloverage/cloverage {:mvn/version "1.2.4"}
                      speclj/speclj {:mvn/version "3.12.2"}}
         :main-opts ["-m" "speclj.cloverage" "--" "-p" "src" "-s" "spec"]}

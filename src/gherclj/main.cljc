@@ -13,16 +13,30 @@
     :multi true
     :default nil
     :update-fn (fn [acc v] (conj (or acc []) (symbol v)))]
-   ["-t" "--test-framework FRAMEWORK" "Test framework (speclj, clojure.test)"
+   ["-t" "--tag TAG" "Tag filter (repeatable, ~prefix to exclude)"
+    :multi true
+    :default nil
+    :update-fn (fn [acc v] (conj (or acc []) v))]
+   ["-T" "--test-framework FRAMEWORK" "Test framework (speclj, clojure.test)"
     :parse-fn keyword]
    ["-v" "--verbose" "Print progress to stdout"]
    ["-h" "--help" "Show usage"]])
 
+(defn- parse-tag-flags [tags]
+  (when (seq tags)
+    (let [{excludes true includes false} (group-by #(str/starts-with? % "~") tags)]
+      (cond-> {}
+        (seq includes) (assoc :include-tags (vec includes))
+        (seq excludes) (assoc :exclude-tags (mapv #(subs % 1) excludes))))))
+
 (defn parse-args
   "Parse CLI arguments. Returns {:options map :help bool :errors seq}."
   [args]
-  (let [{:keys [options errors summary arguments]} (cli/parse-opts args cli-options)]
-    (cond-> {:options (dissoc options :help)
+  (let [{:keys [options errors summary arguments]} (cli/parse-opts args cli-options)
+        tag-opts (parse-tag-flags (:tag options))
+        opts (-> (dissoc options :help :tag)
+                 (merge tag-opts))]
+    (cond-> {:options opts
              :help (:help options)
              :errors errors
              :summary summary}
