@@ -11,12 +11,14 @@
    ["-o" "--output-dir DIR" "Generated spec output directory"]
    ["-s" "--step-namespaces NS" "Step namespace (repeatable, supports globs)"
     :multi true
-    :default nil
-    :update-fn (fn [acc v] (conj (or acc []) (symbol v)))]
-   ["-t" "--tag TAG" "Tag filter (repeatable, ~prefix to exclude)"
+    :default :none
+    :default-desc ""
+    :update-fn (fn [acc v] (conj (if (= :none acc) [] acc) (symbol v)))]
+   ["-t" "--tag TAG" "Run only the features with the specified tag(s). To exclude, prefix the tag with ~ (eg ~slow). Use this option multiple times to filter multiple tags."
     :multi true
-    :default nil
-    :update-fn (fn [acc v] (conj (or acc []) v))]
+    :default :none
+    :default-desc ""
+    :update-fn (fn [acc v] (conj (if (= :none acc) [] acc) v))]
    ["-T" "--test-framework FRAMEWORK" "Test framework (speclj, clojure.test)"
     :parse-fn keyword]
    ["-v" "--verbose" "Print progress to stdout"]
@@ -33,9 +35,12 @@
   "Parse CLI arguments. Returns {:options map :help bool :errors seq}."
   [args]
   (let [{:keys [options errors summary arguments]} (cli/parse-opts args cli-options)
-        tag-opts (parse-tag-flags (:tag options))
-        opts (-> (dissoc options :help :tag)
-                 (merge tag-opts))]
+        tags (let [t (:tag options)] (when-not (= :none t) t))
+        tag-opts (parse-tag-flags tags)
+        step-ns (let [s (:step-namespaces options)] (when-not (= :none s) s))
+        opts (-> (dissoc options :help :tag :step-namespaces)
+                 (merge tag-opts)
+                 (cond-> step-ns (assoc :step-namespaces step-ns)))]
     (cond-> {:options opts
              :help (:help options)
              :errors errors
@@ -44,7 +49,9 @@
 
 (defn usage-message []
   (let [{:keys [summary]} (cli/parse-opts [] cli-options)]
-    (str "Usage: gherclj [options]\n\n" summary)))
+    (str "\nGherclj - pronounced /\u0261\u025c\u02d0rk\u0259l/, gur-kull: a Gherkin -> test code transducer.\n"
+         "Copyright (c) 2026 Micah Martin under The MIT License.\n\n"
+         summary "\n")))
 
 (defn- failures? [run-specs-result]
   (cond
