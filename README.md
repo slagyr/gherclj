@@ -235,6 +235,32 @@ clj -M -m gherclj.main -- -c spec/myapp -s src --no-color
 
 CLI `--` arguments override `:framework-opts` from the config file.
 
+### Useful speclj options
+
+The documentation reporter gives a readable overview of all feature scenarios:
+
+```bash
+gherclj -- -f documentation -c target/gherclj/generated -s src
+```
+
+```
+Authentication
+- Admin can log in
+- Guest gets 401
+
+Checkout
+- Empty cart shows error
+- Valid cart creates order
+```
+
+Add a bb task for easy access:
+
+```clojure
+;; bb.edn
+feature-docs {:requires ([gherclj.main :as main])
+              :task     (main/-main "--" "-f" "documentation" "-c")}
+```
+
 ## State Management
 
 gherclj provides a global state atom that is automatically reset before each scenario. Steps interact with state through `gherclj.core`:
