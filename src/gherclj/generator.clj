@@ -80,11 +80,12 @@
        (into #{})))
 
 (defn- source->ns-name
-  "Convert a feature source filename to a namespace name."
+  "Convert a feature source path to a namespace name."
   [source suffix]
   (-> source
       (str/replace #"\.(feature|edn)$" "")
-      (str/replace #"_" "-")
+      (str/replace "/" ".")
+      (str/replace "_" "-")
       (str suffix)))
 
 ;; --- Public generation ---
