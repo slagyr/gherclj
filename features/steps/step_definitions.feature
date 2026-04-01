@@ -4,6 +4,7 @@ Feature: Step definitions
   is defined with defgiven, defwhen, or defthen and maps a
   template string to a callable function.
 
+  @smoke
   Scenario: Define a given step with integer capture
     Given a given step named "add-timeout" with template "timeout is {seconds:int}"
     Then the step "add-timeout" should be registered as a :given step

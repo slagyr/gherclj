@@ -1,3 +1,4 @@
+@slow
 Feature: Pipeline
 
   The pipeline orchestrates parsing and code generation as a
@@ -104,6 +105,7 @@ Feature: Pipeline
     Then the output should contain "Generating target/gherclj/generated/auth_spec.clj from auth.edn"
     And the output should contain "1 scenarios generated"
 
+  @smoke
   Scenario: Full pipeline runs both stages
     Given a features directory containing:
       | file          |

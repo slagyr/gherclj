@@ -4,6 +4,7 @@ Feature: IR to code generation
   It resolves steps to qualified function calls and delegates formatting
   to framework-specific multimethods.
 
+  @smoke
   Scenario: Generate a speclj spec
     Given a feature named "Login" from source "login.feature"
     And a scenario "Valid credentials" with steps:
