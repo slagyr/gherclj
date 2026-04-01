@@ -56,7 +56,9 @@ Feature: Recursive feature discovery
       """
     When the full pipeline runs with framework :speclj
     Then "target/gherclj/generated/session/keys_spec.clj" should exist
+    And "target/gherclj/generated/session/keys_spec.clj" should contain "(ns session.keys-spec"
     And "target/gherclj/generated/auth_spec.clj" should exist
+    And "target/gherclj/generated/auth_spec.clj" should contain "(ns auth-spec"
 
   Scenario: Single run with multiple step namespaces across subdirectories
     Given a features directory containing:
