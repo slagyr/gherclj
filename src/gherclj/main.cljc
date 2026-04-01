@@ -14,7 +14,7 @@
     :default :none
     :default-desc ""
     :update-fn (fn [acc v] (conj (if (= :none acc) [] acc) (symbol v)))]
-   ["-t" "--tag TAG" "Run only the features with the specified tag(s). To exclude, prefix the tag with ~ (eg ~slow). Use this option multiple times to filter multiple tags."
+   ["-t" "--tag TAG" "Run only the scenarios with the specified tag(s). To exclude, prefix the tag with ~ (eg ~slow). Use this option multiple times to filter multiple tags."
     :multi true
     :default :none
     :default-desc ""
