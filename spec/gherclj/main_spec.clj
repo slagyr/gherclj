@@ -59,7 +59,9 @@
 
     (it "contains expected content"
       (let [text (main/usage-message)]
-        (should (str/includes? text "Usage: gherclj [options]"))
+        (should (str/includes? text "Gherclj"))
+        (should (str/includes? text "Gherkin -> test code transducer"))
+        (should (str/includes? text "Copyright"))
         (should (str/includes? text "--features-dir"))
         (should (str/includes? text "--help")))))
 
@@ -68,7 +70,7 @@
     (it "returns 0 and prints usage for --help"
       (let [output (with-out-str
                      (should= 0 (main/run ["--help"])))]
-        (should (str/includes? output "Usage: gherclj [options]"))))
+        (should (str/includes? output "Gherclj"))))
 
     (it "returns 0 for -h"
       (with-out-str
