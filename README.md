@@ -26,7 +26,7 @@ Each stage produces a visible, inspectable artifact. If a step isn't matching, c
 
 ```clojure
 ;; deps.edn or bb.edn
-{:deps {io.github.slagyr/gherclj {:git/tag "v0.2.0" :git/sha "fcd4ad9"}}}
+{:deps {io.github.slagyr/gherclj {:git/tag "v0.3.0" :git/sha "6fe0cf9"}}}
 ```
 
 ### 2. Write features
@@ -114,7 +114,7 @@ There are several ways to configure and run the pipeline.
 
 ```clojure
 ;; bb.edn
-{:deps {io.github.slagyr/gherclj {:git/tag "v0.2.0" :git/sha "fcd4ad9"}}
+{:deps {io.github.slagyr/gherclj {:git/tag "v0.3.0" :git/sha "6fe0cf9"}}
  :tasks
  {features {:doc "Run feature specs"
             :requires ([gherclj.main :as main])
@@ -123,7 +123,7 @@ There are several ways to configure and run the pipeline.
                               "-t" "speclj")}}}
 
 ;; deps.edn
-{:deps {io.github.slagyr/gherclj {:git/tag "v0.2.0" :git/sha "fcd4ad9"}}
+{:deps {io.github.slagyr/gherclj {:git/tag "v0.3.0" :git/sha "6fe0cf9"}}
  :aliases
  {:features {:main-opts ["-m" "gherclj.main"
                          "-s" "myapp.features.steps.auth"
