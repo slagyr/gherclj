@@ -26,7 +26,7 @@ Each stage produces a visible, inspectable artifact. If a step isn't matching, c
 
 ```clojure
 ;; deps.edn or bb.edn
-{:deps {io.github.slagyr/gherclj {:git/tag "v0.3.0" :git/sha "6fe0cf9"}}}
+{:deps {io.github.slagyr/gherclj {:git/tag "v0.4.0" :git/sha "PENDING"}}}
 ```
 
 ### 2. Write features
@@ -114,7 +114,7 @@ There are several ways to configure and run the pipeline.
 
 ```clojure
 ;; bb.edn
-{:deps {io.github.slagyr/gherclj {:git/tag "v0.3.0" :git/sha "6fe0cf9"}}
+{:deps {io.github.slagyr/gherclj {:git/tag "v0.4.0" :git/sha "PENDING"}}
  :tasks
  {features {:doc "Run feature specs"
             :requires ([gherclj.main :as main])
@@ -123,7 +123,7 @@ There are several ways to configure and run the pipeline.
                               "-t" "speclj")}}}
 
 ;; deps.edn
-{:deps {io.github.slagyr/gherclj {:git/tag "v0.3.0" :git/sha "6fe0cf9"}}
+{:deps {io.github.slagyr/gherclj {:git/tag "v0.4.0" :git/sha "PENDING"}}
  :aliases
  {:features {:main-opts ["-m" "gherclj.main"
                          "-s" "myapp.features.steps.auth"
@@ -244,13 +244,13 @@ gherclj -- -f documentation -c -P
 ```
 
 ```
-Authentication
-[0.00003s] - Admin can log in
-[0.00002s] - Guest gets 401
+          Authentication
+[0.00003s]  - Admin can log in
+[0.00002s]  - Guest gets 401
 
-Checkout
-[0.00005s] - Empty cart shows error
-[0.00003s] - Valid cart creates order
+          Checkout
+[0.00005s]  - Empty cart shows error
+[0.00003s]  - Valid cart creates order
 ```
 
 Add a bb task for easy access:
