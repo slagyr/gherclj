@@ -22,8 +22,12 @@ Feature: IR to code generation
 
       (describe "Login"
 
+        (before-all (g/run-before-feature-hooks!))
+        (before (g/reset!) (g/run-before-scenario-hooks!))
+        (after (g/run-after-scenario-hooks!))
+        (after-all (g/run-after-feature-hooks!))
+
         (it "Valid credentials"
-          (g/reset!)
           (sample-app/create-user "alice")
           (sample-app/user-logs-in)
           (sample-app/response-should-be 200)))
@@ -44,9 +48,26 @@ Feature: IR to code generation
                   [gherclj.core :as g]
                   [gherclj.features.steps.sample-app :as sample-app]))
 
+      (defn ^:private feature-fixture [f]
+        (g/run-before-feature-hooks!)
+        (try
+          (f)
+          (finally
+            (g/run-after-feature-hooks!))))
+
+      (defn ^:private scenario-fixture [f]
+        (g/reset!)
+        (g/run-before-scenario-hooks!)
+        (try
+          (f)
+          (finally
+            (g/run-after-scenario-hooks!))))
+
+      (use-fixtures :once feature-fixture)
+      (use-fixtures :each scenario-fixture)
+
       (deftest valid-credentials
         (testing "Valid credentials"
-          (g/reset!)
           (sample-app/create-user "alice")
           (sample-app/user-logs-in)
           (sample-app/response-should-be 200)))
@@ -72,16 +93,32 @@ Feature: IR to code generation
                   [gherclj.core :as g]
                   [gherclj.features.steps.sample-app :as sample-app]))
 
+      (defn ^:private feature-fixture [f]
+        (g/run-before-feature-hooks!)
+        (try
+          (f)
+          (finally
+            (g/run-after-feature-hooks!))))
+
+      (defn ^:private scenario-fixture [f]
+        (g/reset!)
+        (g/run-before-scenario-hooks!)
+        (try
+          (f)
+          (finally
+            (g/run-after-scenario-hooks!))))
+
+      (use-fixtures :once feature-fixture)
+      (use-fixtures :each scenario-fixture)
+
       (deftest valid-credentials
         (testing "Valid credentials"
-          (g/reset!)
           (sample-app/create-user "alice")
           (sample-app/user-logs-in)
           (sample-app/response-should-be 200)))
 
       (deftest invalid-credentials
         (testing "Invalid credentials"
-          (g/reset!)
           (sample-app/create-user "nobody")
           (sample-app/user-logs-in)
           (sample-app/response-should-be 401)))
@@ -104,9 +141,26 @@ Feature: IR to code generation
                   [gherclj.core :as g]
                   [gherclj.features.steps.sample-app :as sample-app]))
 
+      (defn ^:private feature-fixture [f]
+        (g/run-before-feature-hooks!)
+        (try
+          (f)
+          (finally
+            (g/run-after-feature-hooks!))))
+
+      (defn ^:private scenario-fixture [f]
+        (g/reset!)
+        (g/run-before-scenario-hooks!)
+        (try
+          (f)
+          (finally
+            (g/run-after-scenario-hooks!))))
+
+      (use-fixtures :once feature-fixture)
+      (use-fixtures :each scenario-fixture)
+
       (deftest check-response
         (testing "Check response"
-          (g/reset!)
           (sample-app/create-user "alice")
           (sample-app/user-logs-in)
           (sample-app/response-should-be 200)))
@@ -124,6 +178,24 @@ Feature: IR to code generation
       (ns login-test
         (:require [clojure.test :refer :all]
                   [gherclj.core :as g]))
+
+      (defn ^:private feature-fixture [f]
+        (g/run-before-feature-hooks!)
+        (try
+          (f)
+          (finally
+            (g/run-after-feature-hooks!))))
+
+      (defn ^:private scenario-fixture [f]
+        (g/reset!)
+        (g/run-before-scenario-hooks!)
+        (try
+          (f)
+          (finally
+            (g/run-after-scenario-hooks!))))
+
+      (use-fixtures :once feature-fixture)
+      (use-fixtures :each scenario-fixture)
 
       (deftest not-implemented
         (testing "Not implemented"

@@ -70,10 +70,10 @@
     (generate-step-call step)))
 
 (defn- step-ns-requires
-  "Compute the set of step namespace symbols used in a feature's scenarios."
-  [steps scenarios]
-  (->> scenarios
-       (mapcat :steps)
+  "Compute the set of step namespace symbols used in a feature's background and scenarios."
+  [steps background scenarios]
+  (->> (concat (when background (:steps background))
+               (mapcat :steps scenarios))
        (keep (fn [node]
                (when-let [classified (core/classify-step steps (:text node))]
                  (:ns classified))))
@@ -104,15 +104,16 @@
         filtered (cond->> scenarios
                    (seq effective-excludes) (remove #(some (set effective-excludes) (:tags %)))
                    (seq effective-includes) (filter #(some (set effective-includes) (:tags %))))
-        classified-scenarios (mapv #(classify-scenario steps %) filtered)
-        classified-bg (when background (classify-scenario steps background))
-        ns-form (generate-ns-form config source
-                                  (step-ns-requires steps filtered))
-        scenario-blocks (->> classified-scenarios
-                             (map (fn [scenario]
-                                    (if (all-classified? scenario)
-                                      (wrap-scenario config scenario classified-bg)
-                                      (wrap-pending config scenario classified-bg))))
-                             (str/join "\n\n"))]
-    (str ns-form "\n\n"
-         (wrap-feature config feature scenario-blocks))))
+        classified-scenarios (mapv #(classify-scenario steps %) filtered)]
+    (when (seq classified-scenarios)
+      (let [classified-bg (when background (classify-scenario steps background))
+            ns-form (generate-ns-form config source
+                                      (step-ns-requires steps classified-bg filtered))
+            scenario-blocks (->> classified-scenarios
+                                 (map (fn [scenario]
+                                        (if (all-classified? scenario)
+                                          (wrap-scenario config scenario classified-bg)
+                                          (wrap-pending config scenario classified-bg))))
+                                 (str/join "\n\n"))]
+        (str ns-form "\n\n"
+             (wrap-feature config feature scenario-blocks))))))

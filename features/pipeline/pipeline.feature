@@ -173,3 +173,49 @@ Feature: Pipeline
     Then "target/gherclj/edn/auth.edn" should contain IR with 2 scenarios
     And "target/gherclj/generated/auth_spec.clj" should contain "Ready"
     And "target/gherclj/generated/auth_spec.clj" should not contain "Not ready"
+
+  Scenario: Excluding all scenarios omits the generated Speclj file
+    Given a features directory containing:
+      | file             |
+      | logging.feature  |
+    And the feature "logging.feature" contains:
+      """
+      @slow
+      Feature: Logging
+
+        Scenario: Slow logging check
+          Given a user "alice"
+          When the user logs in
+          Then the response should be 200
+      """
+    When the full pipeline runs with framework :speclj and tags:
+      | tag   |
+      | ~slow |
+    Then "target/gherclj/generated/logging_spec.clj" should not exist
+
+  Scenario: Keeping one matching scenario still generates the Speclj file
+    Given a features directory containing:
+      | file             |
+      | logging.feature  |
+    And the feature "logging.feature" contains:
+      """
+      Feature: Logging
+
+        @slow
+        Scenario: Slow logging check
+          Given a user "alice"
+          When the user logs in
+          Then the response should be 200
+
+        @smoke
+        Scenario: Fast logging check
+          Given a user "bob"
+          When the user logs in
+          Then the response should be 200
+      """
+    When the full pipeline runs with framework :speclj and tags:
+      | tag   |
+      | smoke |
+    Then "target/gherclj/generated/logging_spec.clj" should exist
+    And "target/gherclj/generated/logging_spec.clj" should contain "Fast logging check"
+    And "target/gherclj/generated/logging_spec.clj" should not contain "Slow logging check"

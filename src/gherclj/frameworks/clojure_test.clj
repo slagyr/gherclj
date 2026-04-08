@@ -25,7 +25,22 @@
 
 (defmethod gen/wrap-feature :clojure.test
   [_config _feature-name scenario-blocks]
-  (str scenario-blocks "\n"))
+  (str "(defn ^:private feature-fixture [f]\n"
+       "  (g/run-before-feature-hooks!)\n"
+       "  (try\n"
+       "    (f)\n"
+       "    (finally\n"
+       "      (g/run-after-feature-hooks!))))\n\n"
+       "(defn ^:private scenario-fixture [f]\n"
+       "  (g/reset!)\n"
+       "  (g/run-before-scenario-hooks!)\n"
+       "  (try\n"
+       "    (f)\n"
+       "    (finally\n"
+       "      (g/run-after-scenario-hooks!))))\n\n"
+       "(use-fixtures :once feature-fixture)\n"
+       "(use-fixtures :each scenario-fixture)\n\n"
+       scenario-blocks "\n"))
 
 (defmethod gen/wrap-scenario :clojure.test
   [_config scenario background]
@@ -37,7 +52,7 @@
                         (map #'gen/generate-step-call-with-extras)))
         step-calls (->> (:steps scenario)
                         (map #'gen/generate-step-call-with-extras))
-        all-calls (concat ["(g/reset!)"] bg-calls step-calls)
+        all-calls (concat bg-calls step-calls)
         body (->> all-calls
                   (map #(str "    " %))
                   (str/join "\n"))]
@@ -68,12 +83,19 @@
         dir (clojure.java.io/file output-dir)
         test-files (->> (file-seq dir)
                         (filter #(str/ends-with? (.getName %) ".clj"))
-                        (sort-by #(str (.toPath %))))]
-    (doseq [f test-files]
-      (load-file (.getPath f)))
-    (let [test-nses (keep read-ns-name test-files)
-          loaded (keep find-ns test-nses)]
-      (apply (resolve 'clojure.test/run-tests) loaded))))
+                        (sort-by #(str (.toPath %))))
+        test-nses (keep read-ns-name test-files)]
+    (g/run-before-all-hooks!)
+    (try
+      (doseq [ns-sym test-nses]
+        (when (find-ns ns-sym)
+          (remove-ns ns-sym)))
+      (doseq [f test-files]
+        (load-file (.getPath f)))
+      (let [loaded (keep find-ns test-nses)]
+        (apply (resolve 'clojure.test/run-tests) loaded))
+      (finally
+        (g/run-after-all-hooks!)))))
 
 (defn- ct-assert [pass? msg]
   (ct/do-report (if pass?

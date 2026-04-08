@@ -1,10 +1,11 @@
 (ns gherclj.generator-spec
   (:require [speclj.core :refer :all]
-            [gherclj.generator :as gen]
-            [gherclj.core :as core]
-            [gherclj.core :refer [defgiven defwhen defthen]]
-            [clojure.string :as str]
-            [gherclj.frameworks.speclj]))
+             [gherclj.generator :as gen]
+             [gherclj.core :as core]
+             [gherclj.core :refer [defgiven defwhen defthen]]
+             [clojure.string :as str]
+             [gherclj.frameworks.speclj]
+             [gherclj.features.steps.sample-app]))
 
 ;; Sample steps for generation tests
 
@@ -74,7 +75,31 @@
         (should (str/includes? result "(generator-spec/check-result \"ok\")"))
         (should (str/includes? result "[gherclj.generator-spec :as generator-spec]"))
         (should (str/includes? result "[gherclj.core :as g]"))
-        (should (str/includes? result "(g/reset!)")))))
+        (should (str/includes? result "(g/reset!)"))))
+
+    (it "returns nil when tag filtering removes every scenario"
+      (let [config {:step-namespaces ['gherclj.generator-spec]
+                    :exclude-tags ["slow"]
+                    :test-framework :speclj}
+            ir {:feature "Sample feature"
+                :source "sample.feature"
+                :scenarios [{:scenario "Slow only"
+                             :tags ["slow"]
+                             :steps [{:type :given :text "a project alpha with timeout 300"}]}]}]
+        (should-be-nil (gen/generate-spec config ir)))))
+
+    (it "includes namespaces referenced only by background steps"
+      (let [config {:step-namespaces ['gherclj.generator-spec 'gherclj.features.steps.sample-app]
+                    :test-framework :speclj}
+            ir {:feature "Sample feature"
+                :source "sample.feature"
+                :background {:steps [{:type :given :text "a user \"alice\""}]}
+                :scenarios [{:scenario "Does the thing"
+                             :steps [{:type :when :text "running the action"}
+                                     {:type :then :text "the result should be ok"}]}]}
+            result (gen/generate-spec config ir)]
+        (should (str/includes? result "[gherclj.features.steps.sample-app :as sample-app]"))
+        (should (str/includes? result "(sample-app/create-user \"alice\")"))))
 
   (context "generate-step-call with string args"
 

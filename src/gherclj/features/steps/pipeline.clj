@@ -11,13 +11,15 @@
 (defn- edn-dir [] (str base-dir "/target/gherclj/edn"))
 (defn- output-dir [] (str base-dir "/target/gherclj/generated"))
 
-(defn- pipeline-config [& {:keys [verbose framework]}]
+(defn- pipeline-config [& {:keys [verbose framework include-tags exclude-tags]}]
   (cond-> {:features-dir (g/get :pipeline-dir)
            :edn-dir (edn-dir)
            :output-dir (output-dir)}
     verbose (assoc :verbose true)
     framework (assoc :test-framework framework
-                     :step-namespaces [])))
+                     :step-namespaces [])
+    include-tags (assoc :include-tags include-tags)
+    exclude-tags (assoc :exclude-tags exclude-tags)))
 
 (defn- strip-quotes [s]
   (if (and (str/starts-with? s "\"") (str/ends-with? s "\""))
@@ -76,11 +78,27 @@
         output (with-out-str (pipeline/run! (pipeline-config :framework framework)))]
     (g/assoc! :pipeline-output output)))
 
+(defwhen run-full-pipeline-with-tags "the full pipeline runs with framework {fw} and tags:"
+  [fw table]
+  (let [framework (keyword (str/replace fw #"^:" ""))
+        tags (mapv first (:rows table))
+        includes (vec (remove #(str/starts-with? % "~") tags))
+        excludes (mapv #(subs % 1) (filter #(str/starts-with? % "~") tags))
+        output (with-out-str
+                 (pipeline/run! (pipeline-config :framework framework
+                                                :include-tags includes
+                                                :exclude-tags excludes)))]
+    (g/assoc! :pipeline-output output)))
+
 ;; --- Then steps ---
 
 (defthen file-should-exist "{path} should exist"
   [path]
   (g/should (.exists (io/file base-dir (strip-quotes path)))))
+
+(defthen file-should-not-exist "{path} should not exist"
+  [path]
+  (g/should-not (.exists (io/file base-dir (strip-quotes path)))))
 
 (defthen file-should-contain-ir #"^(\S+) should contain IR:$"
   [path doc-string]
