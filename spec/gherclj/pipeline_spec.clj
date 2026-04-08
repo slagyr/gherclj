@@ -189,4 +189,33 @@
           (let [content (slurp (io/file output-dir "auth_test.clj"))]
             (should (str/includes? content "deftest"))
             (should (str/includes? content "clojure.test")))
+          (finally (cleanup features-dir edn-dir output-dir)))))
+
+    (it "removes stale generated spec files when tags exclude every scenario"
+      (let [features-dir (tmp "features")
+            edn-dir (tmp "edn")
+            output-dir (tmp "output")
+            feature-file (io/file features-dir "auth.feature")
+            spec-file (io/file output-dir "auth_spec.clj")]
+        (io/make-parents feature-file)
+        (spit feature-file
+              (str "Feature: Authentication\n"
+                   "\n"
+                   "  @slow\n"
+                   "  Scenario: User can log in\n"
+                   "    Given a user \"alice\" with role \"admin\"\n"
+                   "    When the user logs in\n"
+                   "    Then the response status should be 200\n"))
+        (io/make-parents spec-file)
+        (spit spec-file "stale")
+        (try
+          (pipeline/run!
+            {:features-dir features-dir
+             :edn-dir edn-dir
+             :output-dir output-dir
+             :step-namespaces ['gherclj.pipeline-spec]
+             :exclude-tags ["slow"]
+             :test-framework :speclj})
+
+          (should-not (.exists spec-file))
           (finally (cleanup features-dir edn-dir output-dir)))))))

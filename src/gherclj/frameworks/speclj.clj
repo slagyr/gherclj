@@ -21,6 +21,10 @@
 (defmethod gen/wrap-feature :speclj
   [_config feature-name scenario-blocks]
   (str "(describe \"" feature-name "\"\n\n"
+       "  (before-all (g/run-before-feature-hooks!))\n"
+       "  (before (g/reset!) (g/run-before-scenario-hooks!))\n"
+       "  (after (g/run-after-scenario-hooks!))\n"
+       "  (after-all (g/run-after-feature-hooks!))\n\n"
        scenario-blocks ")\n"))
 
 (defmethod gen/wrap-scenario :speclj
@@ -32,7 +36,7 @@
                         (map #'gen/generate-step-call-with-extras)))
         step-calls (->> (:steps scenario)
                         (map #'gen/generate-step-call-with-extras))
-        all-calls (concat ["(g/reset!)"] bg-calls step-calls)
+        all-calls (concat bg-calls step-calls)
         body (->> all-calls
                   (map #(str "    " %))
                   (str/join "\n"))]
@@ -57,11 +61,15 @@
   [config]
   (g/set-test-framework! :speclj)
   (let [output-dir (or (:output-dir config) "target/gherclj/generated")
-        fw-opts (or (:framework-opts config) [])
-        args (if (seq fw-opts)
-               fw-opts
-               ["-c" output-dir "-s" "src"])]
-    (apply speclj/run args)))
+         fw-opts (or (:framework-opts config) [])
+         args (if (seq fw-opts)
+                fw-opts
+                ["-c" output-dir "-s" "src"])]
+    (g/run-before-all-hooks!)
+    (try
+      (apply speclj/run args)
+      (finally
+        (g/run-after-all-hooks!)))))
 
 (defmethod g/should= :speclj [expected actual] (sc/should= expected actual))
 (defmethod g/should :speclj [value] (sc/should value))

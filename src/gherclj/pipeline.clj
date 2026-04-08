@@ -106,11 +106,15 @@
         (let [ir (edn/read-string (slurp f))
               out-name (source->spec-filename (:source ir) test-framework)
               out-path (str output-dir "/" out-name)
-              spec-str (gen/generate-spec config ir)]
-          (io/make-parents (io/file out-path))
-          (log verbose (str "Generating " out-path " from " (.getName f)))
-          (spit out-path spec-str)
-          (log verbose (str "  " (count (:scenarios ir)) " scenarios generated")))))))
+              spec-str (gen/generate-spec config ir)
+              out-file (io/file out-path)]
+          (io/make-parents out-file)
+          (if spec-str
+            (do
+              (log verbose (str "Generating " out-path " from " (.getName f)))
+              (spit out-path spec-str)
+              (log verbose (str "  " (count (:scenarios ir)) " scenarios generated")))
+            (.delete out-file)))))))
 
 (defn run!
   "Run the full pipeline: parse .feature -> .edn -> generated specs.

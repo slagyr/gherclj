@@ -135,7 +135,31 @@
       (should= 1 (core/get :x))
       (should= 2 (core/get :y)))
 
-    (it "preserves internal :_gherclj key across user operations"
-      (core/reset!)
-      (core/assoc! :user-data "hello")
-      (should-not-be-nil (core/get-in [:_gherclj])))))
+     (it "preserves internal :_gherclj key across user operations"
+       (core/reset!)
+       (core/assoc! :user-data "hello")
+       (should-not-be-nil (core/get-in [:_gherclj]))))
+
+  (context "lifecycle hooks"
+
+    (before
+      (core/clear-lifecycle-hooks!))
+
+    (it "runs registered hooks in registration order"
+      (let [events (atom [])
+            record! #(swap! events conj %)]
+        (core/before-feature (fn [] (record! :first)))
+        (core/before-feature (fn [] (record! :second)))
+
+        (core/run-before-feature-hooks!)
+
+        (should= [:first :second] @events)))
+
+    (it "does not clear registered lifecycle hooks on state reset"
+      (let [events (atom [])]
+        (core/after-scenario #(swap! events conj :cleanup))
+
+        (core/reset!)
+        (core/run-after-scenario-hooks!)
+
+        (should= [:cleanup] @events)))))

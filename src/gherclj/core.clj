@@ -10,6 +10,39 @@
 
 (defonce ^:private state (atom {}))
 
+(def ^:private lifecycle-stages
+  [:before-all :before-feature :before-scenario :after-scenario :after-feature :after-all])
+
+(defonce ^:private lifecycle-hooks
+  (atom (zipmap lifecycle-stages (repeat []))))
+
+(defn- register-lifecycle-hook! [stage f]
+  (clojure.core/swap! lifecycle-hooks clojure.core/update stage conj f)
+  nil)
+
+(defn clear-lifecycle-hooks!
+  "Clear all registered lifecycle hooks. Intended for tests."
+  []
+  (clojure.core/reset! lifecycle-hooks (zipmap lifecycle-stages (repeat []))))
+
+(defn- run-lifecycle-hooks! [stage]
+  (doseq [f (clojure.core/get @lifecycle-hooks stage)]
+    (f)))
+
+(defn before-all [f] (register-lifecycle-hook! :before-all f))
+(defn before-feature [f] (register-lifecycle-hook! :before-feature f))
+(defn before-scenario [f] (register-lifecycle-hook! :before-scenario f))
+(defn after-scenario [f] (register-lifecycle-hook! :after-scenario f))
+(defn after-feature [f] (register-lifecycle-hook! :after-feature f))
+(defn after-all [f] (register-lifecycle-hook! :after-all f))
+
+(defn run-before-all-hooks! [] (run-lifecycle-hooks! :before-all))
+(defn run-before-feature-hooks! [] (run-lifecycle-hooks! :before-feature))
+(defn run-before-scenario-hooks! [] (run-lifecycle-hooks! :before-scenario))
+(defn run-after-scenario-hooks! [] (run-lifecycle-hooks! :after-scenario))
+(defn run-after-feature-hooks! [] (run-lifecycle-hooks! :after-feature))
+(defn run-after-all-hooks! [] (run-lifecycle-hooks! :after-all))
+
 (defn reset!
   "Clear user state, preserving internal keys."
   []
