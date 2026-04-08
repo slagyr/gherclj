@@ -38,3 +38,8 @@ Feature: Framework passthrough options
       """
       {:framework-opts []}
       """
+
+  Scenario: Speclj passthrough options are appended to generated spec defaults
+    Given generated specs in "target/gherclj/generated"
+    When speclj runs with framework options ["-f" "documentation" "-c" "-P"]
+    Then speclj should receive args ["-c" "target/gherclj/generated" "-s" "src" "-f" "documentation" "-c" "-P"]

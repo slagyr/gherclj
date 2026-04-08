@@ -57,14 +57,15 @@
          step-comments "\n"
          "    (pending \"not yet implemented\"))")))
 
+(defn run-args
+  [{:keys [output-dir framework-opts]
+    :or {output-dir "target/gherclj/generated"}}]
+  (into ["-c" output-dir "-s" "src"] (or framework-opts [])))
+
 (defmethod gen/run-specs :speclj
   [config]
   (g/set-test-framework! :speclj)
-  (let [output-dir (or (:output-dir config) "target/gherclj/generated")
-         fw-opts (or (:framework-opts config) [])
-         args (if (seq fw-opts)
-                fw-opts
-                ["-c" output-dir "-s" "src"])]
+  (let [args (run-args config)]
     (g/run-before-all-hooks!)
     (try
       (apply speclj/run args)
