@@ -1,5 +1,13 @@
 # Changes
 
+## v0.6.0
+
+- Lifecycle hooks for generated runs, features, and scenarios: `before-all`, `before-feature`, `before-scenario`, `after-scenario`, `after-feature`, `after-all`
+- Tag-filtered generation skips empty Speclj files and removes stale generated specs when no scenarios survive filtering
+- Speclj passthrough options now append to the default generated-spec runner args instead of replacing them
+- Background-only step namespaces are included in generated requires
+- `bb features-slow` task for running `@slow` feature specs with Speclj documentation output and profiling
+
 ## v0.5.0
 
 - `@wip` tag always excluded unless explicitly included via `-t wip`

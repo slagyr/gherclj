@@ -26,7 +26,7 @@ Each stage produces a visible, inspectable artifact. If a step isn't matching, c
 
 ```clojure
 ;; deps.edn or bb.edn
-{:deps {io.github.slagyr/gherclj {:git/tag "v0.5.0" :git/sha "9748af5"}}}
+{:deps {io.github.slagyr/gherclj {:git/tag "v0.6.0" :git/sha "PENDING"}}}
 ```
 
 ### 2. Write features
@@ -114,7 +114,7 @@ There are several ways to configure and run the pipeline.
 
 ```clojure
 ;; bb.edn
-{:deps {io.github.slagyr/gherclj {:git/tag "v0.5.0" :git/sha "9748af5"}}
+{:deps {io.github.slagyr/gherclj {:git/tag "v0.6.0" :git/sha "PENDING"}}
  :tasks
  {features {:doc "Run feature specs"
             :requires ([gherclj.main :as main])
@@ -123,7 +123,7 @@ There are several ways to configure and run the pipeline.
                               "-t" "speclj")}}}
 
 ;; deps.edn
-{:deps {io.github.slagyr/gherclj {:git/tag "v0.5.0" :git/sha "9748af5"}}
+{:deps {io.github.slagyr/gherclj {:git/tag "v0.6.0" :git/sha "PENDING"}}
  :aliases
  {:features {:main-opts ["-m" "gherclj.main"
                          "-s" "myapp.features.steps.auth"
@@ -184,14 +184,17 @@ The generated specs are clean, readable function calls:
 
 (describe "Authentication"
 
+  (before-all (g/run-before-feature-hooks!))
+  (before (g/reset!) (g/run-before-scenario-hooks!))
+  (after (g/run-after-scenario-hooks!))
+  (after-all (g/run-after-feature-hooks!))
+
   (it "Admin can log in"
-    (g/reset!)
     (auth/create-user "alice" "admin")
     (auth/user-logs-in)
     (auth/response-status 200))
 
   (it "Guest gets 401"
-    (g/reset!)
     (auth/create-user "unknown" "guest")
     (auth/user-logs-in)
     (auth/response-status 401)))
@@ -233,14 +236,14 @@ gherclj -t smoke -t '~slow'  # combine include and exclude
 
 ### Framework passthrough options
 
-Pass framework-specific options to the test runner via `--` on the CLI or `:framework-opts` in config. When provided, these replace the default runner arguments entirely.
+Pass framework-specific options to the test runner via `--` on the CLI or `:framework-opts` in config. When provided, these are appended to the default runner arguments.
 
 ```bash
 # Pass options to speclj after --
-clj -M -m gherclj.main -- -c spec/myapp -s src --no-color
+clj -M -m gherclj.main -- -f documentation -c -P
 
 # Or in gherclj.edn
-{:framework-opts ["-c" "spec/myapp" "-s" "src"]}
+{:framework-opts ["-f" "documentation" "-c" "-P"]}
 ```
 
 CLI `--` arguments override `:framework-opts` from the config file.
@@ -269,6 +272,9 @@ Add a bb task for easy access:
 ;; bb.edn
 feature-docs {:requires ([gherclj.main :as main])
               :task     (main/-main "--" "-f" "documentation" "-c" "-P")}
+
+features-slow {:requires ([gherclj.main :as main])
+               :task     (main/-main "-t" "slow" "--" "-f" "documentation" "-P")}
 ```
 
 ## State Management
@@ -337,4 +343,3 @@ bb features   # Run feature specs (parse + generate + execute)
 bb test       # Run all tests
 bb clean      # Remove generated files
 ```
-
