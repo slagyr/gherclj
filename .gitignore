@@ -3,6 +3,7 @@
 *.jar
 .claude/
 .cpcache/
+.env
 .idea/
 .nrepl-port
 .toolbox/
