@@ -237,6 +237,20 @@ gherclj -t wip            # only @wip scenarios
 gherclj -t smoke -t '~slow'  # combine include and exclude
 ```
 
+### Scenario location selection
+
+You can run only specific scenarios by passing `file:line` selectors as positional arguments. A selector matches the scenario whose declaration contains the given line.
+
+```bash
+gherclj features/adventure/dragon_cave.feature:42
+
+# Multiple selectors run all selected scenarios in one invocation
+gherclj features/adventure/dragon_cave.feature:42 \
+        features/adventure/moon_castle.feature:73
+```
+
+Location selectors combine with normal options like `-f`, `-e`, `-o`, and tag filters.
+
 ### Framework passthrough options
 
 Pass framework-specific options to the test runner via `--` on the CLI or `:framework-opts` in config. When provided, these are appended to the default runner arguments.
