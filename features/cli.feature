@@ -15,7 +15,6 @@ Feature: CLI
     And the output should contain "-s, --step-namespaces NS"
     And the output should contain "-t, --tag TAG"
     And the output should contain "prefix the tag with ~"
-    And the output should contain "(default: ~wip)"
     And the output should contain "-T, --test-framework FRAMEWORK"
     And the output should contain "-v, --verbose"
     And the output should contain "-h, --help"

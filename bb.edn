@@ -32,20 +32,28 @@
                  :task     (speclj/-main "-c" "spec/gherclj" "-s" "src")}
 
   features      {:doc      "Run feature specs (parse, generate, execute)"
-                 :requires ([gherclj.main :as main])
-                 :task     (apply main/-main *command-line-args*)}
+                  :requires ([gherclj.main :as main])
+                  :task     (let [has-tag? (some #{"-t" "--tag"} *command-line-args*)
+                                  args (if has-tag?
+                                         *command-line-args*
+                                         (concat ["-t" "~wip"] *command-line-args*))]
+                              (apply main/-main args))}
 
   feature-docs  {:doc      "Run feature specs with documentation reporter"
-                 :requires ([gherclj.main :as main])
-                 :task     (main/-main "--" "-f" "documentation" "-c" "-P")}
+                  :requires ([gherclj.main :as main])
+                  :task     (main/-main "-t" "~wip" "--" "-f" "documentation" "-c" "-P")}
 
   features-slow {:doc      "Run @slow feature specs with documentation reporter, color, and profiling"
-                 :requires ([gherclj.main :as main])
-                 :task     (main/-main "-t" "slow" "--" "-f" "documentation" "-P")}
+                  :requires ([gherclj.main :as main])
+                  :task     (main/-main "-t" "slow" "-t" "~wip" "--" "-f" "documentation" "-P")}
 
   features-ct   {:doc      "Run feature specs with clojure.test"
-                 :requires ([gherclj.main :as main])
-                 :task     (main/-main "-T" "clojure.test" *command-line-args*)}
+                  :requires ([gherclj.main :as main])
+                  :task     (let [has-tag? (some #{"-t" "--tag"} *command-line-args*)
+                                  args (if has-tag?
+                                         (concat ["-T" "clojure.test"] *command-line-args*)
+                                         (concat ["-T" "clojure.test" "-t" "~wip"] *command-line-args*))]
+                              (apply main/-main args))}
 
   test          {:doc  "Run all tests (unit specs + feature specs)"
                  :task (do (run 'spec) (run 'features))}

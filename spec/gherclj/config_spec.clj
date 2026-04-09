@@ -37,6 +37,12 @@
                       :test-framework :speclj})]
         (should= [] (:step-namespaces result))))
 
+    (it "applies defaults for exclude-tags"
+      (let [result (schema/conform config/pipeline-schema
+                     {:features-dir "features"
+                      :test-framework :speclj})]
+        (should= [] (:exclude-tags result))))
+
     (it "coerces verbose to boolean"
       (let [result (schema/conform config/pipeline-schema
                      {:features-dir "features"
@@ -58,6 +64,7 @@
         (should= "target/gherclj/edn" (:edn-dir result))
         (should= "target/gherclj/generated" (:output-dir result))
         (should= [] (:step-namespaces result))
+        (should= [] (:exclude-tags result))
         (should= :speclj (:test-framework result))
         (should= false (:verbose result))))
 

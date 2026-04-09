@@ -55,7 +55,7 @@ Feature: Config file loading
        :verbose false
        :framework-opts []
        :include-tags []
-       :exclude-tags ["wip"]}
+       :exclude-tags []}
       """
 
   Scenario: Config file is validated

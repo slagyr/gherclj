@@ -215,6 +215,8 @@ gherclj reads configuration from `gherclj.edn` (project root or classpath), with
 | `:test-framework` | `:speclj` | `:speclj` or `:clojure.test` |
 | `:verbose` | `false` | Print progress to stdout |
 | `:framework-opts` | `[]` | Options passed to the test runner |
+| `:include-tags` | `[]` | Include scenarios that match any listed tag |
+| `:exclude-tags` | `[]` | Exclude scenarios that match any listed tag |
 
 Step namespaces support glob patterns for discovery:
 
@@ -226,11 +228,12 @@ Step namespaces support glob patterns for discovery:
 
 ### Tag filtering
 
-Scenarios tagged `@wip` are always excluded from generation unless explicitly included. Use `-t` to filter by additional tags:
+Tags are filtered uniformly. Use `-t` to include tags and `-t '~tag'` to exclude tags:
 
 ```bash
 gherclj -t smoke          # only @smoke scenarios
-gherclj -t '~slow'        # exclude @slow (wip still excluded)
+gherclj -t '~slow'        # exclude @slow
+gherclj -t wip            # only @wip scenarios
 gherclj -t smoke -t '~slow'  # combine include and exclude
 ```
 
@@ -271,10 +274,10 @@ Add a bb task for easy access:
 ```clojure
 ;; bb.edn
 feature-docs {:requires ([gherclj.main :as main])
-              :task     (main/-main "--" "-f" "documentation" "-c" "-P")}
+              :task     (main/-main "-t" "~wip" "--" "-f" "documentation" "-c" "-P")}
 
 features-slow {:requires ([gherclj.main :as main])
-               :task     (main/-main "-t" "slow" "--" "-f" "documentation" "-P")}
+               :task     (main/-main "-t" "slow" "-t" "~wip" "--" "-f" "documentation" "-P")}
 ```
 
 ## State Management
@@ -378,7 +381,7 @@ The following skills are available for AI coding agents working with gherclj:
 bb parse      # Parse .feature files → EDN IR
 bb generate   # Generate spec files from EDN
 bb spec       # Run unit specs
-bb features   # Run feature specs (parse + generate + execute)
+bb features   # Run feature specs (parse + generate + execute, excludes @wip by default)
 bb test       # Run all tests
 bb clean      # Remove generated files
 ```
