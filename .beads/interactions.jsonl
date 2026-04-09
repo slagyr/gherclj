@@ -146,3 +146,5 @@
 {"id":"int-9ed27750","kind":"field_change","created_at":"2026-04-09T04:41:30.610456Z","actor":"Micah","issue_id":"gherclj-9wy","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Closed"}}
 {"id":"int-07832fc5","kind":"field_change","created_at":"2026-04-09T17:23:52.946807Z","actor":"Micah","issue_id":"gherclj-p9e","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}
 {"id":"int-99df9ade","kind":"field_change","created_at":"2026-04-09T17:31:46.43251Z","actor":"Micah","issue_id":"gherclj-p9e","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Closed"}}
+{"id":"int-9c94999e","kind":"field_change","created_at":"2026-04-09T17:34:47.308904Z","actor":"Micah","issue_id":"gherclj-70b","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}
+{"id":"int-7c0a2e60","kind":"field_change","created_at":"2026-04-09T17:37:16.374426Z","actor":"Micah","issue_id":"gherclj-70b","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Closed"}}

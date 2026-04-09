@@ -104,22 +104,28 @@
   [path]
   (g/should-not (.exists (io/file base-dir (strip-quotes path)))))
 
+(defthen file-should-exist-and "{path} should exist and:"
+  [path table]
+  (let [file (io/file base-dir (strip-quotes path))]
+    (g/should (.exists file))
+    (let [content (slurp file)
+          {:keys [headers rows]} table]
+      (doseq [row rows
+              :let [m (zipmap headers row)
+                    check (get m "check")
+                    value (get m "value")]]
+        (g/should (contains? #{"contains" "not-contains"} check))
+        (case check
+          "contains" (g/should (str/includes? content value))
+          "not-contains" (g/should-not (str/includes? content value))
+          nil)))))
+
 (defthen file-should-contain-ir #"^(\S+) should contain IR:$"
   [path doc-string]
   (let [p (strip-quotes path)
         actual (edn/read-string (slurp (io/file base-dir p)))
         expected (edn/read-string doc-string)]
     (g/should= expected actual)))
-
-(defthen file-should-contain #"^(\S+) should contain \"(.+)\"$"
-  [path text]
-  (let [content (slurp (io/file base-dir (strip-quotes path)))]
-    (g/should (str/includes? content text))))
-
-(defthen file-should-not-contain #"^(\S+) should not contain \"(.+)\"$"
-  [path text]
-  (let [content (slurp (io/file base-dir (strip-quotes path)))]
-    (g/should-not (str/includes? content text))))
 
 (defthen file-should-contain-ir-with-n-scenarios "{path} should contain IR with {n:int} scenarios"
   [path n]

@@ -56,10 +56,12 @@ Feature: Recursive feature discovery
           Given a valid user
       """
     When the full pipeline runs with framework :speclj
-    Then "target/gherclj/generated/session/keys_spec.clj" should exist
-    And "target/gherclj/generated/session/keys_spec.clj" should contain "(ns session.keys-spec"
-    And "target/gherclj/generated/auth_spec.clj" should exist
-    And "target/gherclj/generated/auth_spec.clj" should contain "(ns auth-spec"
+    Then "target/gherclj/generated/session/keys_spec.clj" should exist and:
+      | check    | value                 |
+      | contains | (ns session.keys-spec |
+    And "target/gherclj/generated/auth_spec.clj" should exist and:
+      | check    | value         |
+      | contains | (ns auth-spec |
 
   Scenario: Single run with multiple step namespaces across subdirectories
     Given a features directory containing:
@@ -104,6 +106,7 @@ Feature: Recursive feature discovery
           Given a valid user
       """
     When the full pipeline runs with framework :clojure.test
-    Then "target/gherclj/generated/session/keys_test.clj" should exist
-    And "target/gherclj/generated/session/keys_test.clj" should contain "(ns session.keys-test"
+    Then "target/gherclj/generated/session/keys_test.clj" should exist and:
+      | check    | value                 |
+      | contains | (ns session.keys-test |
     And "target/gherclj/generated/auth_test.clj" should exist
