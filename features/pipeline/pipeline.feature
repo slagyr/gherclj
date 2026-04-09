@@ -154,6 +154,24 @@ Feature: Pipeline
     Then "target/gherclj/edn/auth.edn" should exist
     And "target/gherclj/generated/auth_test.clj" should exist
 
+  Scenario: Full pipeline resolves globbed step namespaces from classpath roots
+    Given a features directory containing:
+      | file          |
+      | auth.feature  |
+    And the feature "auth.feature" contains:
+      """
+      Feature: Auth
+
+        Scenario: Login
+          Given a user "alice" with role "admin"
+          When the user logs in
+          Then the response status should be 200
+      """
+    And step namespaces include pattern "gherclj.pipeline-*"
+    When the full pipeline runs with framework :speclj
+    Then "target/gherclj/generated/auth_spec.clj" should exist
+    And "target/gherclj/generated/auth_spec.clj" should contain "pipeline-spec/setup-user"
+
   Scenario: WIP scenarios are parsed but not generated
     Given a features directory containing:
       | file          |

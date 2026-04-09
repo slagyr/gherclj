@@ -19,7 +19,7 @@
     (require fw-ns)))
 
 (defn- scan-namespaces
-  "Scan source directories for .clj files and derive namespace symbols."
+  "Scan directories for .clj files and derive namespace symbols."
   [dirs]
   (->> dirs
        (mapcat (fn [dir]
@@ -34,15 +34,29 @@
                                        (str/replace "/" ".")
                                        (str/replace "_" "-")
                                        symbol)))))))))
-       vec))
+        vec))
+
+(defn- classpath-roots
+  "Return classpath directory entries used for namespace glob resolution."
+  []
+  (let [classpath (or (System/getProperty "java.class.path") "")
+        path-separator (re-pattern (java.util.regex.Pattern/quote (System/getProperty "path.separator")))]
+    (or (seq (->> (str/split classpath path-separator)
+                  (remove str/blank?)
+                  (map io/file)
+                  (filter #(.isDirectory %))
+                  (map str)
+                  distinct
+                  vec))
+        ["src"])))
 
 (defn- ensure-steps-loaded!
   "Resolve glob patterns and require all step namespaces."
   [step-namespaces]
   (let [has-globs? (some string? step-namespaces)
         resolved (if has-globs?
-                   (let [available (scan-namespaces ["src"])]
-                     (discovery/resolve-step-namespaces step-namespaces available))
+                   (let [available (scan-namespaces (classpath-roots))]
+                      (discovery/resolve-step-namespaces step-namespaces available))
                    (vec step-namespaces))]
     (doseq [ns-sym resolved]
       (require ns-sym))

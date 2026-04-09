@@ -14,10 +14,10 @@
 (defn- pipeline-config [& {:keys [verbose framework include-tags exclude-tags]}]
   (cond-> {:features-dir (g/get :pipeline-dir)
            :edn-dir (edn-dir)
-           :output-dir (output-dir)}
+           :output-dir (output-dir)
+           :step-namespaces (or (g/get :step-namespaces) [])}
     verbose (assoc :verbose true)
-    framework (assoc :test-framework framework
-                     :step-namespaces [])
+    framework (assoc :test-framework framework)
     include-tags (assoc :include-tags include-tags)
     exclude-tags (assoc :exclude-tags exclude-tags)))
 
@@ -47,6 +47,10 @@
   []
   (let [output (with-out-str (pipeline/parse! (pipeline-config)))]
     (g/assoc! :pipeline-output output)))
+
+(defgiven step-namespace-pattern "step namespaces include pattern {pattern:string}"
+  [pattern]
+  (g/assoc! :step-namespaces [pattern]))
 
 ;; --- When steps ---
 
