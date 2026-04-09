@@ -154,6 +154,59 @@ Feature: Pipeline
     Then "target/gherclj/edn/auth.edn" should exist
     And "target/gherclj/generated/auth_test.clj" should exist
 
+  @wip
+  Scenario: Generated speclj output can be verified with grouped assertions
+    Given a features directory containing:
+      | file         |
+      | auth.feature |
+    And the feature "auth.feature" contains:
+      """
+      Feature: Auth
+
+        Scenario: Login
+          Given a user "alice" with role "admin"
+          When the user logs in
+          Then the response status should be 200
+      """
+    When the full pipeline runs with framework :speclj
+    Then "target/gherclj/generated/auth_spec.clj" should exist and:
+      | check        | value                          |
+      | contains     | describe "Auth"              |
+      | contains     | pipeline-spec/setup-user      |
+      | contains     | pipeline-spec/user-logs-in    |
+      | contains     | pipeline-spec/response-status |
+      | not-contains | pending                       |
+
+  @wip
+  Scenario: Grouped assertions can verify filtered generated output
+    Given a features directory containing:
+      | file            |
+      | logging.feature |
+    And the feature "logging.feature" contains:
+      """
+      Feature: Logging
+
+        @slow
+        Scenario: Slow logging check
+          Given a user "alice"
+          When the user logs in
+          Then the response should be 200
+
+        @smoke
+        Scenario: Fast logging check
+          Given a user "bob"
+          When the user logs in
+          Then the response should be 200
+      """
+    When the full pipeline runs with framework :speclj and tags:
+      | tag   |
+      | smoke |
+    Then "target/gherclj/generated/logging_spec.clj" should exist and:
+      | check        | value              |
+      | contains     | Fast logging check |
+      | not-contains | Slow logging check |
+
+  @wip
   Scenario: Full pipeline resolves globbed step namespaces from classpath roots
     Given a features directory containing:
       | file          |
@@ -169,10 +222,14 @@ Feature: Pipeline
       """
     And step namespaces include pattern "gherclj.pipeline-*"
     When the full pipeline runs with framework :speclj
-    Then "target/gherclj/generated/auth_spec.clj" should exist
-    And "target/gherclj/generated/auth_spec.clj" should contain "pipeline-spec/setup-user"
+    Then "target/gherclj/generated/auth_spec.clj" should exist and:
+      | check        | value                         |
+      | contains     | pipeline-spec/setup-user      |
+      | contains     | pipeline-spec/user-logs-in    |
+      | contains     | pipeline-spec/response-status |
+      | not-contains | pending                       |
 
-  Scenario: WIP scenarios are parsed but not generated
+  Scenario: WIP scenarios are parsed and generated when unfiltered
     Given a features directory containing:
       | file          |
       | auth.feature  |
@@ -190,7 +247,7 @@ Feature: Pipeline
     When the full pipeline runs with framework :speclj
     Then "target/gherclj/edn/auth.edn" should contain IR with 2 scenarios
     And "target/gherclj/generated/auth_spec.clj" should contain "Ready"
-    And "target/gherclj/generated/auth_spec.clj" should not contain "Not ready"
+    And "target/gherclj/generated/auth_spec.clj" should contain "Not ready"
 
   Scenario: Excluding all scenarios omits the generated Speclj file
     Given a features directory containing:
