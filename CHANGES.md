@@ -1,5 +1,12 @@
 # Changes
 
+## v0.7.0
+
+- Scenario location selection via `file:line` selectors, including multiple selectors in one invocation
+- Step namespace globs now resolve from classpath roots, so globbed step discovery can find namespaces under `spec/`
+- Grouped generated-file assertions in pipeline acceptance specs using `"{path}" should exist and:`
+- `wip` is now treated like any other tag; default `~wip` behavior moved into the project tasks and aliases
+
 ## v0.6.1
 
 - `gherclj.lifecycle` extracted into its own namespace; framework adapters call it directly

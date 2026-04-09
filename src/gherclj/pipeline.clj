@@ -93,15 +93,26 @@
 (defn- scenario-ranges [feature-file]
   (let [lines (str/split-lines (slurp feature-file))
         count-lines (count lines)
-        starts (->> lines
-                    (map-indexed (fn [idx line]
-                                   (let [line-number (inc idx)
-                                         trimmed (str/trim line)]
-                                     (when-let [title (scenario-title trimmed)]
-                                       {:scenario title
-                                        :start-line line-number}))))
-                    (remove nil?)
-                    vec)]
+        {:keys [starts]} (reduce (fn [{:keys [in-doc-string starts]} [idx line]]
+                                  (let [line-number (inc idx)
+                                        trimmed (str/trim line)]
+                                    (cond
+                                      (= "\"\"\"" trimmed)
+                                      {:in-doc-string (not in-doc-string)
+                                       :starts starts}
+
+                                      in-doc-string
+                                      {:in-doc-string in-doc-string
+                                       :starts starts}
+
+                                      :else
+                                      {:in-doc-string in-doc-string
+                                       :starts (if-let [title (scenario-title trimmed)]
+                                                 (conj starts {:scenario title
+                                                               :start-line line-number})
+                                                 starts)})))
+                                {:in-doc-string false :starts []}
+                                (map-indexed vector lines))]
     (mapv (fn [idx {:keys [scenario start-line]}]
             (let [next-start (:start-line (nth starts (inc idx) nil))]
               {:scenario scenario
