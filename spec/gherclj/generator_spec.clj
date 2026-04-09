@@ -128,7 +128,7 @@
                                      {:type :then :text "the result should be ok"}]}]}
             result (gen/generate-spec config ir)]
         (should (str/includes? result "[gherclj.features.steps.sample-app :as sample-app]"))
-        (should (str/includes? result "(sample-app/create-user \"alice\")"))))
+        (should (str/includes? result "(sample-app/create-adventurer \"alice\")"))))
 
   (context "generate-step-call with string args"
 

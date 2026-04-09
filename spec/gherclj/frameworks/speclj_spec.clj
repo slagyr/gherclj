@@ -54,12 +54,12 @@
     (it "wraps steps in an it block with the scenario title"
       (let [scenario {:scenario "User can log in"
                       :steps [{:type :given :text "a user exists" :classified? true
-                               :ns 'myapp.steps :name "setup-user" :args []}
+                               :ns 'myapp.steps :name "summon-hero" :args []}
                               {:type :when :text "they log in" :classified? true
                                :ns 'myapp.steps :name "log-in" :args []}]}
             result (gen/wrap-scenario {:test-framework :speclj} scenario nil)]
         (should (str/includes? result "(it \"User can log in\""))
-        (should (str/includes? result "steps/setup-user"))
+        (should (str/includes? result "steps/summon-hero"))
         (should (str/includes? result "steps/log-in"))))
 
     (it "includes background steps before scenario steps"

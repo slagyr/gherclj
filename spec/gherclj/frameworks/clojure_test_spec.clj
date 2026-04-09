@@ -53,13 +53,13 @@
     (it "wraps steps in a deftest with slugified name"
       (let [scenario {:scenario "User Can Log In"
                       :steps [{:type :given :text "a user exists" :classified? true
-                               :ns 'myapp.steps :name "setup-user" :args []}
+                               :ns 'myapp.steps :name "summon-hero" :args []}
                               {:type :when :text "they log in" :classified? true
                                :ns 'myapp.steps :name "log-in" :args []}]}
             result (gen/wrap-scenario {:test-framework :clojure.test} scenario nil)]
         (should (str/includes? result "(deftest user-can-log-in"))
         (should (str/includes? result "(testing \"User Can Log In\""))
-        (should (str/includes? result "steps/setup-user"))
+        (should (str/includes? result "steps/summon-hero"))
         (should (str/includes? result "steps/log-in"))))
 
     (it "includes background steps before scenario steps"
