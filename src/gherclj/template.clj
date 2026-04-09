@@ -43,27 +43,23 @@
      {name}        → word capture (\\S+)"
   [template]
   (let [token-re #"\{([^}]+)\}"
-        matcher (re-matcher token-re template)
-        result (loop [pos 0
-                      regex-parts []
-                      bindings []]
-                 (if (.find matcher)
-                   (let [match-start (.start matcher)
-                         match-end (.end matcher)
-                         inner (.group matcher 1)
-                         literal (subs template pos match-start)
-                         escaped-literal (apply str (map escape-regex-char literal))
-                         capture (parse-capture inner)
-                         capture-regex (str "(" (:regex capture) ")")]
-                     (recur match-end
-                            (conj regex-parts escaped-literal capture-regex)
-                            (conj bindings {:name (:name capture) :coerce (:coerce capture)})))
-                   (let [remaining (subs template pos)
-                         escaped-remaining (apply str (map escape-regex-char remaining))]
-                     {:regex-str (str "^" (apply str (conj regex-parts escaped-remaining)) "$")
-                      :bindings bindings})))]
-    {:regex (re-pattern (:regex-str result))
-     :bindings (:bindings result)}))
+        literals (str/split template token-re -1)
+        captures (mapv second (re-seq token-re template))
+        pairs (map vector literals (concat captures [nil]))
+        {:keys [regex-parts bindings]}
+        (reduce (fn [{:keys [regex-parts bindings]} [literal capture-expr]]
+                  (let [escaped-literal (apply str (map escape-regex-char literal))]
+                    (if capture-expr
+                      (let [capture (parse-capture capture-expr)
+                            capture-regex (str "(" (:regex capture) ")")]
+                        {:regex-parts (conj regex-parts escaped-literal capture-regex)
+                         :bindings (conj bindings {:name (:name capture) :coerce (:coerce capture)})})
+                      {:regex-parts (conj regex-parts escaped-literal)
+                       :bindings bindings})))
+                {:regex-parts [] :bindings []}
+                pairs)]
+    {:regex (re-pattern (str "^" (apply str regex-parts) "$"))
+     :bindings bindings}))
 
 (defn match-step
   "Match step text against a compiled template. Returns a vector of coerced

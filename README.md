@@ -184,10 +184,10 @@ The generated specs are clean, readable function calls:
 
 (describe "Authentication"
 
-  (before-all (g/run-before-feature-hooks!))
-  (before (g/reset!) (g/run-before-scenario-hooks!))
-  (after (g/run-after-scenario-hooks!))
-  (after-all (g/run-after-feature-hooks!))
+  (before-all (lifecycle/run-before-feature-hooks!))
+  (before (g/reset!) (lifecycle/run-before-scenario-hooks!))
+  (after (lifecycle/run-after-scenario-hooks!))
+  (after-all (lifecycle/run-after-feature-hooks!))
 
   (it "Admin can log in"
     (auth/create-user "alice" "admin")
@@ -292,6 +292,45 @@ gherclj provides a global state atom that is automatically reset before each sce
 (g/swap! f & args)             ;; arbitrary transformation
 (g/reset!)                     ;; clear all state
 ```
+
+## Lifecycle Hooks
+
+Step namespaces can register lifecycle hooks through `gherclj.core`:
+
+```clojure
+(ns myapp.features.steps.hooks
+  (:require [gherclj.core :as g]))
+
+(g/before-all #(println "starting feature run"))
+(g/before-feature #(println "starting feature"))
+(g/before-scenario #(println "starting scenario"))
+
+(g/after-scenario cleanup!)
+(g/after-feature #(println "finished feature"))
+(g/after-all #(println "finished feature run"))
+```
+
+Hook timing:
+- `g/before-all` - once before the generated test run starts
+- `g/before-feature` - once per generated feature file
+- `g/before-scenario` - before each generated scenario, after `g/reset!`
+- `g/after-scenario` - after each generated scenario, even when it fails
+- `g/after-feature` - once after each generated feature file finishes
+- `g/after-all` - once after the generated test run finishes
+
+Example cleanup hook:
+
+```clojure
+(defn cleanup! []
+  (app/stop!)
+  (when-let [s @mock-ollama-server]
+    (httpkit/server-stop! s)
+    (reset! mock-ollama-server nil)))
+
+(g/after-scenario cleanup!)
+```
+
+`g/before-all` and `g/after-all` run when specs are executed through gherclj's runner. If you invoke generated Speclj or `clojure.test` files directly, feature and scenario hooks still run, but the `all` hooks do not.
 
 ## Assertions
 

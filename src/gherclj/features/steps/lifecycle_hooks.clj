@@ -2,6 +2,7 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as str]
             [gherclj.core :as g :refer [defgiven defwhen defthen]]
+            [gherclj.lifecycle :as lifecycle]
             [gherclj.features.steps.sample-app]
             [gherclj.frameworks.clojure-test]
             [gherclj.frameworks.speclj]
@@ -41,7 +42,7 @@
 (defn- reset-lifecycle-state! []
   (clean-test-dir!)
   (clear-events!)
-  (g/clear-lifecycle-hooks!)
+  (lifecycle/clear!)
   (g/reset!))
 
 (defn- pipeline-config [framework]

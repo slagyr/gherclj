@@ -1,9 +1,10 @@
 (ns gherclj.frameworks.speclj
   (:require [clojure.string :as str]
-            [gherclj.core :as g]
-            [gherclj.generator :as gen]
-            [speclj.cli :as speclj]
-            [speclj.core :as sc]))
+             [gherclj.core :as g]
+             [gherclj.generator :as gen]
+             [gherclj.lifecycle :as lifecycle]
+             [speclj.cli :as speclj]
+             [speclj.core :as sc]))
 
 (defmethod gen/generate-ns-form :speclj
   [_config source step-ns-syms]
@@ -13,7 +14,8 @@
                        (map #(str "            [" % " :as " (gen/ns->alias %) "]")))]
     (str "(ns " ns-name "\n"
          "  (:require [speclj.core :refer :all]\n"
-         "            [gherclj.core :as g]"
+         "            [gherclj.core :as g]\n"
+         "            [gherclj.lifecycle :as lifecycle]"
          (when (seq step-reqs)
            (str "\n" (str/join "\n" step-reqs)))
          "))")))
@@ -21,10 +23,10 @@
 (defmethod gen/wrap-feature :speclj
   [_config feature-name scenario-blocks]
   (str "(describe \"" feature-name "\"\n\n"
-       "  (before-all (g/run-before-feature-hooks!))\n"
-       "  (before (g/reset!) (g/run-before-scenario-hooks!))\n"
-       "  (after (g/run-after-scenario-hooks!))\n"
-       "  (after-all (g/run-after-feature-hooks!))\n\n"
+       "  (before-all (lifecycle/run-before-feature-hooks!))\n"
+       "  (before (g/reset!) (lifecycle/run-before-scenario-hooks!))\n"
+       "  (after (lifecycle/run-after-scenario-hooks!))\n"
+       "  (after-all (lifecycle/run-after-feature-hooks!))\n\n"
        scenario-blocks ")\n"))
 
 (defmethod gen/wrap-scenario :speclj
@@ -66,11 +68,11 @@
   [config]
   (g/set-test-framework! :speclj)
   (let [args (run-args config)]
-    (g/run-before-all-hooks!)
+    (lifecycle/run-before-all-hooks!)
     (try
       (apply speclj/run args)
       (finally
-        (g/run-after-all-hooks!)))))
+        (lifecycle/run-after-all-hooks!)))))
 
 (defmethod g/should= :speclj [expected actual] (sc/should= expected actual))
 (defmethod g/should :speclj [value] (sc/should value))
