@@ -31,6 +31,22 @@
         (seq includes) (assoc :include-tags (vec includes))
         (seq excludes) (assoc :exclude-tags (mapv #(subs % 1) excludes))))))
 
+(defn- parse-location-arg [arg]
+  (when-let [[_ source line] (re-matches #"^(.+):(\d+)$" arg)]
+    {:source source
+     :line #?(:clj (Long/parseLong line)
+              :bb (Long/parseLong line))}))
+
+(defn- parse-positional-args [arguments]
+  (reduce (fn [{:keys [locations framework-opts]} arg]
+            (if-let [location (parse-location-arg arg)]
+              {:locations (conj locations location)
+               :framework-opts framework-opts}
+              {:locations locations
+               :framework-opts (conj framework-opts arg)}))
+          {:locations [] :framework-opts []}
+          arguments))
+
 (defn parse-args
   "Parse CLI arguments. Returns {:options map :help bool :errors seq}."
   [args]
@@ -38,14 +54,16 @@
         tags (let [t (:tag options)] (when-not (= :none t) t))
         tag-opts (parse-tag-flags tags)
         step-ns (let [s (:step-namespaces options)] (when-not (= :none s) s))
+        {:keys [locations framework-opts]} (parse-positional-args arguments)
         opts (-> (dissoc options :help :tag :step-namespaces)
-                 (merge tag-opts)
-                 (cond-> step-ns (assoc :step-namespaces step-ns)))]
+                  (merge tag-opts)
+                 (cond-> step-ns (assoc :step-namespaces step-ns)
+                         (seq locations) (assoc :locations locations)
+                         (seq framework-opts) (assoc :framework-opts framework-opts)))]
     (cond-> {:options opts
              :help (:help options)
              :errors errors
-             :summary summary}
-      (seq arguments) (assoc-in [:options :framework-opts] (vec arguments)))))
+             :summary summary})))
 
 (defn usage-message []
   (let [{:keys [summary]} (cli/parse-opts [] cli-options)]

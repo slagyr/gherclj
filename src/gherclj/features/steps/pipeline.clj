@@ -11,7 +11,13 @@
 (defn- edn-dir [] (str base-dir "/target/gherclj/edn"))
 (defn- output-dir [] (str base-dir "/target/gherclj/generated"))
 
-(defn- pipeline-config [& {:keys [verbose framework include-tags exclude-tags]}]
+(defn- clean-base-dir! []
+  (let [root (io/file base-dir)]
+    (when (.exists root)
+      (doseq [f (reverse (file-seq root))]
+        (.delete f)))))
+
+(defn- pipeline-config [& {:keys [verbose framework include-tags exclude-tags locations]}]
   (cond-> {:features-dir (g/get :pipeline-dir)
            :edn-dir (edn-dir)
            :output-dir (output-dir)
@@ -19,7 +25,8 @@
     verbose (assoc :verbose true)
     framework (assoc :test-framework framework)
     include-tags (assoc :include-tags include-tags)
-    exclude-tags (assoc :exclude-tags exclude-tags)))
+    exclude-tags (assoc :exclude-tags exclude-tags)
+    locations (assoc :locations locations)))
 
 (defn- strip-quotes [s]
   (if (and (str/starts-with? s "\"") (str/ends-with? s "\""))
@@ -31,6 +38,7 @@
 (defgiven setup-features-dir "a features directory containing:"
   [table]
   (let [dir (str base-dir "/features")]
+    (clean-base-dir!)
     (io/make-parents (io/file dir "dummy"))
     (doseq [row (:rows table)]
       (let [filename (first row)
@@ -89,9 +97,21 @@
         includes (vec (remove #(str/starts-with? % "~") tags))
         excludes (mapv #(subs % 1) (filter #(str/starts-with? % "~") tags))
         output (with-out-str
+                  (pipeline/run! (pipeline-config :framework framework
+                                                 :include-tags includes
+                                                 :exclude-tags excludes)))]
+    (g/assoc! :pipeline-output output)))
+
+(defwhen run-full-pipeline-with-locations "the full pipeline runs with framework {fw} and locations:"
+  [fw table]
+  (let [framework (keyword (str/replace fw #"^:" ""))
+        locations (mapv (fn [[selector]]
+                          (let [[_ source line] (re-matches #"^(.+):(\d+)$" selector)]
+                            {:source source :line (Long/parseLong line)}))
+                        (:rows table))
+        output (with-out-str
                  (pipeline/run! (pipeline-config :framework framework
-                                                :include-tags includes
-                                                :exclude-tags excludes)))]
+                                                :locations locations)))]
     (g/assoc! :pipeline-output output)))
 
 ;; --- Then steps ---
