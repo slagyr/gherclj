@@ -44,6 +44,19 @@
         (should= ["smoke"] (get-in result [:options :include-tags]))
         (should= ["slow" "wip"] (get-in result [:options :exclude-tags]))))
 
+    (it "parses a single file:line selector"
+      (let [result (main/parse-args ["features/adventure/dragon_cave.feature:42"])]
+        (should= [{:source "features/adventure/dragon_cave.feature"
+                   :line 42}]
+                 (get-in result [:options :locations]))))
+
+    (it "parses multiple file:line selectors"
+      (let [result (main/parse-args ["features/adventure/dragon_cave.feature:42"
+                                     "features/adventure/moon_castle.feature:73"])]
+        (should= [{:source "features/adventure/dragon_cave.feature" :line 42}
+                  {:source "features/adventure/moon_castle.feature" :line 73}]
+                 (get-in result [:options :locations]))))
+
     (it "accumulates step-namespaces"
       (let [result (main/parse-args ["-s" "myapp.steps.auth" "-s" "myapp.steps.cart"])]
         (should= ['myapp.steps.auth 'myapp.steps.cart]

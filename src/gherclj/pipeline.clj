@@ -79,6 +79,74 @@
 (defn- log [verbose & args]
   (when verbose (apply println args)))
 
+(defn- normalize-path [path]
+  (-> path
+      (str/replace "\\" "/")
+      (str/replace #"^\./" "")))
+
+(defn- scenario-title [trimmed]
+  (cond
+    (str/starts-with? trimmed "Scenario:") (str/trim (subs trimmed 9))
+    (str/starts-with? trimmed "Scenario Outline:") (str/trim (subs trimmed 17))
+    :else nil))
+
+(defn- scenario-ranges [feature-file]
+  (let [lines (str/split-lines (slurp feature-file))
+        count-lines (count lines)
+        starts (->> lines
+                    (map-indexed (fn [idx line]
+                                   (let [line-number (inc idx)
+                                         trimmed (str/trim line)]
+                                     (when-let [title (scenario-title trimmed)]
+                                       {:scenario title
+                                        :start-line line-number}))))
+                    (remove nil?)
+                    vec)]
+    (mapv (fn [idx {:keys [scenario start-line]}]
+            (let [next-start (:start-line (nth starts (inc idx) nil))]
+              {:scenario scenario
+               :start-line start-line
+               :end-line (or (some-> next-start dec) count-lines)}))
+          (range (count starts))
+          starts)))
+
+(defn- selector->relative-source [features-dir source]
+  (let [normalized-source (normalize-path source)
+        normalized-features-dir (normalize-path features-dir)
+        prefix (str normalized-features-dir "/")]
+    (if (str/starts-with? normalized-source prefix)
+      (subs normalized-source (count prefix))
+      normalized-source)))
+
+(defn- selected-scenario-name [features-dir {:keys [source line]}]
+  (let [relative-source (selector->relative-source features-dir source)
+        feature-file (io/file features-dir relative-source)
+        scenario (when (.exists feature-file)
+                   (->> (scenario-ranges feature-file)
+                        (some (fn [{:keys [scenario start-line end-line]}]
+                                (when (<= start-line line end-line)
+                                  scenario)))))]
+    (when-not scenario
+      (throw (ex-info (str "No scenario found for location " source ":" line)
+                      {:source source :line line})))
+    {:source relative-source
+     :scenario scenario}))
+
+(defn- selected-scenarios-by-source [features-dir locations]
+  (reduce (fn [acc location]
+            (let [{:keys [source scenario]} (selected-scenario-name features-dir location)]
+              (update acc source (fnil conj #{}) scenario)))
+          {}
+          locations))
+
+(defn- filter-ir-by-locations [ir selected]
+  (if-let [scenario-names (get selected (:source ir))]
+    (update ir :scenarios (fn [scenarios]
+                            (->> scenarios
+                                 (filter #(contains? scenario-names (:scenario %)))
+                                 vec)))
+    (assoc ir :scenarios [])))
+
 (defn parse!
   "Parse .feature files into .edn IR files.
 
@@ -107,17 +175,23 @@
      :step-namespaces - vector of namespace symbols containing step definitions
      :test-framework  - :speclj or :clojure.test"
   [config]
-  (let [{:keys [edn-dir output-dir step-namespaces test-framework verbose]
-         :or {edn-dir "target/gherclj/edn"
-              output-dir "target/gherclj/generated"}} config]
+  (let [{:keys [edn-dir output-dir step-namespaces test-framework verbose locations features-dir]
+          :or {edn-dir "target/gherclj/edn"
+               output-dir "target/gherclj/generated"
+               features-dir "features"}} config]
     (ensure-framework-loaded! test-framework)
     (let [resolved-steps (ensure-steps-loaded! step-namespaces)
           config (assoc config :step-namespaces resolved-steps)
+          selected-scenarios (when (seq locations)
+                               (selected-scenarios-by-source features-dir locations))
           edn-files (->> (file-seq (io/file edn-dir))
                          (filter #(str/ends-with? (.getName %) ".edn"))
                          (sort-by #(str (.toPath %))))]
       (doseq [f edn-files]
-        (let [ir (edn/read-string (slurp f))
+        (let [parsed-ir (edn/read-string (slurp f))
+              ir (if selected-scenarios
+                   (filter-ir-by-locations parsed-ir selected-scenarios)
+                   parsed-ir)
               out-name (source->spec-filename (:source ir) test-framework)
               out-path (str output-dir "/" out-name)
               spec-str (gen/generate-spec config ir)

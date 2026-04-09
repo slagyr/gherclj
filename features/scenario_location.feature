@@ -1,4 +1,3 @@
-@wip
 Feature: Scenario location selection
 
   gherclj can run specific scenarios by source location using

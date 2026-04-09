@@ -308,4 +308,93 @@
              :test-framework :speclj})
 
           (should-not (.exists spec-file))
+          (finally (cleanup features-dir edn-dir output-dir)))))
+
+    (it "generates only the scenario selected by file:line"
+      (let [features-dir (tmp "loc-features")
+            edn-dir (tmp "loc-edn")
+            output-dir (tmp "loc-output")
+            feature-file (io/file features-dir "adventure.feature")]
+        (io/make-parents feature-file)
+        (spit feature-file
+              (str "Feature: Adventure\n"
+                   "\n"
+                   "  Scenario: Wake the dragon\n"
+                   "    Given a user \"alice\" with role \"admin\"\n"
+                   "    When the user logs in\n"
+                   "    Then the response status should be 200\n"
+                   "\n"
+                   "  Scenario: Negotiate for treasure\n"
+                   "    Given a user \"bob\" with role \"guest\"\n"
+                   "    When the user logs in\n"
+                   "    Then the response status should be 200\n"))
+        (try
+          (pipeline/run!
+            {:features-dir features-dir
+             :edn-dir edn-dir
+             :output-dir output-dir
+             :step-namespaces ['gherclj.pipeline-spec]
+             :locations [{:source "adventure.feature" :line 4}]
+             :test-framework :speclj})
+
+          (let [content (slurp (io/file output-dir "adventure_spec.clj"))]
+            (should (str/includes? content "Wake the dragon"))
+            (should-not (str/includes? content "Negotiate for treasure")))
+          (finally (cleanup features-dir edn-dir output-dir)))))
+
+    (it "selects a scenario when the location line is inside its body"
+      (let [features-dir (tmp "loc-body-features")
+            edn-dir (tmp "loc-body-edn")
+            output-dir (tmp "loc-body-output")
+            feature-file (io/file features-dir "adventure.feature")]
+        (io/make-parents feature-file)
+        (spit feature-file
+              (str "Feature: Adventure\n"
+                   "\n"
+                   "  Scenario: Wake the dragon\n"
+                   "    Given a user \"alice\" with role \"admin\"\n"
+                   "\n"
+                   "  Scenario: Crown the raccoon king\n"
+                   "    Given a user \"bob\" with role \"guest\"\n"
+                   "    When the user logs in\n"
+                   "    Then the response status should be 200\n"))
+        (try
+          (pipeline/run!
+            {:features-dir features-dir
+             :edn-dir edn-dir
+             :output-dir output-dir
+             :step-namespaces ['gherclj.pipeline-spec]
+             :locations [{:source "adventure.feature" :line 8}]
+             :test-framework :speclj})
+
+          (let [content (slurp (io/file output-dir "adventure_spec.clj"))]
+            (should-not (str/includes? content "Wake the dragon"))
+            (should (str/includes? content "Crown the raccoon king")))
+          (finally (cleanup features-dir edn-dir output-dir)))))
+
+    (it "rejects unknown file:line selectors"
+      (let [features-dir (tmp "loc-missing-features")
+            edn-dir (tmp "loc-missing-edn")
+            output-dir (tmp "loc-missing-output")
+            feature-file (io/file features-dir "adventure.feature")]
+        (io/make-parents feature-file)
+        (spit feature-file
+              (str "Feature: Adventure\n"
+                   "\n"
+                   "  Scenario: Wake the dragon\n"
+                   "    Given a user \"alice\" with role \"admin\"\n"))
+        (try
+          (let [message (try
+                          (pipeline/run!
+                            {:features-dir features-dir
+                             :edn-dir edn-dir
+                             :output-dir output-dir
+                             :step-namespaces ['gherclj.pipeline-spec]
+                             :locations [{:source "adventure.feature" :line 99}]
+                             :test-framework :speclj})
+                          nil
+                          (catch RuntimeException e
+                            (.getMessage e)))]
+            (should (str/includes? message "No scenario found for location"))
+            (should (str/includes? message "adventure.feature:99")))
           (finally (cleanup features-dir edn-dir output-dir)))))))
