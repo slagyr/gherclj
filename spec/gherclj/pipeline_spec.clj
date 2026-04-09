@@ -397,4 +397,40 @@
                             (.getMessage e)))]
             (should (str/includes? message "No scenario found for location"))
             (should (str/includes? message "adventure.feature:99")))
+          (finally (cleanup features-dir edn-dir output-dir)))))
+
+    (it "ignores scenario-like lines inside doc-strings when selecting locations"
+      (let [features-dir (tmp "loc-doc-features")
+            edn-dir (tmp "loc-doc-edn")
+            output-dir (tmp "loc-doc-output")
+            feature-file (io/file features-dir "adventure.feature")]
+        (io/make-parents feature-file)
+        (spit feature-file
+              (str "Feature: Adventure\n"
+                   "\n"
+                   "  Scenario: Embedded feature text\n"
+                   "    Given a feature file containing:\n"
+                   "      \"\"\"\n"
+                   "      Feature: Embedded\n"
+                   "\n"
+                   "        Scenario: Not the real target\n"
+                   "          Given something\n"
+                   "      \"\"\"\n"
+                   "\n"
+                   "  Scenario: Real target\n"
+                   "    Given a user \"alice\" with role \"admin\"\n"
+                   "    When the user logs in\n"
+                   "    Then the response status should be 200\n"))
+        (try
+          (pipeline/run!
+            {:features-dir features-dir
+             :edn-dir edn-dir
+             :output-dir output-dir
+             :step-namespaces ['gherclj.pipeline-spec]
+             :locations [{:source "adventure.feature" :line 12}]
+             :test-framework :speclj})
+
+          (let [content (slurp (io/file output-dir "adventure_spec.clj"))]
+            (should (str/includes? content "Real target"))
+            (should-not (str/includes? content "Embedded feature text")))
           (finally (cleanup features-dir edn-dir output-dir)))))))
