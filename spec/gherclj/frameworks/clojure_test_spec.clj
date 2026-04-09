@@ -191,4 +191,24 @@
           (finally
             (doseq [f (reverse (file-seq (io/file output-dir)))] (.delete f))
             (when (find-ns 'gherclj-ct-sample-ns)
-              (remove-ns 'gherclj-ct-sample-ns))))))))
+              (remove-ns 'gherclj-ct-sample-ns)))))))
+
+    (it "suppresses clojure.test reporter output"
+      (let [output-dir (str (System/getProperty "java.io.tmpdir") "/gherclj-ct-quiet-test")
+            test-file (io/file output-dir "sample_test.clj")]
+        (io/make-parents test-file)
+        (spit test-file
+              (str "(ns gherclj-ct-sample-ns\n"
+                   "  (:require [clojure.test :refer :all]))\n"
+                   "(deftest sample-pass (is (= 1 1)))"))
+        (try
+          (with-redefs [gherclj.lifecycle/run-before-all-hooks! (fn [])
+                        gherclj.lifecycle/run-after-all-hooks!  (fn [])]
+            (let [output (with-out-str
+                           (gen/run-specs {:test-framework :clojure.test
+                                           :output-dir output-dir}))]
+              (should= "" output)))
+          (finally
+            (doseq [f (reverse (file-seq (io/file output-dir)))] (.delete f))
+            (when (find-ns 'gherclj-ct-sample-ns)
+              (remove-ns 'gherclj-ct-sample-ns)))))))
