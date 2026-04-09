@@ -86,8 +86,9 @@ Feature: Pipeline
       """
     And the parse stage has run
     When the generate stage runs with framework :speclj
-    Then "target/gherclj/generated/auth_spec.clj" should exist
-    And "target/gherclj/generated/auth_spec.clj" should contain "(describe"
+    Then "target/gherclj/generated/auth_spec.clj" should exist and:
+      | check    | value     |
+      | contains | (describe |
 
   Scenario: Generate stage reports progress when verbose
     Given a features directory containing:
@@ -133,11 +134,15 @@ Feature: Pipeline
           Given a valid user
       """
     When the full pipeline runs with framework :speclj
-    Then "target/gherclj/generated/auth_spec.clj" should contain "describe"
-    And "target/gherclj/generated/auth_spec.clj" should contain "speclj.core"
+    Then "target/gherclj/generated/auth_spec.clj" should exist and:
+      | check    | value       |
+      | contains | describe    |
+      | contains | speclj.core |
     When the full pipeline runs with framework :clojure.test
-    Then "target/gherclj/generated/auth_test.clj" should contain "deftest"
-    And "target/gherclj/generated/auth_test.clj" should contain "clojure.test"
+    Then "target/gherclj/generated/auth_test.clj" should exist and:
+      | check    | value        |
+      | contains | deftest      |
+      | contains | clojure.test |
 
   Scenario: clojure.test generates _test files
     Given a features directory containing:
@@ -154,7 +159,6 @@ Feature: Pipeline
     Then "target/gherclj/edn/auth.edn" should exist
     And "target/gherclj/generated/auth_test.clj" should exist
 
-  @wip
   Scenario: Generated speclj output can be verified with grouped assertions
     Given a features directory containing:
       | file         |
@@ -168,6 +172,7 @@ Feature: Pipeline
           When the user logs in
           Then the response status should be 200
       """
+    And step namespaces include pattern "gherclj.pipeline-*"
     When the full pipeline runs with framework :speclj
     Then "target/gherclj/generated/auth_spec.clj" should exist and:
       | check        | value                          |
@@ -177,7 +182,6 @@ Feature: Pipeline
       | contains     | pipeline-spec/response-status |
       | not-contains | pending                       |
 
-  @wip
   Scenario: Grouped assertions can verify filtered generated output
     Given a features directory containing:
       | file            |
@@ -206,7 +210,6 @@ Feature: Pipeline
       | contains     | Fast logging check |
       | not-contains | Slow logging check |
 
-  @wip
   Scenario: Full pipeline resolves globbed step namespaces from classpath roots
     Given a features directory containing:
       | file          |
@@ -246,8 +249,10 @@ Feature: Pipeline
       """
     When the full pipeline runs with framework :speclj
     Then "target/gherclj/edn/auth.edn" should contain IR with 2 scenarios
-    And "target/gherclj/generated/auth_spec.clj" should contain "Ready"
-    And "target/gherclj/generated/auth_spec.clj" should contain "Not ready"
+    And "target/gherclj/generated/auth_spec.clj" should exist and:
+      | check    | value     |
+      | contains | Ready     |
+      | contains | Not ready |
 
   Scenario: Excluding all scenarios omits the generated Speclj file
     Given a features directory containing:
@@ -291,6 +296,7 @@ Feature: Pipeline
     When the full pipeline runs with framework :speclj and tags:
       | tag   |
       | smoke |
-    Then "target/gherclj/generated/logging_spec.clj" should exist
-    And "target/gherclj/generated/logging_spec.clj" should contain "Fast logging check"
-    And "target/gherclj/generated/logging_spec.clj" should not contain "Slow logging check"
+    Then "target/gherclj/generated/logging_spec.clj" should exist and:
+      | check        | value              |
+      | contains     | Fast logging check |
+      | not-contains | Slow logging check |
