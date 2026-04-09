@@ -6,6 +6,7 @@
 .env
 .idea/
 .nrepl-port
+.opencode/
 .toolbox/
 features/edn/
 features/generated/
