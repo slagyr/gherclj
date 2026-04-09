@@ -1,8 +1,9 @@
 (ns gherclj.frameworks.clojure-test
   (:require [clojure.string :as str]
-            [clojure.test :as ct]
-            [gherclj.core :as g]
-            [gherclj.generator :as gen]))
+             [clojure.test :as ct]
+             [gherclj.core :as g]
+             [gherclj.generator :as gen]
+             [gherclj.lifecycle :as lifecycle]))
 
 (defn- slugify [title]
   (-> title
@@ -18,7 +19,8 @@
                        (map #(str "            [" % " :as " (gen/ns->alias %) "]")))]
     (str "(ns " ns-name "\n"
          "  (:require [clojure.test :refer :all]\n"
-         "            [gherclj.core :as g]"
+         "            [gherclj.core :as g]\n"
+         "            [gherclj.lifecycle :as lifecycle]"
          (when (seq step-reqs)
            (str "\n" (str/join "\n" step-reqs)))
          "))")))
@@ -26,18 +28,18 @@
 (defmethod gen/wrap-feature :clojure.test
   [_config _feature-name scenario-blocks]
   (str "(defn ^:private feature-fixture [f]\n"
-       "  (g/run-before-feature-hooks!)\n"
+       "  (lifecycle/run-before-feature-hooks!)\n"
        "  (try\n"
        "    (f)\n"
        "    (finally\n"
-       "      (g/run-after-feature-hooks!))))\n\n"
+       "      (lifecycle/run-after-feature-hooks!))))\n\n"
        "(defn ^:private scenario-fixture [f]\n"
        "  (g/reset!)\n"
-       "  (g/run-before-scenario-hooks!)\n"
+       "  (lifecycle/run-before-scenario-hooks!)\n"
        "  (try\n"
        "    (f)\n"
        "    (finally\n"
-       "      (g/run-after-scenario-hooks!))))\n\n"
+       "      (lifecycle/run-after-scenario-hooks!))))\n\n"
        "(use-fixtures :once feature-fixture)\n"
        "(use-fixtures :each scenario-fixture)\n\n"
        scenario-blocks "\n"))
@@ -85,7 +87,7 @@
                         (filter #(str/ends-with? (.getName %) ".clj"))
                         (sort-by #(str (.toPath %))))
         test-nses (keep read-ns-name test-files)]
-    (g/run-before-all-hooks!)
+    (lifecycle/run-before-all-hooks!)
     (try
       (doseq [ns-sym test-nses]
         (when (find-ns ns-sym)
@@ -95,7 +97,7 @@
       (let [loaded (keep find-ns test-nses)]
         (apply (resolve 'clojure.test/run-tests) loaded))
       (finally
-        (g/run-after-all-hooks!)))))
+        (lifecycle/run-after-all-hooks!)))))
 
 (defn- ct-assert [pass? msg]
   (ct/do-report (if pass?

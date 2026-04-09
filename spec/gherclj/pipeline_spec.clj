@@ -1,10 +1,21 @@
 (ns gherclj.pipeline-spec
   (:require [speclj.core :refer :all]
             [gherclj.pipeline :as pipeline]
+            [gherclj.generator :as gen]
             [gherclj.core :refer [defgiven defwhen defthen]]
             [clojure.java.io :as io]
             [clojure.edn :as edn]
             [clojure.string :as str]))
+
+;; Minimal custom framework for fallback-path coverage
+(defmethod gen/generate-ns-form :custom-pipeline-fw [_ source _]
+  (str "(ns custom-fw-test)"))
+(defmethod gen/wrap-feature :custom-pipeline-fw [_ _ scenario-blocks]
+  scenario-blocks)
+(defmethod gen/wrap-scenario :custom-pipeline-fw [_ scenario _]
+  (str "(it \"" (:scenario scenario) "\")"))
+(defmethod gen/wrap-pending :custom-pipeline-fw [_ scenario _]
+  (str "(pending \"" (:scenario scenario) "\")"))
 
 ;; Sample steps for pipeline test
 
@@ -77,6 +88,15 @@
           (let [output (with-out-str (pipeline/parse! {:features-dir features-dir :edn-dir edn-dir :verbose true}))]
             (should (str/includes? output "Parsing"))
             (should (str/includes? output "scenarios parsed")))
+          (finally (cleanup features-dir edn-dir)))))
+
+    (it "parses an empty features directory without error"
+      (let [features-dir (tmp "features-empty")
+            edn-dir (tmp "edn-empty")]
+        (.mkdirs (io/file features-dir))
+        (try
+          (pipeline/parse! {:features-dir features-dir :edn-dir edn-dir})
+          (should-not (.exists (io/file edn-dir)))
           (finally (cleanup features-dir edn-dir))))))
 
   (context "run!"
@@ -189,6 +209,76 @@
           (let [content (slurp (io/file output-dir "auth_test.clj"))]
             (should (str/includes? content "deftest"))
             (should (str/includes? content "clojure.test")))
+          (finally (cleanup features-dir edn-dir output-dir)))))
+
+    (it "generates spec directly from EDN files via generate!"
+      (let [edn-dir (tmp "edn-direct")
+            output-dir (tmp "output-direct")
+            edn-file (io/file edn-dir "auth.edn")
+            ir {:source "auth.feature"
+                :feature "Authentication"
+                :scenarios [{:scenario "User can log in"
+                             :steps [{:type :given :text "a user \"alice\" with role \"admin\"" :classified? true
+                                      :fn-sym 'gherclj.pipeline-spec/setup-user :args ["alice" "admin"]}
+                                     {:type :when :text "the user logs in" :classified? true
+                                      :fn-sym 'gherclj.pipeline-spec/user-logs-in :args []}
+                                     {:type :then :text "the response status should be 200" :classified? true
+                                      :fn-sym 'gherclj.pipeline-spec/response-status :args [200]}]}]}]
+        (io/make-parents edn-file)
+        (spit edn-file (pr-str ir))
+        (try
+          (pipeline/generate!
+            {:edn-dir edn-dir
+             :output-dir output-dir
+             :step-namespaces ['gherclj.pipeline-spec]
+             :test-framework :speclj})
+          (let [out-file (io/file output-dir "auth_spec.clj")]
+            (should (.exists out-file))
+            (should (str/includes? (slurp out-file) "Authentication")))
+          (finally (cleanup edn-dir output-dir)))))
+
+    (it "generate! prints progress when :verbose is true"
+      (let [edn-dir (tmp "edn-verbose")
+            output-dir (tmp "output-verbose")
+            edn-file (io/file edn-dir "auth.edn")
+            ir {:source "auth.feature"
+                :feature "Authentication"
+                :scenarios [{:scenario "User can log in"
+                             :steps [{:type :given :text "a user \"alice\" with role \"admin\"" :classified? true
+                                      :fn-sym 'gherclj.pipeline-spec/setup-user :args ["alice" "admin"]}
+                                     {:type :when :text "the user logs in" :classified? true
+                                      :fn-sym 'gherclj.pipeline-spec/user-logs-in :args []}
+                                     {:type :then :text "the response status should be 200" :classified? true
+                                      :fn-sym 'gherclj.pipeline-spec/response-status :args [200]}]}]}]
+        (io/make-parents edn-file)
+        (spit edn-file (pr-str ir))
+        (try
+          (let [output (with-out-str
+                         (pipeline/generate!
+                           {:edn-dir edn-dir
+                            :output-dir output-dir
+                            :step-namespaces ['gherclj.pipeline-spec]
+                            :test-framework :speclj
+                            :verbose true}))]
+            (should (str/includes? output "Generating")))
+          (finally (cleanup edn-dir output-dir)))))
+
+    (it "uses fallback framework namespace symbol for non-standard :test-framework values"
+      (let [features-dir (tmp "fw-features")
+            edn-dir (tmp "fw-edn")
+            output-dir (tmp "fw-output")
+            feature-file (io/file features-dir "auth.feature")]
+        (io/make-parents feature-file)
+        (spit feature-file feature-content)
+        (try
+          (with-redefs [clojure.core/require (fn [_] nil)]
+            (pipeline/run!
+              {:features-dir features-dir
+               :edn-dir edn-dir
+               :output-dir output-dir
+               :step-namespaces ['gherclj.pipeline-spec]
+               :test-framework :custom-pipeline-fw}))
+          (should (.exists (io/file edn-dir "auth.edn")))
           (finally (cleanup features-dir edn-dir output-dir)))))
 
     (it "removes stale generated spec files when tags exclude every scenario"

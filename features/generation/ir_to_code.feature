@@ -18,14 +18,15 @@ Feature: IR to code generation
       (ns login-spec
         (:require [speclj.core :refer :all]
                   [gherclj.core :as g]
+                  [gherclj.lifecycle :as lifecycle]
                   [gherclj.features.steps.sample-app :as sample-app]))
 
       (describe "Login"
 
-        (before-all (g/run-before-feature-hooks!))
-        (before (g/reset!) (g/run-before-scenario-hooks!))
-        (after (g/run-after-scenario-hooks!))
-        (after-all (g/run-after-feature-hooks!))
+        (before-all (lifecycle/run-before-feature-hooks!))
+        (before (g/reset!) (lifecycle/run-before-scenario-hooks!))
+        (after (lifecycle/run-after-scenario-hooks!))
+        (after-all (lifecycle/run-after-feature-hooks!))
 
         (it "Valid credentials"
           (sample-app/create-user "alice")
@@ -46,22 +47,23 @@ Feature: IR to code generation
       (ns login-test
         (:require [clojure.test :refer :all]
                   [gherclj.core :as g]
+                  [gherclj.lifecycle :as lifecycle]
                   [gherclj.features.steps.sample-app :as sample-app]))
 
       (defn ^:private feature-fixture [f]
-        (g/run-before-feature-hooks!)
+        (lifecycle/run-before-feature-hooks!)
         (try
           (f)
           (finally
-            (g/run-after-feature-hooks!))))
+            (lifecycle/run-after-feature-hooks!))))
 
       (defn ^:private scenario-fixture [f]
         (g/reset!)
-        (g/run-before-scenario-hooks!)
+        (lifecycle/run-before-scenario-hooks!)
         (try
           (f)
           (finally
-            (g/run-after-scenario-hooks!))))
+            (lifecycle/run-after-scenario-hooks!))))
 
       (use-fixtures :once feature-fixture)
       (use-fixtures :each scenario-fixture)
@@ -91,22 +93,23 @@ Feature: IR to code generation
       (ns login-test
         (:require [clojure.test :refer :all]
                   [gherclj.core :as g]
+                  [gherclj.lifecycle :as lifecycle]
                   [gherclj.features.steps.sample-app :as sample-app]))
 
       (defn ^:private feature-fixture [f]
-        (g/run-before-feature-hooks!)
+        (lifecycle/run-before-feature-hooks!)
         (try
           (f)
           (finally
-            (g/run-after-feature-hooks!))))
+            (lifecycle/run-after-feature-hooks!))))
 
       (defn ^:private scenario-fixture [f]
         (g/reset!)
-        (g/run-before-scenario-hooks!)
+        (lifecycle/run-before-scenario-hooks!)
         (try
           (f)
           (finally
-            (g/run-after-scenario-hooks!))))
+            (lifecycle/run-after-scenario-hooks!))))
 
       (use-fixtures :once feature-fixture)
       (use-fixtures :each scenario-fixture)
@@ -139,22 +142,23 @@ Feature: IR to code generation
       (ns login-test
         (:require [clojure.test :refer :all]
                   [gherclj.core :as g]
+                  [gherclj.lifecycle :as lifecycle]
                   [gherclj.features.steps.sample-app :as sample-app]))
 
       (defn ^:private feature-fixture [f]
-        (g/run-before-feature-hooks!)
+        (lifecycle/run-before-feature-hooks!)
         (try
           (f)
           (finally
-            (g/run-after-feature-hooks!))))
+            (lifecycle/run-after-feature-hooks!))))
 
       (defn ^:private scenario-fixture [f]
         (g/reset!)
-        (g/run-before-scenario-hooks!)
+        (lifecycle/run-before-scenario-hooks!)
         (try
           (f)
           (finally
-            (g/run-after-scenario-hooks!))))
+            (lifecycle/run-after-scenario-hooks!))))
 
       (use-fixtures :once feature-fixture)
       (use-fixtures :each scenario-fixture)
@@ -177,22 +181,23 @@ Feature: IR to code generation
       """
       (ns login-test
         (:require [clojure.test :refer :all]
-                  [gherclj.core :as g]))
+                  [gherclj.core :as g]
+                  [gherclj.lifecycle :as lifecycle]))
 
       (defn ^:private feature-fixture [f]
-        (g/run-before-feature-hooks!)
+        (lifecycle/run-before-feature-hooks!)
         (try
           (f)
           (finally
-            (g/run-after-feature-hooks!))))
+            (lifecycle/run-after-feature-hooks!))))
 
       (defn ^:private scenario-fixture [f]
         (g/reset!)
-        (g/run-before-scenario-hooks!)
+        (lifecycle/run-before-scenario-hooks!)
         (try
           (f)
           (finally
-            (g/run-after-scenario-hooks!))))
+            (lifecycle/run-after-scenario-hooks!))))
 
       (use-fixtures :once feature-fixture)
       (use-fixtures :each scenario-fixture)

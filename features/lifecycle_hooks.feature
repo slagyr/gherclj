@@ -11,10 +11,10 @@ Feature: Lifecycle hooks
       | when  | the user logs in           |
       | then  | the response should be 200 |
     When generating the spec with framework :speclj and lifecycle hooks enabled
-    Then the output should contain "(before-all (g/run-before-feature-hooks!))"
-    And the output should contain "(g/run-before-scenario-hooks!)"
-    And the output should contain "(after (g/run-after-scenario-hooks!))"
-    And the output should contain "(after-all (g/run-after-feature-hooks!))"
+    Then the output should contain "(before-all (lifecycle/run-before-feature-hooks!))"
+    And the output should contain "(lifecycle/run-before-scenario-hooks!)"
+    And the output should contain "(after (lifecycle/run-after-scenario-hooks!))"
+    And the output should contain "(after-all (lifecycle/run-after-feature-hooks!))"
 
   Scenario: clojure.test generation includes feature and scenario hook runners
     Given a feature named "Hooks" from source "hooks.feature"
@@ -25,11 +25,11 @@ Feature: Lifecycle hooks
       | then  | the response should be 200 |
     When generating the spec with framework :clojure.test and lifecycle hooks enabled
     Then the output should contain "(use-fixtures :once"
-    And the output should contain "(g/run-before-feature-hooks!)"
-    And the output should contain "(g/run-after-feature-hooks!)"
+    And the output should contain "(lifecycle/run-before-feature-hooks!)"
+    And the output should contain "(lifecycle/run-after-feature-hooks!)"
     And the output should contain "(use-fixtures :each"
-    And the output should contain "(g/run-before-scenario-hooks!)"
-    And the output should contain "(g/run-after-scenario-hooks!)"
+    And the output should contain "(lifecycle/run-before-scenario-hooks!)"
+    And the output should contain "(lifecycle/run-after-scenario-hooks!)"
 
   Scenario: Direct generated runs record feature and scenario lifecycle events
     Given lifecycle event recording is enabled

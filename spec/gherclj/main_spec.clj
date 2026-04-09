@@ -1,6 +1,9 @@
 (ns gherclj.main-spec
   (:require [speclj.core :refer :all]
             [clojure.string :as str]
+            [gherclj.config :as config]
+            [gherclj.generator :as gen]
+            [gherclj.pipeline :as pipeline]
             [gherclj.main :as main]))
 
 (describe "Main"
@@ -53,7 +56,11 @@
     (it "leaves nil for unspecified options"
       (let [result (main/parse-args ["-v"])]
         (should-be-nil (get-in result [:options :step-namespaces]))
-        (should-be-nil (get-in result [:options :features-dir])))))
+        (should-be-nil (get-in result [:options :features-dir]))))
+
+    (it "captures positional args as :framework-opts"
+      (let [result (main/parse-args ["--" "-f" "documentation"])]
+        (should= ["-f" "documentation"] (get-in result [:options :framework-opts])))))
 
   (context "usage"
 
@@ -80,4 +87,34 @@
       (let [output (with-out-str
                      (should= 1 (main/run ["--turbo-mode"])))]
         (should (str/includes? output "Unknown option"))
-        (should (str/includes? output "turbo-mode"))))))
+        (should (str/includes? output "turbo-mode"))))
+
+    (context "pipeline execution"
+      (around [it]
+        (with-redefs [config/load-config (fn [] {})
+                      pipeline/run!      (fn [_] nil)]
+          (it)))
+
+      (it "returns 0 when run-specs returns zero (number)"
+        (with-redefs [gen/run-specs (fn [_] 0)]
+          (should= 0 (main/run []))))
+
+      (it "returns 1 when run-specs returns positive number"
+        (with-redefs [gen/run-specs (fn [_] 3)]
+          (should= 1 (main/run []))))
+
+      (it "returns 0 when run-specs returns map with no failures"
+        (with-redefs [gen/run-specs (fn [_] {:fail 0 :error 0})]
+          (should= 0 (main/run []))))
+
+      (it "returns 1 when run-specs returns map with :fail > 0"
+        (with-redefs [gen/run-specs (fn [_] {:fail 2 :error 0})]
+          (should= 1 (main/run []))))
+
+      (it "returns 1 when run-specs returns map with :error > 0"
+        (with-redefs [gen/run-specs (fn [_] {:fail 0 :error 1})]
+          (should= 1 (main/run []))))
+
+      (it "returns 0 when run-specs returns non-number non-map (else branch)"
+        (with-redefs [gen/run-specs (fn [_] nil)]
+          (should= 0 (main/run [])))))))

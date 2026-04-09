@@ -1,18 +1,19 @@
-{:deps {org.clojure/clojure {:mvn/version "1.12.0"}
-        com.cleancoders.c3kit/apron {:mvn/version "2.5.0"}
-        org.clojure/tools.cli {:mvn/version "1.1.230"}}
+{:deps  {org.clojure/clojure         {:mvn/version "1.12.0"}
+         com.cleancoders.c3kit/apron {:mvn/version "2.5.0"}
+         org.clojure/tools.cli       {:mvn/version "1.1.230"}}
  :paths ["src" "spec" "target/gherclj/generated"]
  :aliases
- {:spec {:extra-deps {speclj/speclj {:mvn/version "3.12.2"}}
-         :main-opts ["-m" "speclj.main" "-c" "spec/gherclj" "-c" "target/gherclj/generated" "-s" "src"]}
-  :features {:extra-deps {speclj/speclj {:mvn/version "3.12.2"}}
-             :main-opts ["-m" "gherclj.main"]}
+ {:test        {:extra-deps {speclj/speclj {:mvn/version "3.12.2"}}}
+  :spec        {:extra-deps {speclj/speclj {:mvn/version "3.12.2"}}
+                :main-opts  ["-m" "speclj.main" "-c" "spec/gherclj" "-c" "target/gherclj/generated" "-s" "src"]}
+  :features    {:extra-deps {speclj/speclj {:mvn/version "3.12.2"}}
+                :main-opts  ["-m" "gherclj.main"]}
   :features-ct {:extra-deps {speclj/speclj {:mvn/version "3.12.2"}}
-                :main-opts ["-m" "gherclj.main" "-T" "clojure.test"]}
-  :cov {:extra-deps {cloverage/cloverage {:mvn/version "1.2.4"}
-                     speclj/speclj {:mvn/version "3.12.2"}}
-        :main-opts ["-m" "speclj.cloverage" "--" "-p" "src" "-s" "spec"]}
-  :crap {:extra-deps {io.github.unclebob/crap4clj
-                       {:git/url "https://github.com/unclebob/crap4clj"
-                        :git/sha "992a5dd41bb337a843c02fb4829a69af7bfcf595"}}
-         :main-opts ["-m" "crap4clj.core"]}}}
+                :main-opts  ["-m" "gherclj.main" "-T" "clojure.test"]}
+  :cov         {:extra-deps {cloverage/cloverage {:mvn/version "1.2.4"}
+                             speclj/speclj       {:mvn/version "3.12.2"}}
+                :main-opts  ["-m" "speclj.cloverage" "--" "-p" "src" "-s" "spec" "--ns-exclude-regex" "gherclj\\.features\\.steps\\..*"]}
+  :crap        {:extra-deps {io.github.unclebob/crap4clj
+                             {:git/url "https://github.com/unclebob/crap4clj"
+                              :git/sha "992a5dd41bb337a843c02fb4829a69af7bfcf595"}}
+                :main-opts  ["-m" "crap4clj.core"]}}}

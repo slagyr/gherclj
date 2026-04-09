@@ -1,6 +1,7 @@
 (ns gherclj.core-spec
   (:require [speclj.core :refer :all]
-            [gherclj.core :as core :refer [defgiven defwhen defthen]]))
+            [gherclj.core :as core :refer [defgiven defwhen defthen]]
+            [gherclj.lifecycle :as lifecycle]))
 
 ;; Sample step definitions — must be defined before the describe block
 
@@ -143,7 +144,7 @@
   (context "lifecycle hooks"
 
     (before
-      (core/clear-lifecycle-hooks!))
+      (lifecycle/clear!))
 
     (it "runs registered hooks in registration order"
       (let [events (atom [])
@@ -151,7 +152,7 @@
         (core/before-feature (fn [] (record! :first)))
         (core/before-feature (fn [] (record! :second)))
 
-        (core/run-before-feature-hooks!)
+        (lifecycle/run-before-feature-hooks!)
 
         (should= [:first :second] @events)))
 
@@ -160,6 +161,6 @@
         (core/after-scenario #(swap! events conj :cleanup))
 
         (core/reset!)
-        (core/run-after-scenario-hooks!)
+        (lifecycle/run-after-scenario-hooks!)
 
         (should= [:cleanup] @events)))))

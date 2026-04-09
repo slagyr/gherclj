@@ -49,7 +49,23 @@
 
     (it "escapes regex special characters in literal text"
       (let [{:keys [regex]} (compile-template "progress is 1/3 (33%)")]
-        (should= "^progress is 1/3 \\(33%\\)$" (str regex)))))
+        (should= "^progress is 1/3 \\(33%\\)$" (str regex))))
+
+    (it "compiles a template with a capture at the start"
+      (let [{:keys [regex bindings]} (compile-template "{count:int} items")]
+        (should= "^(\\d+) items$" (str regex))
+        (should= 1 (count bindings))
+        (should= "count" (:name (first bindings)))))
+
+    (it "compiles a template that is only a capture with no literal"
+      (let [{:keys [regex bindings]} (compile-template "{name}")]
+        (should= "^(\\S+)$" (str regex))
+        (should= 1 (count bindings))))
+
+    (it "escapes special chars in literal text between captures"
+      (let [{:keys [regex]} (compile-template "(prefix) {val:int} [suffix]")]
+        (should (clojure.string/includes? (str regex) "\\(prefix\\)"))
+        (should (clojure.string/includes? (str regex) "\\[suffix\\]")))))
 
   (context "match-step"
 
@@ -69,6 +85,16 @@
         (should= "alice" (coerce-fn "\"alice\""))
         (should= "x" (coerce-fn "\"x\""))
         (should= "hello" (coerce-fn "hello"))))
+
+    (it "does not strip when only leading quote present"
+      (let [compiled (compile-template "value is {v:string}")
+            coerce-fn (:coerce (first (:bindings compiled)))]
+        (should= "\"hello" (coerce-fn "\"hello"))))
+
+    (it "does not strip when only trailing quote present"
+      (let [compiled (compile-template "value is {v:string}")
+            coerce-fn (:coerce (first (:bindings compiled)))]
+        (should= "hello\"" (coerce-fn "hello\""))))
 
     (it "string coerce does not include surrounding quotes"
       (let [compiled (compile-template "value is {v:string}")
