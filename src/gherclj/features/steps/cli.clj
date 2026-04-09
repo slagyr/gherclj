@@ -73,7 +73,7 @@
             merged (merge (config/resolve-config file-config) cli-overrides)
             run-args (with-sandbox-defaults arg-vec)]
         (g/assoc! :loaded-config merged)
-        (when (and (seq (:locations merged)) (pipeline-base-dir))
+        (when (pipeline-base-dir)
           (let [previous-framework (g/get :_test-framework)
                 output (with-out-str
                          (try

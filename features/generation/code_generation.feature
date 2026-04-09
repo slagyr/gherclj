@@ -13,8 +13,8 @@ Feature: Code generation
     When generating the spec with framework :speclj
     Then the output should contain "Authentication"
     And the output should contain "User can log in"
-    And the output should contain "create-user"
-    And the output should contain "user-logs-in"
+    And the output should contain "create-adventurer"
+    And the output should contain "enter-the-realm"
 
   Scenario: Unrecognized steps generate pending scenarios
     Given a feature named "Pending" from source "pending.feature"

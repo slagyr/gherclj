@@ -19,15 +19,15 @@
 
 ;; Sample steps for pipeline test
 
-(defgiven setup-user "a user {name:string} with role {role:string}"
+(defgiven summon-hero "a user {name:string} with role {role:string}"
   [name role]
   :setup)
 
-(defwhen user-logs-in "the user logs in"
+(defwhen enter-the-realm "the user logs in"
   []
   :login)
 
-(defthen response-status "the response status should be {status:int}"
+(defthen check-the-gate "the response status should be {status:int}"
   [status]
   :check)
 
@@ -120,9 +120,9 @@
 
           (let [content (slurp (io/file output-dir "auth_spec.clj"))]
             (should (str/includes? content "(describe \"Authentication\""))
-            (should (str/includes? content "(pipeline-spec/setup-user \"alice\" \"admin\")"))
-            (should (str/includes? content "(pipeline-spec/user-logs-in)"))
-            (should (str/includes? content "(pipeline-spec/response-status 200)")))
+            (should (str/includes? content "(pipeline-spec/summon-hero \"alice\" \"admin\")"))
+            (should (str/includes? content "(pipeline-spec/enter-the-realm)"))
+            (should (str/includes? content "(pipeline-spec/check-the-gate 200)")))
           (finally (cleanup features-dir edn-dir output-dir)))))
 
     (it "is silent by default"
@@ -187,7 +187,7 @@
 
           (should (.exists (io/file output-dir "auth_spec.clj")))
           (let [content (slurp (io/file output-dir "auth_spec.clj"))]
-            (should (str/includes? content "sample-app/create-user")))
+            (should (str/includes? content "sample-app/create-adventurer")))
           (finally (cleanup features-dir edn-dir output-dir)))))
 
     (it "generates clojure.test files with _test suffix"
@@ -219,11 +219,11 @@
                 :feature "Authentication"
                 :scenarios [{:scenario "User can log in"
                              :steps [{:type :given :text "a user \"alice\" with role \"admin\"" :classified? true
-                                      :fn-sym 'gherclj.pipeline-spec/setup-user :args ["alice" "admin"]}
+                                      :fn-sym 'gherclj.pipeline-spec/summon-hero :args ["alice" "admin"]}
                                      {:type :when :text "the user logs in" :classified? true
-                                      :fn-sym 'gherclj.pipeline-spec/user-logs-in :args []}
+                                      :fn-sym 'gherclj.pipeline-spec/enter-the-realm :args []}
                                      {:type :then :text "the response status should be 200" :classified? true
-                                      :fn-sym 'gherclj.pipeline-spec/response-status :args [200]}]}]}]
+                                      :fn-sym 'gherclj.pipeline-spec/check-the-gate :args [200]}]}]}]
         (io/make-parents edn-file)
         (spit edn-file (pr-str ir))
         (try
@@ -245,11 +245,11 @@
                 :feature "Authentication"
                 :scenarios [{:scenario "User can log in"
                              :steps [{:type :given :text "a user \"alice\" with role \"admin\"" :classified? true
-                                      :fn-sym 'gherclj.pipeline-spec/setup-user :args ["alice" "admin"]}
+                                      :fn-sym 'gherclj.pipeline-spec/summon-hero :args ["alice" "admin"]}
                                      {:type :when :text "the user logs in" :classified? true
-                                      :fn-sym 'gherclj.pipeline-spec/user-logs-in :args []}
+                                      :fn-sym 'gherclj.pipeline-spec/enter-the-realm :args []}
                                      {:type :then :text "the response status should be 200" :classified? true
-                                      :fn-sym 'gherclj.pipeline-spec/response-status :args [200]}]}]}]
+                                      :fn-sym 'gherclj.pipeline-spec/check-the-gate :args [200]}]}]}]
         (io/make-parents edn-file)
         (spit edn-file (pr-str ir))
         (try

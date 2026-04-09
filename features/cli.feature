@@ -58,6 +58,43 @@ Feature: CLI
       {:step-namespaces [myapp.steps.auth myapp.steps.cart]}
       """
 
+  Scenario: Step namespace glob patterns remain strings
+    When running gherclj with "-s carnival.dragon_steps.*"
+    Then the resolved config should contain:
+      """
+      {:step-namespaces ["carnival.dragon_steps.*"]}
+      """
+
+  Scenario: Concrete step namespaces remain symbols
+    When running gherclj with "-s carnival.dragon_steps.fire -s carnival.dragon_steps.treasure"
+    Then the resolved config should contain:
+      """
+      {:step-namespaces [carnival.dragon_steps.fire carnival.dragon_steps.treasure]}
+      """
+
+  Scenario: CLI step namespace glob patterns are resolved during the pipeline
+    Given a features directory containing:
+      | file           |
+      | dragon.feature |
+    And the feature "dragon.feature" contains:
+      """
+      Feature: Dragon academy
+
+        Scenario: Wake the librarian dragon
+          Given a user "alice" with role "admin"
+          When the user logs in
+          Then the response status should be 200
+      """
+    And step namespaces include pattern "gherclj.pipeline-*"
+    When running gherclj with "-f features -o target/gherclj/generated -e target/gherclj/edn -T speclj -s gherclj.pipeline-*"
+    Then "target/gherclj/generated/dragon_spec.clj" should exist and:
+      | check        | value                         |
+      | contains     | Wake the librarian dragon     |
+      | contains     | pipeline-spec/summon-hero     |
+      | contains     | pipeline-spec/enter-the-realm |
+      | contains     | pipeline-spec/check-the-gate  |
+      | not-contains | pending                       |
+
   Scenario: Unknown flag is rejected
     When running gherclj with "--turbo-mode"
     Then the output should contain "Unknown option"

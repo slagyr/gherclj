@@ -177,9 +177,9 @@ Feature: Pipeline
     Then "target/gherclj/generated/auth_spec.clj" should exist and:
       | check        | value                          |
       | contains     | describe "Auth"              |
-      | contains     | pipeline-spec/setup-user      |
-      | contains     | pipeline-spec/user-logs-in    |
-      | contains     | pipeline-spec/response-status |
+      | contains     | pipeline-spec/summon-hero     |
+      | contains     | pipeline-spec/enter-the-realm |
+      | contains     | pipeline-spec/check-the-gate  |
       | not-contains | pending                       |
 
   Scenario: Grouped assertions can verify filtered generated output
@@ -227,9 +227,9 @@ Feature: Pipeline
     When the full pipeline runs with framework :speclj
     Then "target/gherclj/generated/auth_spec.clj" should exist and:
       | check        | value                         |
-      | contains     | pipeline-spec/setup-user      |
-      | contains     | pipeline-spec/user-logs-in    |
-      | contains     | pipeline-spec/response-status |
+      | contains     | pipeline-spec/summon-hero     |
+      | contains     | pipeline-spec/enter-the-realm |
+      | contains     | pipeline-spec/check-the-gate  |
       | not-contains | pending                       |
 
   Scenario: WIP scenarios are parsed and generated when unfiltered
