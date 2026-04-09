@@ -1,5 +1,12 @@
 # Changes
 
+## v0.6.1
+
+- `gherclj.lifecycle` extracted into its own namespace; framework adapters call it directly
+- `compile-template` refactored from `loop/recur` to `reduce` over literal/capture pairs
+- Feature step namespaces excluded from coverage report (they are tests, not code under test)
+- Test coverage improvements across clojure-test, pipeline, speclj, and template namespaces
+
 ## v0.6.0
 
 - Lifecycle hooks for generated runs, features, and scenarios: `before-all`, `before-feature`, `before-scenario`, `after-scenario`, `after-feature`, `after-all`
