@@ -26,7 +26,7 @@ Each stage produces a visible, inspectable artifact. If a step isn't matching, c
 
 ```clojure
 ;; deps.edn or bb.edn
-{:deps {io.github.slagyr/gherclj {:git/tag "v0.6.1" :git/sha "PENDING"}}}
+{:deps {io.github.slagyr/gherclj {:git/tag "v0.6.1" :git/sha "9602253"}}}
 ```
 
 ### 2. Write features
