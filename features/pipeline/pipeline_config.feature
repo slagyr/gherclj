@@ -17,7 +17,7 @@ Feature: Pipeline configuration
        :verbose false
        :framework-opts []
        :include-tags []
-       :exclude-tags ["wip"]}
+       :exclude-tags []}
       """
 
   Scenario: Explicit values override defaults
@@ -38,7 +38,7 @@ Feature: Pipeline configuration
        :verbose true
        :framework-opts []
        :include-tags []
-       :exclude-tags ["wip"]}
+       :exclude-tags []}
       """
 
   Scenario: Invalid test framework is rejected

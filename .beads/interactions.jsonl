@@ -144,3 +144,5 @@
 {"id":"int-d4d366a2","kind":"field_change","created_at":"2026-04-09T04:28:41.987602Z","actor":"Micah","issue_id":"gherclj-drb","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Closed by user decision: macro-heavy namespaces make the remaining coverage targets misleading or not worth pursuing."}}
 {"id":"int-155bf253","kind":"field_change","created_at":"2026-04-09T04:38:25.425767Z","actor":"Micah","issue_id":"gherclj-9wy","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}
 {"id":"int-9ed27750","kind":"field_change","created_at":"2026-04-09T04:41:30.610456Z","actor":"Micah","issue_id":"gherclj-9wy","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Closed"}}
+{"id":"int-07832fc5","kind":"field_change","created_at":"2026-04-09T17:23:52.946807Z","actor":"Micah","issue_id":"gherclj-p9e","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}
+{"id":"int-99df9ade","kind":"field_change","created_at":"2026-04-09T17:31:46.43251Z","actor":"Micah","issue_id":"gherclj-p9e","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Closed"}}

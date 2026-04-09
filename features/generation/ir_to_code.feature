@@ -245,7 +245,7 @@ Feature: IR to code generation
     Then the output should contain "pending"
     And the output should contain ";; given something undefined"
 
-  Scenario: WIP scenarios are excluded from generation
+  Scenario: WIP scenarios are generated when no tag filters are provided
     Given a feature named "Login" from source "login.feature"
     And a scenario "Normal" with steps:
       | type  | text             |
@@ -255,4 +255,4 @@ Feature: IR to code generation
       | given | something undefined |
     When generating the spec with framework :speclj
     Then the output should contain "Normal"
-    And the output should not contain "Skipped"
+    And the output should contain "Skipped"

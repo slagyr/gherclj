@@ -95,11 +95,8 @@
   [config ir]
   (let [{:keys [step-namespaces extra-steps exclude-tags include-tags]} config
         {:keys [source feature scenarios background]} ir
-        wip-included? (some #{"wip"} include-tags)
-        effective-excludes (if wip-included?
-                             (vec (remove #{"wip"} (or exclude-tags [])))
-                             (vec (distinct (concat ["wip"] (or exclude-tags [])))))
-        effective-includes (vec (remove #{"wip"} (or include-tags [])))
+        effective-excludes (vec (or exclude-tags []))
+        effective-includes (vec (or include-tags []))
         steps (into (core/collect-steps step-namespaces) extra-steps)
         filtered (cond->> scenarios
                    (seq effective-excludes) (remove #(some (set effective-excludes) (:tags %)))

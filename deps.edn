@@ -2,14 +2,14 @@
          com.cleancoders.c3kit/apron {:mvn/version "2.5.0"}
          org.clojure/tools.cli       {:mvn/version "1.1.230"}}
  :paths ["src" "spec" "target/gherclj/generated"]
- :aliases
- {:test        {:extra-deps {speclj/speclj {:mvn/version "3.12.2"}}}
-  :spec        {:extra-deps {speclj/speclj {:mvn/version "3.12.2"}}
-                :main-opts  ["-m" "speclj.main" "-c" "spec/gherclj" "-c" "target/gherclj/generated" "-s" "src"]}
-  :features    {:extra-deps {speclj/speclj {:mvn/version "3.12.2"}}
-                :main-opts  ["-m" "gherclj.main"]}
-  :features-ct {:extra-deps {speclj/speclj {:mvn/version "3.12.2"}}
-                :main-opts  ["-m" "gherclj.main" "-T" "clojure.test"]}
+  :aliases
+  {:test        {:extra-deps {speclj/speclj {:mvn/version "3.12.2"}}}
+   :spec        {:extra-deps {speclj/speclj {:mvn/version "3.12.2"}}
+                 :main-opts  ["-m" "speclj.main" "-c" "spec/gherclj" "-c" "target/gherclj/generated" "-s" "src"]}
+   :features    {:extra-deps {speclj/speclj {:mvn/version "3.12.2"}}
+                 :main-opts  ["-m" "gherclj.main" "-t" "~wip"]}
+   :features-ct {:extra-deps {speclj/speclj {:mvn/version "3.12.2"}}
+                 :main-opts  ["-m" "gherclj.main" "-T" "clojure.test" "-t" "~wip"]}
   :cov         {:extra-deps {cloverage/cloverage {:mvn/version "1.2.4"}
                              speclj/speclj       {:mvn/version "3.12.2"}}
                 :main-opts  ["-m" "speclj.cloverage" "--" "-p" "src" "-s" "spec" "--ns-exclude-regex" "gherclj\\.features\\.steps\\..*"]}

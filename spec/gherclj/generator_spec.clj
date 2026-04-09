@@ -88,6 +88,35 @@
                              :steps [{:type :given :text "a project alpha with timeout 300"}]}]}]
         (should-be-nil (gen/generate-spec config ir)))))
 
+    (it "includes wip-tagged scenarios when no tag filters are configured"
+      (let [config {:step-namespaces ['gherclj.generator-spec]
+                    :test-framework :speclj}
+            ir {:feature "Sample feature"
+                :source "sample.feature"
+                :scenarios [{:scenario "Ready"
+                             :steps [{:type :given :text "a project alpha with timeout 300"}]}
+                            {:scenario "Not ready"
+                             :tags ["wip"]
+                             :steps [{:type :given :text "a project alpha with timeout 300"}]}]}
+            result (gen/generate-spec config ir)]
+        (should (str/includes? result "(it \"Ready\""))
+        (should (str/includes? result "(it \"Not ready\""))))
+
+    (it "treats wip like any other tag when included"
+      (let [config {:step-namespaces ['gherclj.generator-spec]
+                    :include-tags ["wip"]
+                    :test-framework :speclj}
+            ir {:feature "Sample feature"
+                :source "sample.feature"
+                :scenarios [{:scenario "Ready"
+                             :steps [{:type :given :text "a project alpha with timeout 300"}]}
+                            {:scenario "Not ready"
+                             :tags ["wip"]
+                             :steps [{:type :given :text "a project alpha with timeout 300"}]}]}
+            result (gen/generate-spec config ir)]
+        (should-not (str/includes? result "(it \"Ready\""))
+        (should (str/includes? result "(it \"Not ready\""))))
+
     (it "includes namespaces referenced only by background steps"
       (let [config {:step-namespaces ['gherclj.generator-spec 'gherclj.features.steps.sample-app]
                     :test-framework :speclj}
