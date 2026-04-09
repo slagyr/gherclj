@@ -88,7 +88,8 @@
     (doseq [f test-files]
       (load-file (.getPath f)))
     (let [nses (keep find-ns test-nses)]
-      (apply clojure.test/run-tests nses))))
+      (binding [clojure.test/*test-out* (java.io.StringWriter.)]
+        (apply clojure.test/run-tests nses)))))
 
 (defgiven lifecycle-recording-enabled "lifecycle event recording is enabled"
   []

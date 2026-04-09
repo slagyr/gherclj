@@ -95,7 +95,8 @@
       (doseq [f test-files]
         (load-file (.getPath f)))
       (let [loaded (keep find-ns test-nses)]
-        (apply (resolve 'clojure.test/run-tests) loaded))
+        (binding [ct/*test-out* (java.io.StringWriter.)]
+          (apply (resolve 'clojure.test/run-tests) loaded)))
       (finally
         (lifecycle/run-after-all-hooks!)))))
 

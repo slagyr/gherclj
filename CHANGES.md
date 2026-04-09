@@ -1,5 +1,10 @@
 # Changes
 
+## v0.7.1
+
+- `bb spec` and `bb features` no longer print `clojure.test` reporter noise during normal runs
+- Scenario location selection ignores scenario-like lines that appear inside doc-strings
+
 ## v0.7.0
 
 - Scenario location selection via `file:line` selectors, including multiple selectors in one invocation
