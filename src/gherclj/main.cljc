@@ -9,9 +9,9 @@
 (def version (str/trim (slurp (io/resource "gherclj/VERSION"))))
 
 (def ^:private cli-options
-  [["-f" "--features-dir DIR" "Features directory"]
-   ["-e" "--edn-dir DIR" "EDN IR output directory"]
-   ["-o" "--output-dir DIR" "Generated spec output directory"]
+  [["-f" "--features-dir DIR" "Features directory (default: features)"]
+   ["-e" "--edn-dir DIR" "EDN IR output directory (default: target/gherclj/edn)"]
+   ["-o" "--output-dir DIR" "Generated spec output directory (default: target/gherclj/generated)"]
    ["-s" "--step-namespaces NS" "Step namespace (repeatable, supports globs)"
     :multi true
     :default :none
@@ -24,7 +24,7 @@
     :default :none
     :default-desc ""
     :update-fn (fn [acc v] (conj (if (= :none acc) [] acc) v))]
-   ["-T" "--test-framework FRAMEWORK" "Test framework (speclj, clojure.test)"
+   ["-T" "--test-framework FRAMEWORK" "Test framework: speclj, clojure.test (default: speclj)"
     :parse-fn keyword]
    ["-v" "--verbose" "Print progress to stdout"]
    ["-h" "--help" "Show usage"]])
