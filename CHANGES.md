@@ -1,5 +1,10 @@
 # Changes
 
+## Unreleased
+
+- Bare `.feature` paths on the CLI run every scenario in the file, and may be mixed with `file:line` selectors in one invocation
+- Usage banner shows the current gherclj version, read from `resources/gherclj/VERSION`
+
 ## v0.7.1
 
 - `bb spec` and `bb features` no longer print `clojure.test` reporter noise during normal runs
