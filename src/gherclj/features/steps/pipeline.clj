@@ -106,8 +106,9 @@
   [fw table]
   (let [framework (keyword (str/replace fw #"^:" ""))
         locations (mapv (fn [[selector]]
-                          (let [[_ source line] (re-matches #"^(.+):(\d+)$" selector)]
-                            {:source source :line (Long/parseLong line)}))
+                          (if-let [[_ source line] (re-matches #"^(.+\.feature):(\d+)$" selector)]
+                            {:source source :line (Long/parseLong line)}
+                            {:source selector}))
                         (:rows table))
         output (with-out-str
                  (pipeline/run! (pipeline-config :framework framework

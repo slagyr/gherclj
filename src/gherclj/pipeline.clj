@@ -143,20 +143,37 @@
     {:source relative-source
      :scenario scenario}))
 
+(defn- verify-feature-file! [features-dir source]
+  (let [relative (selector->relative-source features-dir source)
+        file (io/file features-dir relative)]
+    (when-not (.exists file)
+      (throw (ex-info (str "Feature file not found: " source)
+                      {:source source})))
+    relative))
+
 (defn- selected-scenarios-by-source [features-dir locations]
-  (reduce (fn [acc location]
-            (let [{:keys [source scenario]} (selected-scenario-name features-dir location)]
-              (update acc source (fnil conj #{}) scenario)))
+  (reduce (fn [acc {:keys [source line] :as location}]
+            (if line
+              (let [{:keys [source scenario]} (selected-scenario-name features-dir location)]
+                (if (= :all (get acc source))
+                  acc
+                  (update acc source (fnil conj #{}) scenario)))
+              (let [relative (verify-feature-file! features-dir source)]
+                (assoc acc relative :all))))
           {}
           locations))
 
 (defn- filter-ir-by-locations [ir selected]
-  (if-let [scenario-names (get selected (:source ir))]
-    (update ir :scenarios (fn [scenarios]
-                            (->> scenarios
-                                 (filter #(contains? scenario-names (:scenario %)))
-                                 vec)))
-    (assoc ir :scenarios [])))
+  (let [entry (get selected (:source ir))]
+    (cond
+      (= :all entry) ir
+      (set? entry)
+      (update ir :scenarios
+              (fn [scenarios]
+                (->> scenarios
+                     (filter #(contains? entry (:scenario %)))
+                     vec)))
+      :else (assoc ir :scenarios []))))
 
 (defn parse!
   "Parse .feature files into .edn IR files.

@@ -57,6 +57,24 @@
                   {:source "features/adventure/moon_castle.feature" :line 73}]
                  (get-in result [:options :locations]))))
 
+    (it "parses a bare .feature path as a location with no :line"
+      (let [result (main/parse-args ["features/adventure/dragon_cave.feature"])]
+        (should= [{:source "features/adventure/dragon_cave.feature"}]
+                 (get-in result [:options :locations]))))
+
+    (it "parses mixed bare and file:line selectors"
+      (let [result (main/parse-args ["features/adventure/dragon_cave.feature"
+                                     "features/adventure/moon_castle.feature:73"])]
+        (should= [{:source "features/adventure/dragon_cave.feature"}
+                  {:source "features/adventure/moon_castle.feature" :line 73}]
+                 (get-in result [:options :locations]))))
+
+    (it "leaves non-.feature positional args as framework-opts"
+      (let [result (main/parse-args ["--" "notes.txt" "plain-arg"])]
+        (should-be-nil (get-in result [:options :locations]))
+        (should= ["notes.txt" "plain-arg"]
+                 (get-in result [:options :framework-opts]))))
+
     (it "accumulates step-namespaces"
       (let [result (main/parse-args ["-s" "myapp.steps.auth" "-s" "myapp.steps.cart"])]
         (should= ['myapp.steps.auth 'myapp.steps.cart]
