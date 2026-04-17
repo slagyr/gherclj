@@ -5,6 +5,8 @@
             [gherclj.pipeline :as pipeline]
             [gherclj.generator :as gen]))
 
+(def version "0.7.1")
+
 (def ^:private cli-options
   [["-f" "--features-dir DIR" "Features directory"]
    ["-e" "--edn-dir DIR" "EDN IR output directory"]
@@ -71,7 +73,7 @@
 
 (defn usage-message []
   (let [{:keys [summary]} (cli/parse-opts [] cli-options)]
-    (str "\nGherclj - pronounced /\u0261\u025c\u02d0rk\u0259l/, gur-kull: a Gherkin -> test code transducer.\n"
+    (str "\nGherclj " version " - pronounced /\u0261\u025c\u02d0rk\u0259l/, gur-kull: a Gherkin -> test code transducer.\n"
          "Copyright (c) 2026 Micah Martin under The MIT License.\n\n"
          summary "\n")))
 

@@ -30,10 +30,11 @@ When the user asks to bump/tag/release a version:
 
 1. **Run `bb test-all`** — all 6 combinations must pass
 2. **Update CHANGES.md** — add a new section at the top with the version and bullet points summarizing changes since the last tag
-3. **Update README.md** — replace git coordinates with the new tag and `"PENDING"` as the sha
-4. **Commit** — `git commit` with message "Prepare vX.Y.Z release"
-5. **Push** — `git push`
-6. **Tag** — `git tag vX.Y.Z && git push origin vX.Y.Z`
-7. **Get sha** — `git rev-parse vX.Y.Z | head -c 7`
-8. **Update README.md** — replace `"PENDING"` with the actual short sha
-9. **Commit and push** — "Update README with vX.Y.Z git coordinates"
+3. **Update `src/gherclj/main.cljc`** — bump the `version` constant to the new X.Y.Z
+4. **Update README.md** — replace git coordinates with the new tag and `"PENDING"` as the sha
+5. **Commit** — `git commit` with message "Prepare vX.Y.Z release"
+6. **Push** — `git push`
+7. **Tag** — `git tag vX.Y.Z && git push origin vX.Y.Z`
+8. **Get sha** — `git rev-parse vX.Y.Z | head -c 7`
+9. **Update README.md** — replace `"PENDING"` with the actual short sha
+10. **Commit and push** — "Update README with vX.Y.Z git coordinates"

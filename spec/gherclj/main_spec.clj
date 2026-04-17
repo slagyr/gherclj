@@ -101,7 +101,11 @@
         (should (str/includes? text "Gherkin -> test code transducer"))
         (should (str/includes? text "Copyright"))
         (should (str/includes? text "--features-dir"))
-        (should (str/includes? text "--help")))))
+        (should (str/includes? text "--help"))))
+
+    (it "includes the current version in the banner"
+      (let [text (main/usage-message)]
+        (should (str/includes? text (str "Gherclj " main/version))))))
 
   (context "run"
 
