@@ -19,7 +19,7 @@
     :update-fn (fn [acc v]
                  (conj (if (= :none acc) [] acc)
                        (if (re-find #"[*?]" v) v (symbol v))))]
-   ["-t" "--tag TAG" "Generate only the scenarios with the specified tag(s). To exclude, prefix the tag with ~ (eg ~slow). Use this option multiple times to filter multiple tags."
+   ["-t" "--tag TAG" "Generate only the scenarios with the specified tag(s). Repeatable. Use ~ prefix to exclude tags (eg ~slow)."
     :multi true
     :default :none
     :default-desc ""
