@@ -1,4 +1,4 @@
-{:paths ["src" "spec"]
+{:paths ["src" "spec" "resources"]
  :deps  {com.cleancoders.c3kit/apron {:mvn/version "2.5.0"}
          org.clojure/tools.cli       {:mvn/version "1.1.230"}
          speclj/speclj               {:mvn/version "3.12.2"}

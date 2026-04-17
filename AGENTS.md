@@ -30,7 +30,7 @@ When the user asks to bump/tag/release a version:
 
 1. **Run `bb test-all`** — all 6 combinations must pass
 2. **Update CHANGES.md** — add a new section at the top with the version and bullet points summarizing changes since the last tag
-3. **Update `src/gherclj/main.cljc`** — bump the `version` constant to the new X.Y.Z
+3. **Update `resources/gherclj/VERSION`** — write the new X.Y.Z (no leading `v`)
 4. **Update README.md** — replace git coordinates with the new tag and `"PENDING"` as the sha
 5. **Commit** — `git commit` with message "Prepare vX.Y.Z release"
 6. **Push** — `git push`

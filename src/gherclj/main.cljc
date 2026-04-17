@@ -1,11 +1,12 @@
 (ns gherclj.main
-  (:require [clojure.tools.cli :as cli]
+  (:require [clojure.java.io :as io]
+            [clojure.tools.cli :as cli]
             [clojure.string :as str]
             [gherclj.config :as config]
             [gherclj.pipeline :as pipeline]
             [gherclj.generator :as gen]))
 
-(def version "0.7.1")
+(def version (str/trim (slurp (io/resource "gherclj/VERSION"))))
 
 (def ^:private cli-options
   [["-f" "--features-dir DIR" "Features directory"]
