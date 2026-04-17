@@ -3,15 +3,15 @@
          org.clojure/tools.cli       {:mvn/version "1.1.230"}}
  :paths ["src" "spec" "resources" "target/gherclj/generated"]
   :aliases
-  {:test        {:extra-deps {speclj/speclj {:mvn/version "3.12.2"}}}
-   :spec        {:extra-deps {speclj/speclj {:mvn/version "3.12.2"}}
+  {:test        {:extra-deps {speclj/speclj {:mvn/version "3.13.0"}}}
+   :spec        {:extra-deps {speclj/speclj {:mvn/version "3.13.0"}}
                  :main-opts  ["-m" "speclj.main" "-c" "spec/gherclj" "-c" "target/gherclj/generated" "-s" "src"]}
-   :features    {:extra-deps {speclj/speclj {:mvn/version "3.12.2"}}
+   :features    {:extra-deps {speclj/speclj {:mvn/version "3.13.0"}}
                  :main-opts  ["-m" "gherclj.main" "-t" "~wip"]}
-   :features-ct {:extra-deps {speclj/speclj {:mvn/version "3.12.2"}}
+   :features-ct {:extra-deps {speclj/speclj {:mvn/version "3.13.0"}}
                  :main-opts  ["-m" "gherclj.main" "-T" "clojure.test" "-t" "~wip"]}
   :cov         {:extra-deps {cloverage/cloverage {:mvn/version "1.2.4"}
-                             speclj/speclj       {:mvn/version "3.12.2"}}
+                             speclj/speclj       {:mvn/version "3.13.0"}}
                 :main-opts  ["-m" "speclj.cloverage" "--" "-p" "src" "-s" "spec" "--ns-exclude-regex" "gherclj\\.features\\.steps\\..*"]}
   :crap        {:extra-deps {io.github.unclebob/crap4clj
                              {:git/url "https://github.com/unclebob/crap4clj"
