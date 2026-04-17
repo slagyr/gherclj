@@ -109,7 +109,7 @@
 
     (it "describes how to pass feature targets"
       (let [text (main/usage-message)]
-        (should (str/includes? text "Usage:  gherclj [options] [feature targets]*"))
+        (should (str/includes? text "Usage:  gherclj [option]... [feature target]... [-- framework option...]"))
         (should (str/includes? text "feature targets"))
         (should (str/includes? text "[file|file:line]"))
         (should (str/includes? text "file      all scenarios in the file"))
