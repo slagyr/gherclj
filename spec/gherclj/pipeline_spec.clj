@@ -433,4 +433,123 @@
           (let [content (slurp (io/file output-dir "adventure_spec.clj"))]
             (should (str/includes? content "Real target"))
             (should-not (str/includes? content "Embedded feature text")))
+          (finally (cleanup features-dir edn-dir output-dir)))))
+
+    (it "generates every scenario when the location has no line number"
+      (let [features-dir (tmp "loc-bare-features")
+            edn-dir (tmp "loc-bare-edn")
+            output-dir (tmp "loc-bare-output")
+            feature-file (io/file features-dir "adventure.feature")]
+        (io/make-parents feature-file)
+        (spit feature-file
+              (str "Feature: Adventure\n"
+                   "\n"
+                   "  Scenario: Wake the dragon\n"
+                   "    Given a user \"alice\" with role \"admin\"\n"
+                   "\n"
+                   "  Scenario: Negotiate for treasure\n"
+                   "    Given a user \"bob\" with role \"guest\"\n"))
+        (try
+          (pipeline/run!
+            {:features-dir features-dir
+             :edn-dir edn-dir
+             :output-dir output-dir
+             :step-namespaces ['gherclj.pipeline-spec]
+             :locations [{:source "adventure.feature"}]
+             :test-framework :speclj})
+
+          (let [content (slurp (io/file output-dir "adventure_spec.clj"))]
+            (should (str/includes? content "Wake the dragon"))
+            (should (str/includes? content "Negotiate for treasure")))
+          (finally (cleanup features-dir edn-dir output-dir)))))
+
+    (it "bare feature location wins when mixed with file:line for the same file"
+      (let [features-dir (tmp "loc-union-features")
+            edn-dir (tmp "loc-union-edn")
+            output-dir (tmp "loc-union-output")
+            feature-file (io/file features-dir "adventure.feature")]
+        (io/make-parents feature-file)
+        (spit feature-file
+              (str "Feature: Adventure\n"
+                   "\n"
+                   "  Scenario: Wake the dragon\n"
+                   "    Given a user \"alice\" with role \"admin\"\n"
+                   "\n"
+                   "  Scenario: Negotiate for treasure\n"
+                   "    Given a user \"bob\" with role \"guest\"\n"))
+        (try
+          (pipeline/run!
+            {:features-dir features-dir
+             :edn-dir edn-dir
+             :output-dir output-dir
+             :step-namespaces ['gherclj.pipeline-spec]
+             :locations [{:source "adventure.feature" :line 3}
+                         {:source "adventure.feature"}]
+             :test-framework :speclj})
+
+          (let [content (slurp (io/file output-dir "adventure_spec.clj"))]
+            (should (str/includes? content "Wake the dragon"))
+            (should (str/includes? content "Negotiate for treasure")))
+          (finally (cleanup features-dir edn-dir output-dir)))))
+
+    (it "mixes a bare feature and a file:line across two files"
+      (let [features-dir (tmp "loc-mixed-features")
+            edn-dir (tmp "loc-mixed-edn")
+            output-dir (tmp "loc-mixed-output")
+            bare-file (io/file features-dir "bare.feature")
+            line-file (io/file features-dir "line.feature")]
+        (io/make-parents bare-file)
+        (spit bare-file
+              (str "Feature: Bare\n"
+                   "\n"
+                   "  Scenario: First bare\n"
+                   "    Given a user \"alice\" with role \"admin\"\n"
+                   "\n"
+                   "  Scenario: Second bare\n"
+                   "    Given a user \"bob\" with role \"guest\"\n"))
+        (spit line-file
+              (str "Feature: Line\n"
+                   "\n"
+                   "  Scenario: Chosen line\n"
+                   "    Given a user \"carol\" with role \"admin\"\n"
+                   "\n"
+                   "  Scenario: Skipped line\n"
+                   "    Given a user \"dave\" with role \"guest\"\n"))
+        (try
+          (pipeline/run!
+            {:features-dir features-dir
+             :edn-dir edn-dir
+             :output-dir output-dir
+             :step-namespaces ['gherclj.pipeline-spec]
+             :locations [{:source "bare.feature"}
+                         {:source "line.feature" :line 3}]
+             :test-framework :speclj})
+
+          (let [bare-content (slurp (io/file output-dir "bare_spec.clj"))
+                line-content (slurp (io/file output-dir "line_spec.clj"))]
+            (should (str/includes? bare-content "First bare"))
+            (should (str/includes? bare-content "Second bare"))
+            (should (str/includes? line-content "Chosen line"))
+            (should-not (str/includes? line-content "Skipped line")))
+          (finally (cleanup features-dir edn-dir output-dir)))))
+
+    (it "rejects an unknown bare feature location"
+      (let [features-dir (tmp "loc-bare-missing-features")
+            edn-dir (tmp "loc-bare-missing-edn")
+            output-dir (tmp "loc-bare-missing-output")]
+        (io/make-parents (io/file features-dir ".placeholder"))
+        (try
+          (let [message (try
+                          (pipeline/run!
+                            {:features-dir features-dir
+                             :edn-dir edn-dir
+                             :output-dir output-dir
+                             :step-namespaces ['gherclj.pipeline-spec]
+                             :locations [{:source "ghost.feature"}]
+                             :test-framework :speclj})
+                          nil
+                          (catch RuntimeException e
+                            (.getMessage e)))]
+            (should (str/includes? message "Feature file not found"))
+            (should (str/includes? message "ghost.feature")))
           (finally (cleanup features-dir edn-dir output-dir)))))))

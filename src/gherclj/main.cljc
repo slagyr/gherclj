@@ -34,10 +34,12 @@
         (seq excludes) (assoc :exclude-tags (mapv #(subs % 1) excludes))))))
 
 (defn- parse-location-arg [arg]
-  (when-let [[_ source line] (re-matches #"^(.+):(\d+)$" arg)]
+  (if-let [[_ source line] (re-matches #"^(.+\.feature):(\d+)$" arg)]
     {:source source
      :line #?(:clj (Long/parseLong line)
-              :bb (Long/parseLong line))}))
+              :bb (Long/parseLong line))}
+    (when (str/ends-with? arg ".feature")
+      {:source arg})))
 
 (defn- parse-positional-args [arguments]
   (reduce (fn [{:keys [locations framework-opts]} arg]
