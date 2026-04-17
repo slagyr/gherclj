@@ -4,6 +4,8 @@
 
 - Bare `.feature` paths on the CLI run every scenario in the file, and may be mixed with `file:line` selectors in one invocation
 - Usage banner shows the current gherclj version, read from `resources/gherclj/VERSION`
+- Usage text now documents feature targets (`file`, `file:line`)
+- Speclj bumped to 3.13.0
 
 ## v0.7.1
 
