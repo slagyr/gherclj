@@ -9,13 +9,28 @@
   [slug timeout]
   :setup-result)
 
+(defgiven sample-documented-given-step "a documented project step"
+  "Sets project state in memory."
+  []
+  :documented-setup-result)
+
 (defwhen sample-when-step "checking for zombies"
   []
   :action-result)
 
+(defwhen sample-documented-when-step "waiting for the project docs"
+  "Polls for up to 2s."
+  []
+  :documented-action-result)
+
 (defthen sample-then-step "session {session-id:string} should be a zombie with reason {reason:string}"
   [session-id reason]
   :assert-result)
+
+(defthen sample-documented-then-step "the project docs should match"
+  "Matches within 2s timeout."
+  []
+  :documented-assert-result)
 
 (defthen sample-regex-step #"^the output should contain headers (.+)$"
   [headers-str]
@@ -31,10 +46,20 @@
 
     (it "registers a :given step"
       (let [steps (core/steps-in-ns 'gherclj.core-spec)
-            step (first (filter #(= "sample-given-step" (:name %)) steps))]
+             step (first (filter #(= "sample-given-step" (:name %)) steps))]
         (should-not-be-nil step)
         (should= :given (:type step))
-        (should= "a project {slug:string} with timeout {timeout:int}" (:template step)))))
+        (should= "a project {slug:string} with timeout {timeout:int}" (:template step))
+        (should-be-nil (:doc step))))
+
+    (it "stores the optional docstring and source location in the registry"
+      (let [steps (core/steps-in-ns 'gherclj.core-spec)
+            step (first (filter #(= "sample-documented-given-step" (:name %)) steps))
+            var-meta (meta #'sample-documented-given-step)]
+        (should-not-be-nil step)
+        (should= "Sets project state in memory." (:doc step))
+        (should= (:file var-meta) (:file step))
+        (should= (:line var-meta) (:line step)))))
 
   (context "defwhen"
 
@@ -46,7 +71,13 @@
       (let [steps (core/steps-in-ns 'gherclj.core-spec)
             step (first (filter #(= "sample-when-step" (:name %)) steps))]
         (should-not-be-nil step)
-        (should= :when (:type step)))))
+        (should= :when (:type step))))
+
+    (it "stores an optional docstring for a :when step"
+      (let [steps (core/steps-in-ns 'gherclj.core-spec)
+            step (first (filter #(= "sample-documented-when-step" (:name %)) steps))]
+        (should-not-be-nil step)
+        (should= "Polls for up to 2s." (:doc step)))))
 
   (context "defthen"
 
@@ -58,7 +89,13 @@
       (let [steps (core/steps-in-ns 'gherclj.core-spec)
             step (first (filter #(= "sample-then-step" (:name %)) steps))]
         (should-not-be-nil step)
-        (should= :then (:type step)))))
+        (should= :then (:type step))))
+
+    (it "stores an optional docstring for a :then step"
+      (let [steps (core/steps-in-ns 'gherclj.core-spec)
+            step (first (filter #(= "sample-documented-then-step" (:name %)) steps))]
+        (should-not-be-nil step)
+        (should= "Matches within 2s timeout." (:doc step)))))
 
   (context "raw regex escape hatch"
 

@@ -1,5 +1,6 @@
 (ns gherclj.features.steps.step-patterns
-  (:require [gherclj.core :as g :refer [defgiven defwhen defthen]]))
+  (:require [clojure.string :as str]
+            [gherclj.core :as g :refer [defgiven defwhen defthen]]))
 
 ;; --- Regex-based test subjects ---
 
@@ -13,9 +14,10 @@
 
 ;; --- Steps ---
 
-(defgiven lookup-registered-step "the registered step {name:string}"
+(defgiven lookup-registered-step "the registered step {name}"
   [name]
-  (let [steps (g/steps-in-ns 'gherclj.features.steps.step-patterns)
-        step (first (filter #(= name (:name %)) steps))]
+  (let [normalized-name (str/replace name #"^\"|\"$" "")
+        steps (g/steps-in-ns 'gherclj.features.steps.step-patterns)
+        step (first (filter #(= normalized-name (:name %)) steps))]
     (when step
       (g/update! :steps (fnil conj []) step))))

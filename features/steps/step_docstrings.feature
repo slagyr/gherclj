@@ -1,4 +1,3 @@
-@wip
 Feature: Step docstrings
 
   defgiven, defwhen, and defthen accept an optional docstring between

@@ -105,15 +105,18 @@
 
 (defn register-step!
   "Register a step definition. Called by the defgiven/defwhen/defthen macros."
-  [ns-sym step-type step-name template-or-regex compiled]
+  [ns-sym step-type step-name template-or-regex compiled {:keys [doc file line]}]
   (let [entry (merge {:name (name step-name)
                       :type step-type
-                      :ns ns-sym}
+                      :ns ns-sym
+                      :doc doc
+                      :file file
+                      :line line}
                      (if (instance? java.util.regex.Pattern template-or-regex)
                        {:regex template-or-regex}
                        {:template template-or-regex
-                        :regex (:regex compiled)
-                        :bindings (:bindings compiled)}))]
+                         :regex (:regex compiled)
+                         :bindings (:bindings compiled)}))]
     (clojure.core/swap! registry clojure.core/update ns-sym (fnil conj []) entry)
     nil))
 
@@ -151,14 +154,16 @@
 
 ;; --- Macros ---
 
-(defmacro defstep* [step-type step-name template-or-regex args & body]
-  (let [ns-sym (ns-name *ns*)]
+(defmacro defstep* [step-type step-name template-or-regex docstring args source & body]
+  (let [ns-sym (ns-name *ns*)
+        fn-doc (or docstring (when (string? template-or-regex) template-or-regex))]
     `(do
-       (defn ~step-name ~(if (string? template-or-regex) template-or-regex "") ~args ~@body)
+       (defn ~step-name ~@(cond-> [] fn-doc (conj fn-doc) true (conj args) true (into body)))
        (register-step! '~ns-sym ~step-type '~step-name
-                       ~template-or-regex
-                       ~(when (string? template-or-regex)
-                          `(template/compile-template ~template-or-regex))))))
+                        ~template-or-regex
+                        ~(when (string? template-or-regex)
+                           `(template/compile-template ~template-or-regex))
+                        ~(assoc source :doc docstring)))))
 
 (defmacro defgiven
   "Define a Given step. Reads like defn with a docstring.
@@ -166,15 +171,30 @@
    (defgiven add-project \"a project \\\"{slug}\\\" with timeout {timeout:int}\"
      [slug timeout]
      (h/add-project slug {:timeout timeout}))"
-  [step-name template-or-regex args & body]
-  `(defstep* :given ~step-name ~template-or-regex ~args ~@body))
+  [step-name template-or-regex & definition]
+  (let [[docstring args body] (if (vector? (first definition))
+                                [nil (first definition) (rest definition)]
+                                [(first definition) (second definition) (nnext definition)])]
+    `(defstep* :given ~step-name ~template-or-regex ~docstring ~args
+       {:file ~*file* :line ~(-> &form meta :line)}
+       ~@body)))
 
 (defmacro defwhen
   "Define a When step."
-  [step-name template-or-regex args & body]
-  `(defstep* :when ~step-name ~template-or-regex ~args ~@body))
+  [step-name template-or-regex & definition]
+  (let [[docstring args body] (if (vector? (first definition))
+                                [nil (first definition) (rest definition)]
+                                [(first definition) (second definition) (nnext definition)])]
+    `(defstep* :when ~step-name ~template-or-regex ~docstring ~args
+       {:file ~*file* :line ~(-> &form meta :line)}
+       ~@body)))
 
 (defmacro defthen
   "Define a Then step."
-  [step-name template-or-regex args & body]
-  `(defstep* :then ~step-name ~template-or-regex ~args ~@body))
+  [step-name template-or-regex & definition]
+  (let [[docstring args body] (if (vector? (first definition))
+                                [nil (first definition) (rest definition)]
+                                [(first definition) (second definition) (nnext definition)])]
+    `(defstep* :then ~step-name ~template-or-regex ~docstring ~args
+       {:file ~*file* :line ~(-> &form meta :line)}
+       ~@body)))
