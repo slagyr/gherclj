@@ -1,12 +1,16 @@
 *.class
 *.iml
 *.jar
+.beads/export-state.json
 .claude/
+.clj-kondo/.cache/
 .cpcache/
 .env
 .idea/
+.lsp/
 .nrepl-port
 .opencode/
+.serena/
 .toolbox/
 features/edn/
 features/generated/
