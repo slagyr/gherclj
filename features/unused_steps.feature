@@ -21,8 +21,8 @@ Feature: Unused step detection
       """
     When running gherclj with "-f features -s gherclj.sample.app-steps unused"
     Then the output should contain lines:
-      | Scanned 3 scenarios. No tag filtering applied. |
-      | No unused steps found.                         |
+      | Scanned 1 scenario. No tag filtering applied. |
+      | No unused steps found.                        |
 
   Scenario: Step never referenced in any feature file is reported
     Given a features directory containing:
@@ -37,7 +37,7 @@ Feature: Unused step detection
       """
     When running gherclj with "-f features -s gherclj.sample.app-steps unused"
     Then the output should contain lines:
-      | Scanned 2 scenarios. No tag filtering applied.        |
+      | Scanned 1 scenario. No tag filtering applied.         |
       | 1 unused step found.                                  |
       | the response should be {status:int}  (app_steps.clj: |
     And the output should not contain "a user {name:string}"
