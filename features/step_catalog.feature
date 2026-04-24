@@ -80,13 +80,13 @@ Feature: Step catalog
 
   # --- Color ---
 
-  Scenario: --no-color produces output without ANSI escape sequences
+  Scenario: Output is colorized by default
+    When running gherclj with "-s gherclj.sample.app-steps steps"
+    Then the output should have color codes
+
+  Scenario: --no-color suppresses ANSI escape sequences
     When running gherclj with "-s gherclj.sample.app-steps steps --no-color"
     Then the output should have no color codes
-
-  Scenario: --color forces ANSI color codes in output
-    When running gherclj with "-s gherclj.sample.app-steps steps --color"
-    Then the output should have color codes
 
   # --- Help ---
 
@@ -96,6 +96,5 @@ Feature: Step catalog
     And the output should contain "--given"
     And the output should contain "--when"
     And the output should contain "--then"
-    And the output should contain "--color"
     And the output should contain "--no-color"
     And the output should contain "-s, --step-namespaces"
