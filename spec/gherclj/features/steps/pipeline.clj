@@ -23,7 +23,7 @@
            :output-dir (output-dir)
            :step-namespaces (or (g/get :step-namespaces) [])}
     verbose (assoc :verbose true)
-    framework (assoc :test-framework framework)
+    framework (assoc :framework framework)
     include-tags (assoc :include-tags include-tags)
     exclude-tags (assoc :exclude-tags exclude-tags)
     locations (assoc :locations locations)))

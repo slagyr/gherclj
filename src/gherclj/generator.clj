@@ -1,29 +1,8 @@
 ;; mutation-tested: 2026-03-25
 (ns gherclj.generator
   (:require [clojure.string :as str]
-            [gherclj.core :as core]))
-
-;; --- Framework multimethods ---
-
-(defmulti generate-ns-form
-  "Generate the ns declaration string for a feature spec."
-  (fn [config & _args] (:test-framework config)))
-
-(defmulti wrap-feature
-  "Wrap scenario blocks in a feature-level form."
-  (fn [config & _] (:test-framework config)))
-
-(defmulti wrap-scenario
-  "Wrap step code in a scenario-level form."
-  (fn [config & _] (:test-framework config)))
-
-(defmulti wrap-pending
-  "Generate a pending/skipped scenario."
-  (fn [config & _] (:test-framework config)))
-
-(defmulti run-specs
-  "Execute generated spec files. Dispatched on :test-framework."
-  (fn [config] (:test-framework config)))
+            [gherclj.core :as core]
+            [gherclj.framework :as fw]))
 
 ;; --- Step classification ---
 
@@ -58,7 +37,7 @@
       (str "(" fn-sym " " args-str ")")
       (str "(" fn-sym ")"))))
 
-(defn- generate-step-call-with-extras
+(defn generate-step-call-with-extras
   "Generate a function call, appending table or doc-string as the last arg if present."
   [{:keys [ns name args table doc-string] :as step}]
   (if (or table doc-string)
@@ -79,7 +58,7 @@
                  (:ns classified))))
        (into #{})))
 
-(defn- source->ns-name
+(defn source->ns-name
   "Convert a feature source path to a namespace name."
   [source suffix]
   (-> source
@@ -104,13 +83,13 @@
         classified-scenarios (mapv #(classify-scenario steps %) filtered)]
     (when (seq classified-scenarios)
       (let [classified-bg (when background (classify-scenario steps background))
-            ns-form (generate-ns-form config source
-                                      (step-ns-requires steps classified-bg filtered))
+            preamble (fw/generate-preamble config source
+                                           (step-ns-requires steps classified-bg filtered))
             scenario-blocks (->> classified-scenarios
                                  (map (fn [scenario]
                                         (if (all-classified? scenario)
-                                          (wrap-scenario config scenario classified-bg)
-                                          (wrap-pending config scenario classified-bg))))
+                                          (fw/wrap-scenario config scenario classified-bg)
+                                          (fw/wrap-pending config scenario classified-bg))))
                                  (str/join "\n\n"))]
-        (str ns-form "\n\n"
-             (wrap-feature config feature scenario-blocks))))))
+        (str preamble "\n\n"
+             (fw/wrap-feature config feature scenario-blocks))))))

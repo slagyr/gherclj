@@ -13,7 +13,7 @@ Feature: Pipeline configuration
        :edn-dir "target/gherclj/edn"
        :output-dir "target/gherclj/generated"
        :step-namespaces []
-       :test-framework :speclj
+       :framework :speclj
        :verbose false
        :framework-opts []
        :include-tags []
@@ -24,7 +24,7 @@ Feature: Pipeline configuration
     Given a config:
       """
       {:features-dir "specs/features"
-       :test-framework :clojure.test
+       :framework :clojure.test
        :verbose true}
       """
     When the config is resolved
@@ -34,7 +34,7 @@ Feature: Pipeline configuration
        :edn-dir "target/gherclj/edn"
        :output-dir "target/gherclj/generated"
        :step-namespaces []
-       :test-framework :clojure.test
+       :framework :clojure.test
        :verbose true
        :framework-opts []
        :include-tags []
@@ -44,7 +44,7 @@ Feature: Pipeline configuration
   Scenario: Invalid test framework is rejected
     Given a config:
       """
-      {:test-framework :banana}
+      {:framework :banana}
       """
     When the config is resolved
     Then the config should be invalid with message "banana"

@@ -10,12 +10,13 @@
             [gherclj.discovery :as discovery]))
 
 (defn- ensure-framework-loaded!
-  "Load the framework namespace for the given test-framework keyword."
-  [test-framework]
-  (let [fw-ns (case test-framework
+  "Load the framework namespace for the given framework keyword."
+  [framework]
+  (let [fw-ns (case framework
                 :speclj 'gherclj.frameworks.speclj
                 :clojure.test 'gherclj.frameworks.clojure-test
-                (symbol (str "gherclj.frameworks." (name test-framework))))]
+                :rspec 'gherclj.frameworks.rspec
+                (symbol (str "gherclj.frameworks." (name framework))))]
     (require fw-ns)))
 
 (defn- scan-namespaces
@@ -65,9 +66,10 @@
 (defn- source->edn-filename [source]
   (str/replace source #"\.feature$" ".edn"))
 
-(defn- source->spec-filename [source test-framework]
-  (let [suffix (case test-framework
+(defn- source->spec-filename [source framework]
+  (let [suffix (case framework
                  :clojure.test "_test.clj"
+                 :rspec "_spec.rb"
                  "_spec.clj")]
     (-> source
         (str/replace #"\.(feature|edn)$" "")
@@ -201,13 +203,13 @@
      :edn-dir         - directory containing .edn IR files (default: target/gherclj/edn)
      :output-dir      - directory to write generated specs (default: target/gherclj/generated)
      :step-namespaces - vector of namespace symbols containing step definitions
-     :test-framework  - :speclj or :clojure.test"
+     :framework  - :speclj or :clojure.test"
   [config]
-  (let [{:keys [edn-dir output-dir step-namespaces test-framework verbose locations features-dir]
+  (let [{:keys [edn-dir output-dir step-namespaces framework verbose locations features-dir]
           :or {edn-dir "target/gherclj/edn"
                output-dir "target/gherclj/generated"
                features-dir "features"}} config]
-    (ensure-framework-loaded! test-framework)
+    (ensure-framework-loaded! framework)
     (let [resolved-steps (load-step-namespaces! step-namespaces)
           config (assoc config :step-namespaces resolved-steps)
           selected-scenarios (when (seq locations)
@@ -220,7 +222,7 @@
               ir (if selected-scenarios
                    (filter-ir-by-locations parsed-ir selected-scenarios)
                    parsed-ir)
-              out-name (source->spec-filename (:source ir) test-framework)
+              out-name (source->spec-filename (:source ir) framework)
               out-path (str output-dir "/" out-name)
               spec-str (gen/generate-spec config ir)
               out-file (io/file out-path)]
@@ -240,7 +242,7 @@
      :edn-dir         - directory to write .edn IR files (default: target/gherclj/edn)
      :output-dir      - directory to write generated specs (default: target/gherclj/generated)
      :step-namespaces - vector of namespace symbols containing step definitions
-     :test-framework  - :speclj or :clojure.test"
+     :framework  - :speclj or :clojure.test"
   [config]
   (parse! config)
   (generate! config))

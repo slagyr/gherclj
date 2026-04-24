@@ -7,39 +7,39 @@ Feature: Config file loading
     Given a gherclj.edn file at the project root:
       """
       {:features-dir "my-features"
-       :test-framework :clojure.test}
+       :framework :clojure.test}
       """
     When the config is loaded
     Then the resolved config should contain:
       """
       {:features-dir "my-features"
-       :test-framework :clojure.test}
+       :framework :clojure.test}
       """
 
   Scenario: Load config from classpath
     Given a gherclj.edn file on the classpath:
       """
-      {:test-framework :clojure.test}
+      {:framework :clojure.test}
       """
     When the config is loaded
     Then the resolved config should contain:
       """
-      {:test-framework :clojure.test}
+      {:framework :clojure.test}
       """
 
   Scenario: Project root takes precedence over classpath
     Given a gherclj.edn file at the project root:
       """
-      {:test-framework :speclj}
+      {:framework :speclj}
       """
     And a gherclj.edn file on the classpath:
       """
-      {:test-framework :clojure.test}
+      {:framework :clojure.test}
       """
     When the config is loaded
     Then the resolved config should contain:
       """
-      {:test-framework :speclj}
+      {:framework :speclj}
       """
 
   Scenario: No config file uses defaults
@@ -51,7 +51,7 @@ Feature: Config file loading
        :edn-dir "target/gherclj/edn"
        :output-dir "target/gherclj/generated"
        :step-namespaces []
-       :test-framework :speclj
+       :framework :speclj
        :verbose false
        :framework-opts []
        :include-tags []

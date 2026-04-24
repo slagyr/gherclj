@@ -28,4 +28,4 @@ Feature: Tag CLI flag
   Scenario: Updated help shows new flags
     When running gherclj with "--help"
     Then the output should contain "-t, --tag TAG"
-    And the output should contain "-T, --test-framework FRAMEWORK"
+    And the output should contain "-F, --framework FRAMEWORK"

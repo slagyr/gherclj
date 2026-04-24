@@ -1,14 +1,15 @@
 (ns gherclj.frameworks.speclj
   (:require [clojure.string :as str]
-             [gherclj.core :as g]
-             [gherclj.generator :as gen]
-             [gherclj.lifecycle :as lifecycle]
-             [speclj.cli :as speclj]
-             [speclj.core :as sc]))
+            [gherclj.core :as g]
+            [gherclj.framework :as fw]
+            [gherclj.generator :as gen]
+            [gherclj.lifecycle :as lifecycle]
+            [speclj.cli :as speclj]
+            [speclj.core :as sc]))
 
-(defmethod gen/generate-ns-form :speclj
+(defmethod fw/generate-preamble :speclj
   [_config source step-ns-syms]
-  (let [ns-name (str (#'gen/source->ns-name source "-spec"))
+  (let [ns-name (str (gen/source->ns-name source "-spec"))
         step-reqs (->> step-ns-syms
                        sort
                        (map #(str "            [" % " :as " (gen/ns->alias %) "]")))]
@@ -20,7 +21,7 @@
            (str "\n" (str/join "\n" step-reqs)))
          "))")))
 
-(defmethod gen/wrap-feature :speclj
+(defmethod fw/wrap-feature :speclj
   [_config feature-name scenario-blocks]
   (str "(describe \"" feature-name "\"\n\n"
        "  (before-all (lifecycle/run-before-feature-hooks!))\n"
@@ -29,15 +30,15 @@
        "  (after-all (lifecycle/run-after-feature-hooks!))\n\n"
        scenario-blocks ")\n"))
 
-(defmethod gen/wrap-scenario :speclj
+(defmethod fw/wrap-scenario :speclj
   [_config scenario background]
   (let [title (:scenario scenario)
         bg-calls (when background
                    (->> (:steps background)
                         (filter :classified?)
-                        (map #'gen/generate-step-call-with-extras)))
+                        (map gen/generate-step-call-with-extras)))
         step-calls (->> (:steps scenario)
-                        (map #'gen/generate-step-call-with-extras))
+                        (map gen/generate-step-call-with-extras))
         all-calls (concat bg-calls step-calls)
         body (->> all-calls
                   (map #(str "    " %))
@@ -45,7 +46,7 @@
     (str "  (it \"" title "\"\n"
          body ")")))
 
-(defmethod gen/wrap-pending :speclj
+(defmethod fw/wrap-pending :speclj
   [_config scenario background]
   (let [title (:scenario scenario)
         step-comments (->> (concat (when background
@@ -64,9 +65,9 @@
     :or {output-dir "target/gherclj/generated"}}]
   (into ["-c" output-dir "-s" "src"] (or framework-opts [])))
 
-(defmethod gen/run-specs :speclj
+(defmethod fw/run-specs :speclj
   [config]
-  (g/set-test-framework! :speclj)
+  (g/set-framework! :speclj)
   (let [args (run-args config)]
     (lifecycle/run-before-all-hooks!)
     (try

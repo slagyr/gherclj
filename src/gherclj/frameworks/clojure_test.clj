@@ -1,9 +1,10 @@
 (ns gherclj.frameworks.clojure-test
   (:require [clojure.string :as str]
-             [clojure.test :as ct]
-             [gherclj.core :as g]
-             [gherclj.generator :as gen]
-             [gherclj.lifecycle :as lifecycle]))
+            [clojure.test :as ct]
+            [gherclj.core :as g]
+            [gherclj.framework :as fw]
+            [gherclj.generator :as gen]
+            [gherclj.lifecycle :as lifecycle]))
 
 (defn- slugify [title]
   (-> title
@@ -11,9 +12,9 @@
       (str/replace #"[^a-z0-9]+" "-")
       (str/replace #"^-|-$" "")))
 
-(defmethod gen/generate-ns-form :clojure.test
+(defmethod fw/generate-preamble :clojure.test
   [_config source step-ns-syms]
-  (let [ns-name (str (#'gen/source->ns-name source "-test"))
+  (let [ns-name (str (gen/source->ns-name source "-test"))
         step-reqs (->> step-ns-syms
                        sort
                        (map #(str "            [" % " :as " (gen/ns->alias %) "]")))]
@@ -25,7 +26,7 @@
            (str "\n" (str/join "\n" step-reqs)))
          "))")))
 
-(defmethod gen/wrap-feature :clojure.test
+(defmethod fw/wrap-feature :clojure.test
   [_config _feature-name scenario-blocks]
   (str "(defn ^:private feature-fixture [f]\n"
        "  (lifecycle/run-before-feature-hooks!)\n"
@@ -44,16 +45,16 @@
        "(use-fixtures :each scenario-fixture)\n\n"
        scenario-blocks "\n"))
 
-(defmethod gen/wrap-scenario :clojure.test
+(defmethod fw/wrap-scenario :clojure.test
   [_config scenario background]
   (let [title (:scenario scenario)
         test-name (slugify title)
         bg-calls (when background
                    (->> (:steps background)
                         (filter :classified?)
-                        (map #'gen/generate-step-call-with-extras)))
+                        (map gen/generate-step-call-with-extras)))
         step-calls (->> (:steps scenario)
-                        (map #'gen/generate-step-call-with-extras))
+                        (map gen/generate-step-call-with-extras))
         all-calls (concat bg-calls step-calls)
         body (->> all-calls
                   (map #(str "    " %))
@@ -62,7 +63,7 @@
          "  (testing \"" title "\"\n"
          body "))")))
 
-(defmethod gen/wrap-pending :clojure.test
+(defmethod fw/wrap-pending :clojure.test
   [_config scenario _background]
   (let [title (:scenario scenario)
         test-name (slugify title)]
@@ -78,9 +79,9 @@
         ns-form (first (filter #(and (seq? %) (= 'ns (first %))) forms))]
     (when ns-form (second ns-form))))
 
-(defmethod gen/run-specs :clojure.test
+(defmethod fw/run-specs :clojure.test
   [config]
-  (g/set-test-framework! :clojure.test)
+  (g/set-framework! :clojure.test)
   (let [output-dir (or (:output-dir config) "target/gherclj/generated")
         dir (clojure.java.io/file output-dir)
         test-files (->> (file-seq dir)

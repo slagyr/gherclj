@@ -24,7 +24,7 @@
         config {:step-namespaces []
                 :include-tags tag-list
                 :exclude-tags []
-                :test-framework :speclj}]
+                :framework :speclj}]
     (g/assoc! :generated-output (gen/generate-spec config (g/get :feature-ir)))))
 
 (defwhen generate-with-exclude-tags "generating with exclude tags {tags:string}"
@@ -32,13 +32,13 @@
   (let [tag-list (str/split tags #",\s*")
         config {:step-namespaces []
                 :exclude-tags tag-list
-                :test-framework :speclj}]
+                :framework :speclj}]
     (g/assoc! :generated-output (gen/generate-spec config (g/get :feature-ir)))))
 
 (defwhen generate-with-no-filters "generating with no tag filters"
   []
   (let [config {:step-namespaces []
-                :test-framework :speclj}]
+                :framework :speclj}]
     (g/assoc! :generated-output (gen/generate-spec config (g/get :feature-ir)))))
 
 (defthen generated-scenarios-should-be "the generated scenarios should be {list:string}"

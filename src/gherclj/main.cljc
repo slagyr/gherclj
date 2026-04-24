@@ -4,7 +4,7 @@
              [clojure.tools.cli :as cli]
              [gherclj.catalog :as catalog]
              [gherclj.config :as config]
-             [gherclj.generator :as gen]
+             [gherclj.framework :as fw]
              [gherclj.unused :as unused]
              [gherclj.pipeline :as pipeline]))
 
@@ -31,7 +31,7 @@
    [nil "--then" "Show Then steps"]
    [nil "--color" "Force ANSI color output"]
    [nil "--no-color" "Disable ANSI color output"]
-   ["-T" "--test-framework FRAMEWORK" "Test framework: speclj, clojure.test (default: speclj)"
+   ["-F" "--framework FRAMEWORK" "Test framework: speclj, clojure.test (default: speclj)"
     :parse-fn keyword]
    ["-v" "--verbose" "Print progress to stdout"]
    ["-h" "--help" "Show usage"]])
@@ -136,7 +136,7 @@
                     0)
           (do
             (pipeline/run! merged)
-            (let [result (gen/run-specs merged)]
+            (let [result (fw/run-specs merged)]
               (if (failures? result) 1 0))))))))
 
 (defn -main [& args]

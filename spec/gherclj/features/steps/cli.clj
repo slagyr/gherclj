@@ -73,7 +73,7 @@
             run-args (with-sandbox-defaults arg-vec)]
         (g/assoc! :loaded-config merged)
         (when (or help (pipeline-base-dir) (= :steps (:subcommand options)))
-          (let [previous-framework (g/get :_test-framework)
+          (let [previous-framework (g/get :_framework)
                 output (with-out-str
                          (try
                            (main/run run-args)
@@ -81,7 +81,7 @@
                              (println (.getMessage e)))
                             (finally
                               (when previous-framework
-                                (g/set-test-framework! previous-framework)))))]
+                                (g/set-framework! previous-framework)))))]
             (g/assoc! :cli-output output)))))))
 
 (defwhen run-speclj-with-framework-options "speclj runs with framework options {opts:string}"

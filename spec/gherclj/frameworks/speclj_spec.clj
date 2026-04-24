@@ -1,6 +1,7 @@
 (ns gherclj.frameworks.speclj-spec
   (:require [gherclj.frameworks.speclj :as speclj-fw]
             [gherclj.core :as g]
+            [gherclj.framework :as fw]
             [gherclj.generator :as gen]
             [gherclj.lifecycle :as lifecycle]
             [clojure.string :as str]
@@ -18,10 +19,10 @@
       (should= ["-c" "target/gherclj/generated" "-s" "src"]
                (speclj-fw/run-args {}))))
 
-  (context "generate-ns-form"
+  (context "generate-preamble"
 
     (it "generates a namespace form with required imports and step requires"
-      (let [result (gen/generate-ns-form {:test-framework :speclj}
+      (let [result (fw/generate-preamble {:framework :speclj}
                                          "features/auth.feature"
                                          ['myapp.steps.auth 'myapp.steps.cart])]
         (should (str/includes? result "speclj.core :refer :all"))
@@ -30,7 +31,7 @@
         (should (str/includes? result "myapp.steps.cart"))))
 
     (it "generates a namespace form with no step requires"
-      (let [result (gen/generate-ns-form {:test-framework :speclj}
+      (let [result (fw/generate-preamble {:framework :speclj}
                                          "features/auth.feature"
                                          [])]
         (should (str/includes? result "speclj.core :refer :all"))
@@ -39,7 +40,7 @@
   (context "wrap-feature"
 
     (it "wraps scenario blocks in a describe with lifecycle hooks"
-      (let [result (gen/wrap-feature {:test-framework :speclj}
+      (let [result (fw/wrap-feature {:framework :speclj}
                                      "Authentication"
                                      "  (it \"test\")")]
         (should (str/includes? result "(describe \"Authentication\""))
@@ -57,7 +58,7 @@
                                :ns 'myapp.steps :name "summon-hero" :args []}
                               {:type :when :text "they log in" :classified? true
                                :ns 'myapp.steps :name "log-in" :args []}]}
-            result (gen/wrap-scenario {:test-framework :speclj} scenario nil)]
+            result (fw/wrap-scenario {:framework :speclj} scenario nil)]
         (should (str/includes? result "(it \"User can log in\""))
         (should (str/includes? result "steps/summon-hero"))
         (should (str/includes? result "steps/log-in"))))
@@ -68,7 +69,7 @@
             scenario {:scenario "User can log in"
                       :steps [{:type :when :text "they log in" :classified? true
                                :ns 'myapp.steps :name "log-in" :args []}]}
-            result (gen/wrap-scenario {:test-framework :speclj} scenario background)]
+            result (fw/wrap-scenario {:framework :speclj} scenario background)]
         (should (str/includes? result "steps/clean-db"))
         (should (str/includes? result "steps/log-in")))))
 
@@ -78,7 +79,7 @@
       (let [scenario {:scenario "Unimplemented feature"
                       :steps [{:type :given :text "something exists"}
                               {:type :when :text "action happens"}]}
-            result (gen/wrap-pending {:test-framework :speclj} scenario nil)]
+            result (fw/wrap-pending {:framework :speclj} scenario nil)]
         (should (str/includes? result "(it \"Unimplemented feature\""))
         (should (str/includes? result "pending"))
         (should (str/includes? result ";; given something exists"))
@@ -88,16 +89,16 @@
       (let [background {:steps [{:type :given :text "db is clean"}]}
             scenario {:scenario "Unimplemented feature"
                       :steps [{:type :when :text "action happens"}]}
-            result (gen/wrap-pending {:test-framework :speclj} scenario background)]
+            result (fw/wrap-pending {:framework :speclj} scenario background)]
         (should (str/includes? result ";; given db is clean"))
         (should (str/includes? result ";; when action happens")))))
 
   (context "assertion methods"
 
     (around [it]
-      (g/set-test-framework! :speclj)
+      (g/set-framework! :speclj)
       (it)
-      (g/set-test-framework! nil))
+      (g/set-framework! nil))
 
     (it "should= passes when values are equal"
       (g/should= 42 42))
@@ -123,7 +124,7 @@
                                                            0)
                       gherclj.lifecycle/run-before-all-hooks! (fn [])
                       gherclj.lifecycle/run-after-all-hooks!  (fn [])]
-          (gen/run-specs {:test-framework :speclj
+          (fw/run-specs {:framework :speclj
                           :output-dir     "tmp/generated"
                           :framework-opts ["-f" "documentation" "-c" "-P"]}))
 
@@ -136,6 +137,6 @@
                       gherclj.lifecycle/run-before-all-hooks! (fn [])
                       gherclj.lifecycle/run-after-all-hooks!  (fn [] (reset! after-called true))]
           (should-throw RuntimeException
-                        (gen/run-specs {:test-framework :speclj
+                        (fw/run-specs {:framework :speclj
                                         :output-dir     "tmp/generated"})))
         (should @after-called)))))

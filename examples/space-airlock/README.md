@@ -15,15 +15,10 @@ emergency override behavior.
 
 **`gherclj` is the runner for every implementation.** The step definitions are
 always written in Clojure — but the production code they exercise can be in any
-language. Clojure step definitions call into Python, Ruby, Go, or whatever the
-implementation language is, typically via subprocess with JSON over stdin/stdout.
+language. Clojure step definitions generate Python, Ruby, Go, or whatever
+implementation language is in use.
 
-This is the unique advantage over language-specific BDD frameworks:
-
-- One workflow, one tool, regardless of implementation language
-- The same `gherclj steps` and `gherclj unused` commands work across all implementations
-- AI agents learn one pattern and apply it everywhere
-- The Gherkin contract is truly language-neutral — not just in theory
+The intermediate representation (IR) files are what provide value to the AIs.
 
 ## Implementations
 

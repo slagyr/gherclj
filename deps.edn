@@ -9,7 +9,7 @@
    :features    {:extra-deps {speclj/speclj {:mvn/version "3.13.0"}}
                  :main-opts  ["-m" "gherclj.main" "-t" "~wip"]}
    :features-ct {:extra-deps {speclj/speclj {:mvn/version "3.13.0"}}
-                 :main-opts  ["-m" "gherclj.main" "-T" "clojure.test" "-t" "~wip"]}
+                 :main-opts  ["-m" "gherclj.main" "-F" "clojure.test" "-t" "~wip"]}
   :cov         {:extra-deps {cloverage/cloverage {:mvn/version "1.2.4"}
                              speclj/speclj       {:mvn/version "3.13.0"}}
                 :main-opts  ["-m" "speclj.cloverage" "--" "-p" "src" "-s" "spec" "--ns-exclude-regex" "gherclj\\.features\\.steps\\..*"]}

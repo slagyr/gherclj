@@ -15,7 +15,7 @@ Feature: CLI
     And the output should contain "-s, --step-namespaces NS"
     And the output should contain "-t, --tag TAG"
     And the output should contain "Use ~ prefix to exclude tags"
-    And the output should contain "-T, --test-framework FRAMEWORK"
+    And the output should contain "-F, --framework FRAMEWORK"
     And the output should contain "-v, --verbose"
     And the output should contain "-h, --help"
 
@@ -27,20 +27,20 @@ Feature: CLI
     Given a config file:
       """
       {:features-dir "features"
-       :test-framework :speclj}
+       :framework :speclj}
       """
-    When running gherclj with "--test-framework clojure.test --verbose"
+    When running gherclj with "--framework clojure.test --verbose"
     Then the resolved config should contain:
       """
-      {:test-framework :clojure.test
+      {:framework :clojure.test
        :verbose true}
       """
 
   Scenario: Short flags work
-    When running gherclj with "-T clojure.test -v"
+    When running gherclj with "-F clojure.test -v"
     Then the resolved config should contain:
       """
-      {:test-framework :clojure.test
+      {:framework :clojure.test
        :verbose true}
       """
 
@@ -86,7 +86,7 @@ Feature: CLI
           Then the response status should be 200
       """
     And step namespaces include pattern "gherclj.pipeline-*"
-    When running gherclj with "-f features -o target/gherclj/generated -e target/gherclj/edn -T speclj -s gherclj.pipeline-*"
+    When running gherclj with "-f features -o target/gherclj/generated -e target/gherclj/edn -F speclj -s gherclj.pipeline-*"
     Then "target/gherclj/generated/dragon_spec.clj" should exist and:
       | check        | value                         |
       | contains     | Wake the librarian dragon     |

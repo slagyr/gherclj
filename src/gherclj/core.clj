@@ -21,12 +21,12 @@
 (defn reset!
   "Clear user state, preserving internal keys."
   []
-  (clojure.core/swap! state (fn [s] {:_gherclj {} :_test-framework (:_test-framework s)})))
+  (clojure.core/swap! state (fn [s] {:_gherclj {} :_framework (:_framework s)})))
 
 (defn get
   "Access state. No args returns user-visible state (excludes internal keys),
    with key returns value, with key+default returns value or default."
-  ([] (clojure.core/dissoc @state :_gherclj :_test-framework))
+  ([] (clojure.core/dissoc @state :_gherclj :_framework))
   ([key] (clojure.core/get @state key))
   ([key default] (clojure.core/get @state key default)))
 
@@ -69,10 +69,10 @@
 ;; Delegate to the active test framework via multimethods.
 
 (defn- active-framework []
-  (clojure.core/get @state :_test-framework))
+  (clojure.core/get @state :_framework))
 
-(defn set-test-framework! [fw]
-  (clojure.core/swap! state clojure.core/assoc :_test-framework fw))
+(defn set-framework! [fw]
+  (clojure.core/swap! state clojure.core/assoc :_framework fw))
 
 (defmulti should=           (fn [_ _] (active-framework)))
 (defmulti should            (fn [_]   (active-framework)))

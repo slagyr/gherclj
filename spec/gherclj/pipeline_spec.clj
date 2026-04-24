@@ -2,19 +2,20 @@
   (:require [speclj.core :refer :all]
             [gherclj.pipeline :as pipeline]
             [gherclj.generator :as gen]
+            [gherclj.framework :as fw]
             [gherclj.core :refer [defgiven defwhen defthen]]
             [clojure.java.io :as io]
             [clojure.edn :as edn]
             [clojure.string :as str]))
 
 ;; Minimal custom framework for fallback-path coverage
-(defmethod gen/generate-ns-form :custom-pipeline-fw [_ source _]
+(defmethod fw/generate-preamble :custom-pipeline-fw [_ source _]
   (str "(ns custom-fw-test)"))
-(defmethod gen/wrap-feature :custom-pipeline-fw [_ _ scenario-blocks]
+(defmethod fw/wrap-feature :custom-pipeline-fw [_ _ scenario-blocks]
   scenario-blocks)
-(defmethod gen/wrap-scenario :custom-pipeline-fw [_ scenario _]
+(defmethod fw/wrap-scenario :custom-pipeline-fw [_ scenario _]
   (str "(it \"" (:scenario scenario) "\")"))
-(defmethod gen/wrap-pending :custom-pipeline-fw [_ scenario _]
+(defmethod fw/wrap-pending :custom-pipeline-fw [_ scenario _]
   (str "(pending \"" (:scenario scenario) "\")"))
 
 ;; Sample steps for pipeline test
@@ -114,7 +115,7 @@
              :edn-dir edn-dir
              :output-dir output-dir
              :step-namespaces ['gherclj.pipeline-spec]
-             :test-framework :speclj})
+             :framework :speclj})
 
           (should (.exists (io/file edn-dir "auth.edn")))
 
@@ -140,7 +141,7 @@
                             :output-dir output-dir
                             :step-namespaces ['gherclj.pipeline-spec]
                             :harness-ns 'myapp.harness
-                            :test-framework :speclj}))]
+                            :framework :speclj}))]
             (should= "" output))
           (finally (cleanup features-dir edn-dir output-dir)))))
 
@@ -159,7 +160,7 @@
                             :output-dir output-dir
                             :step-namespaces ['gherclj.pipeline-spec]
                             :harness-ns 'myapp.harness
-                            :test-framework :speclj
+                            :framework :speclj
                             :verbose true}))]
             (should (str/includes? output "Parsing"))
             (should (str/includes? output "Generating")))
@@ -183,7 +184,7 @@
              :edn-dir edn-dir
              :output-dir output-dir
              :step-namespaces ["gherclj.sample.*"]
-             :test-framework :speclj})
+             :framework :speclj})
 
           (should (.exists (io/file output-dir "auth_spec.clj")))
           (let [content (slurp (io/file output-dir "auth_spec.clj"))]
@@ -203,7 +204,7 @@
              :edn-dir edn-dir
              :output-dir output-dir
              :step-namespaces ['gherclj.pipeline-spec]
-             :test-framework :clojure.test})
+             :framework :clojure.test})
 
           (should (.exists (io/file output-dir "auth_test.clj")))
           (let [content (slurp (io/file output-dir "auth_test.clj"))]
@@ -231,7 +232,7 @@
             {:edn-dir edn-dir
              :output-dir output-dir
              :step-namespaces ['gherclj.pipeline-spec]
-             :test-framework :speclj})
+             :framework :speclj})
           (let [out-file (io/file output-dir "auth_spec.clj")]
             (should (.exists out-file))
             (should (str/includes? (slurp out-file) "Authentication")))
@@ -258,12 +259,12 @@
                            {:edn-dir edn-dir
                             :output-dir output-dir
                             :step-namespaces ['gherclj.pipeline-spec]
-                            :test-framework :speclj
+                            :framework :speclj
                             :verbose true}))]
             (should (str/includes? output "Generating")))
           (finally (cleanup edn-dir output-dir)))))
 
-    (it "uses fallback framework namespace symbol for non-standard :test-framework values"
+    (it "uses fallback framework namespace symbol for non-standard :framework values"
       (let [features-dir (tmp "fw-features")
             edn-dir (tmp "fw-edn")
             output-dir (tmp "fw-output")
@@ -277,7 +278,7 @@
                :edn-dir edn-dir
                :output-dir output-dir
                :step-namespaces ['gherclj.pipeline-spec]
-               :test-framework :custom-pipeline-fw}))
+               :framework :custom-pipeline-fw}))
           (should (.exists (io/file edn-dir "auth.edn")))
           (finally (cleanup features-dir edn-dir output-dir)))))
 
@@ -305,7 +306,7 @@
              :output-dir output-dir
              :step-namespaces ['gherclj.pipeline-spec]
              :exclude-tags ["slow"]
-             :test-framework :speclj})
+             :framework :speclj})
 
           (should-not (.exists spec-file))
           (finally (cleanup features-dir edn-dir output-dir)))))
@@ -335,7 +336,7 @@
              :output-dir output-dir
              :step-namespaces ['gherclj.pipeline-spec]
              :locations [{:source "adventure.feature" :line 4}]
-             :test-framework :speclj})
+             :framework :speclj})
 
           (let [content (slurp (io/file output-dir "adventure_spec.clj"))]
             (should (str/includes? content "Wake the dragon"))
@@ -365,7 +366,7 @@
              :output-dir output-dir
              :step-namespaces ['gherclj.pipeline-spec]
              :locations [{:source "adventure.feature" :line 8}]
-             :test-framework :speclj})
+             :framework :speclj})
 
           (let [content (slurp (io/file output-dir "adventure_spec.clj"))]
             (should-not (str/includes? content "Wake the dragon"))
@@ -391,7 +392,7 @@
                              :output-dir output-dir
                              :step-namespaces ['gherclj.pipeline-spec]
                              :locations [{:source "adventure.feature" :line 99}]
-                             :test-framework :speclj})
+                             :framework :speclj})
                           nil
                           (catch RuntimeException e
                             (.getMessage e)))]
@@ -428,7 +429,7 @@
              :output-dir output-dir
              :step-namespaces ['gherclj.pipeline-spec]
              :locations [{:source "adventure.feature" :line 12}]
-             :test-framework :speclj})
+             :framework :speclj})
 
           (let [content (slurp (io/file output-dir "adventure_spec.clj"))]
             (should (str/includes? content "Real target"))
@@ -456,7 +457,7 @@
              :output-dir output-dir
              :step-namespaces ['gherclj.pipeline-spec]
              :locations [{:source "adventure.feature"}]
-             :test-framework :speclj})
+             :framework :speclj})
 
           (let [content (slurp (io/file output-dir "adventure_spec.clj"))]
             (should (str/includes? content "Wake the dragon"))
@@ -485,7 +486,7 @@
              :step-namespaces ['gherclj.pipeline-spec]
              :locations [{:source "adventure.feature" :line 3}
                          {:source "adventure.feature"}]
-             :test-framework :speclj})
+             :framework :speclj})
 
           (let [content (slurp (io/file output-dir "adventure_spec.clj"))]
             (should (str/includes? content "Wake the dragon"))
@@ -523,7 +524,7 @@
              :step-namespaces ['gherclj.pipeline-spec]
              :locations [{:source "bare.feature"}
                          {:source "line.feature" :line 3}]
-             :test-framework :speclj})
+             :framework :speclj})
 
           (let [bare-content (slurp (io/file output-dir "bare_spec.clj"))
                 line-content (slurp (io/file output-dir "line_spec.clj"))]
@@ -546,7 +547,7 @@
                              :output-dir output-dir
                              :step-namespaces ['gherclj.pipeline-spec]
                              :locations [{:source "ghost.feature"}]
-                             :test-framework :speclj})
+                             :framework :speclj})
                           nil
                           (catch RuntimeException e
                             (.getMessage e)))]

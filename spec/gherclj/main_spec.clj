@@ -3,7 +3,7 @@
              [clojure.string :as str]
              [gherclj.catalog :as catalog]
              [gherclj.config :as config]
-             [gherclj.generator :as gen]
+             [gherclj.framework :as fw]
              [gherclj.unused :as unused]
              [gherclj.pipeline :as pipeline]
              [gherclj.main :as main]))
@@ -24,13 +24,13 @@
       (let [result (main/parse-args ["--verbose"])]
         (should= true (get-in result [:options :verbose]))))
 
-    (it "parses --test-framework"
-      (let [result (main/parse-args ["--test-framework" "clojure.test"])]
-        (should= :clojure.test (get-in result [:options :test-framework]))))
+    (it "parses --framework"
+      (let [result (main/parse-args ["--framework" "clojure.test"])]
+        (should= :clojure.test (get-in result [:options :framework]))))
 
     (it "parses short flags"
-      (let [result (main/parse-args ["-T" "speclj" "-v"])]
-        (should= :speclj (get-in result [:options :test-framework]))
+      (let [result (main/parse-args ["-F" "speclj" "-v"])]
+        (should= :speclj (get-in result [:options :framework]))
         (should= true (get-in result [:options :verbose]))))
 
     (it "parses -t as tag include"
@@ -214,25 +214,25 @@
           (it)))
 
       (it "returns 0 when run-specs returns zero (number)"
-        (with-redefs [gen/run-specs (fn [_] 0)]
+        (with-redefs [fw/run-specs (fn [_] 0)]
           (should= 0 (main/run []))))
 
       (it "returns 1 when run-specs returns positive number"
-        (with-redefs [gen/run-specs (fn [_] 3)]
+        (with-redefs [fw/run-specs (fn [_] 3)]
           (should= 1 (main/run []))))
 
       (it "returns 0 when run-specs returns map with no failures"
-        (with-redefs [gen/run-specs (fn [_] {:fail 0 :error 0})]
+        (with-redefs [fw/run-specs (fn [_] {:fail 0 :error 0})]
           (should= 0 (main/run []))))
 
       (it "returns 1 when run-specs returns map with :fail > 0"
-        (with-redefs [gen/run-specs (fn [_] {:fail 2 :error 0})]
+        (with-redefs [fw/run-specs (fn [_] {:fail 2 :error 0})]
           (should= 1 (main/run []))))
 
       (it "returns 1 when run-specs returns map with :error > 0"
-        (with-redefs [gen/run-specs (fn [_] {:fail 0 :error 1})]
+        (with-redefs [fw/run-specs (fn [_] {:fail 0 :error 1})]
           (should= 1 (main/run []))))
 
       (it "returns 0 when run-specs returns non-number non-map (else branch)"
-        (with-redefs [gen/run-specs (fn [_] nil)]
+        (with-redefs [fw/run-specs (fn [_] nil)]
           (should= 0 (main/run [])))))))

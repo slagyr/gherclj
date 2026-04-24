@@ -59,7 +59,7 @@
     (ensure-framework-loaded! fw)
     (let [config {:step-namespaces ['gherclj.sample.app-steps]
                   :extra-steps (g/get :steps)
-                  :test-framework fw}]
+                  :framework fw}]
       (g/assoc! :generated-output (gen/generate-spec config (g/get :feature-ir))))))
 
 (defthen output-should-contain #"^the output should contain (?!lines:$)(.+)$"

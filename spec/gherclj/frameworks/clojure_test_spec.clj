@@ -1,5 +1,6 @@
 (ns gherclj.frameworks.clojure-test-spec
   (:require [speclj.core :refer :all]
+            [gherclj.framework :as fw]
             [gherclj.frameworks.clojure-test]
             [gherclj.core :as g]
             [gherclj.generator :as gen]
@@ -9,10 +10,10 @@
 
 (describe "Clojure.test framework"
 
-  (context "generate-ns-form"
+  (context "generate-preamble"
 
     (it "generates a namespace form with clojure.test require and step requires"
-      (let [result (gen/generate-ns-form {:test-framework :clojure.test}
+      (let [result (fw/generate-preamble {:framework :clojure.test}
                                          "features/auth.feature"
                                          ['myapp.steps.auth 'myapp.steps.cart])]
         (should (str/includes? result "clojure.test :refer :all"))
@@ -21,14 +22,14 @@
         (should (str/includes? result "myapp.steps.cart"))))
 
     (it "generates a namespace form with no step requires"
-      (let [result (gen/generate-ns-form {:test-framework :clojure.test}
+      (let [result (fw/generate-preamble {:framework :clojure.test}
                                          "features/auth.feature"
                                          [])]
         (should (str/includes? result "clojure.test :refer :all"))
         (should-not (str/includes? result "myapp"))))
 
     (it "uses -test suffix instead of -spec"
-      (let [result (gen/generate-ns-form {:test-framework :clojure.test}
+      (let [result (fw/generate-preamble {:framework :clojure.test}
                                          "features/auth.feature"
                                          [])]
         (should (str/includes? result "auth-test")))))
@@ -36,7 +37,7 @@
   (context "wrap-feature"
 
     (it "generates fixture functions with lifecycle hooks"
-      (let [result (gen/wrap-feature {:test-framework :clojure.test}
+      (let [result (fw/wrap-feature {:framework :clojure.test}
                                      "Authentication"
                                      "(deftest login-test)")]
         (should (str/includes? result "feature-fixture"))
@@ -56,7 +57,7 @@
                                :ns 'myapp.steps :name "summon-hero" :args []}
                               {:type :when :text "they log in" :classified? true
                                :ns 'myapp.steps :name "log-in" :args []}]}
-            result (gen/wrap-scenario {:test-framework :clojure.test} scenario nil)]
+            result (fw/wrap-scenario {:framework :clojure.test} scenario nil)]
         (should (str/includes? result "(deftest user-can-log-in"))
         (should (str/includes? result "(testing \"User Can Log In\""))
         (should (str/includes? result "steps/summon-hero"))
@@ -68,7 +69,7 @@
             scenario {:scenario "User can log in"
                       :steps [{:type :when :text "they log in" :classified? true
                                :ns 'myapp.steps :name "log-in" :args []}]}
-            result (gen/wrap-scenario {:test-framework :clojure.test} scenario background)]
+            result (fw/wrap-scenario {:framework :clojure.test} scenario background)]
         (should (str/includes? result "steps/clean-db"))
         (should (str/includes? result "steps/log-in"))))
 
@@ -76,7 +77,7 @@
       (let [scenario {:scenario "User: Login & Logout!"
                       :steps [{:type :given :text "setup" :classified? true
                                :ns 'myapp.steps :name "setup" :args []}]}
-            result (gen/wrap-scenario {:test-framework :clojure.test} scenario nil)]
+            result (fw/wrap-scenario {:framework :clojure.test} scenario nil)]
         (should (str/includes? result "(deftest user-login-logout")))))
 
   (context "wrap-pending"
@@ -85,22 +86,22 @@
       (let [scenario {:scenario "Unimplemented feature"
                       :steps [{:type :given :text "something exists"}
                               {:type :when :text "action happens"}]}
-            result (gen/wrap-pending {:test-framework :clojure.test} scenario nil)]
+            result (fw/wrap-pending {:framework :clojure.test} scenario nil)]
         (should (str/includes? result "(deftest unimplemented-feature"))
         (should (str/includes? result "TODO: not yet implemented"))))
 
     (it "uses slugified name for pending scenario"
       (let [scenario {:scenario "User Can Sign Up"
                       :steps []}
-            result (gen/wrap-pending {:test-framework :clojure.test} scenario nil)]
+            result (fw/wrap-pending {:framework :clojure.test} scenario nil)]
         (should (str/includes? result "(deftest user-can-sign-up")))))
 
   (context "assertion methods"
 
     (around [it]
-      (g/set-test-framework! :clojure.test)
+      (g/set-framework! :clojure.test)
       (it)
-      (g/set-test-framework! nil))
+      (g/set-framework! nil))
 
     (it "should= passes when values are equal"
       ;; ct/do-report :pass does not throw
@@ -121,9 +122,9 @@
   (context "assertion method failure paths"
 
     (around [it]
-      (g/set-test-framework! :clojure.test)
+      (g/set-framework! :clojure.test)
       (it)
-      (g/set-test-framework! nil))
+      (g/set-framework! nil))
 
     (it "should= reports :fail with message when values differ"
       (let [reported (atom nil)]
@@ -165,7 +166,7 @@
         (try
           (with-redefs [gherclj.lifecycle/run-before-all-hooks! (fn [])
                         gherclj.lifecycle/run-after-all-hooks!  (fn [])]
-            (gen/run-specs {:test-framework :clojure.test
+            (fw/run-specs {:framework :clojure.test
                             :output-dir output-dir}))
           ;; No .clj files exist, so run-tests called with empty list — result is a map
           (finally
@@ -185,7 +186,7 @@
         (try
           (with-redefs [gherclj.lifecycle/run-before-all-hooks! (fn [])
                         gherclj.lifecycle/run-after-all-hooks!  (fn [])]
-            (let [result (gen/run-specs {:test-framework :clojure.test
+            (let [result (fw/run-specs {:framework :clojure.test
                                          :output-dir output-dir})]
               (should (pos? (:test result)))))
           (finally
@@ -205,7 +206,7 @@
           (with-redefs [gherclj.lifecycle/run-before-all-hooks! (fn [])
                         gherclj.lifecycle/run-after-all-hooks!  (fn [])]
             (let [output (with-out-str
-                           (gen/run-specs {:test-framework :clojure.test
+                           (fw/run-specs {:framework :clojure.test
                                            :output-dir output-dir}))]
               (should= "" output)))
           (finally

@@ -13,11 +13,11 @@
                      :coerce (fn [v] (or v "target/gherclj/edn"))}
    :output-dir      {:type   :string
                      :coerce (fn [v] (or v "target/gherclj/generated"))}
-   :step-namespaces {:type   :seq
-                     :coerce (fn [v] (or v []))}
-   :test-framework  {:type     :keyword
-                     :coerce   (fn [v] (or v :speclj))
-                     :validate #(contains? #{:speclj :clojure.test} %)}
+    :step-namespaces {:type   :seq
+                      :coerce (fn [v] (or v []))}
+    :framework  {:type     :keyword
+                      :coerce   (fn [v] (or v :speclj))
+                      :validate #(contains? #{:speclj :clojure.test :rspec} %)}
    :verbose         {:type   :boolean
                      :coerce (fn [v] (boolean v))}
    :framework-opts  {:type   :seq

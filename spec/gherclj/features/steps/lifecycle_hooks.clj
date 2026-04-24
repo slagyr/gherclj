@@ -2,6 +2,7 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as str]
             [gherclj.core :as g :refer [defgiven defwhen defthen]]
+            [gherclj.framework :as fw]
             [gherclj.lifecycle :as lifecycle]
             [gherclj.sample.app-steps]
             [gherclj.frameworks.clojure-test]
@@ -50,7 +51,7 @@
    :edn-dir (edn-dir)
    :output-dir (output-dir)
    :step-namespaces ['gherclj.sample.app-steps 'gherclj.sample.dragon-steps]
-   :test-framework framework})
+   :framework framework})
 
 (defn- ensure-feature-file! [source]
   (let [f (io/file (features-dir) source)]
@@ -124,7 +125,7 @@
   [framework]
   (let [fw (keyword (str/replace framework #"^:" ""))]
     (g/assoc! :generated-output (gen/generate-spec {:step-namespaces ['gherclj.sample.app-steps]
-                                                    :test-framework fw}
+                                                    :framework fw}
                                                    (g/get :feature-ir)))))
 
 (defwhen run-directly "the generated scenarios run directly with framework {framework}"
@@ -143,8 +144,8 @@
     (write-feature-ir!)
     (pipeline/run! (pipeline-config fw))
     (g/assoc! :run-result
-              (gen/run-specs {:output-dir (output-dir)
-                              :test-framework fw}))))
+              (fw/run-specs {:output-dir (output-dir)
+                              :framework fw}))))
 
 (defthen recorded-events-should-be "the recorded lifecycle events should be:"
   [table]
