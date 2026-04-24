@@ -39,8 +39,8 @@ Feature: Unused step detection
     When running gherclj with "-f features -s gherclj.sample.app-steps unused"
     Then the output should contain lines:
       | Scanned 1 scenario. No tag filtering applied.         |
-      | 2 of 3 registered steps are in use.                   |
-      | 1 unused step found.                                  |
+      | 2 of 3 registered steps are in use (1 unused).        |
+      | Unused steps:                                         |
       | the response should be {status:int}  (app_steps.clj: |
     And the output should not contain "a user {name:string}"
     And the output should not contain "the user logs in"
@@ -57,12 +57,12 @@ Feature: Unused step detection
       """
     When running gherclj with "-f features -s gherclj.sample.app-steps unused"
     Then the output should contain lines:
-      | Scanned 1 scenario. No tag filtering applied. |
-      | 1 of 3 registered steps are in use.           |
-      | 2 unused steps found.                         |
-      | When:                                         |
-      | the user logs in  (app_steps.clj:             |
-      | Then:                                         |
+      | Scanned 1 scenario. No tag filtering applied.         |
+      | 1 of 3 registered steps are in use (2 unused).        |
+      | Unused steps:                                         |
+      | When:                                                 |
+      | the user logs in  (app_steps.clj:                     |
+      | Then:                                                 |
       | the response should be {status:int}  (app_steps.clj: |
     And the output should not contain "Given:"
 
@@ -84,8 +84,8 @@ Feature: Unused step detection
     When running gherclj with "-f features -s gherclj.sample.app-steps unused -t ~slow"
     Then the output should contain lines:
       | Scanned 1 scenario. 1 scenario unscanned due to tag filters: ~slow. |
-      | 2 of 3 registered steps are in use.                                  |
-      | 1 unused step found.                                                 |
+      | 2 of 3 registered steps are in use (1 unused).                       |
+      | Unused steps:                                                        |
       | the response should be {status:int}  (app_steps.clj:                |
     And the output should not contain "a user {name:string}"
     And the output should not contain "the user logs in"
