@@ -81,6 +81,20 @@ Steps read like `defn` with a docstring. The template string doubles as document
   (g/should= status (g/get-in [:response :status])))
 ```
 
+Steps accept an optional docstring between the template and arg vector. The docstring is stored in the step registry and surfaces in `gherclj steps` output, helping agents and teammates understand each step's contract without reading source:
+
+```clojure
+(defgiven setup-crew "the following crew exist:"
+  "Sets :crew atom (test only — does NOT write disk)."
+  [table]
+  (g/assoc! :crew (parse-crew table)))
+
+(defwhen check-logs "the log has entries matching:"
+  "Polls for up to 2s. Timeout is not configurable."
+  [pattern]
+  (g/assoc! :log-result (poll-logs pattern 2000)))
+```
+
 Template syntax:
 - `{name:string}` — greedy string capture (bounded by surrounding literal text)
 - `{name:int}` — integer capture (coerced via `parse-long`)
@@ -293,6 +307,85 @@ feature-docs {:requires ([gherclj.main :as main])
 features-slow {:requires ([gherclj.main :as main])
                :task     (main/-main "-t" "slow" "-t" "~wip" "--" "-f" "documentation" "-P")}
 ```
+
+## Step Catalog
+
+`gherclj steps` lists all registered step definitions grouped by type. Each entry shows the phrase and source location on one line, with an optional docstring on the next. Output is colorized by default.
+
+```bash
+gherclj -s myapp.features.steps.* steps
+```
+
+```
+Given:
+  a user {name:string}  (auth_steps.clj:4)
+  the following crew exist:  (crew_steps.clj:18)
+    Sets :crew atom (test only — does NOT write disk).
+
+When:
+  the user logs in  (auth_steps.clj:12)
+    Polls for up to 2s. Timeout is not configurable.
+
+Then:
+  the response status should be {status:int}  (auth_steps.clj:20)
+```
+
+**Type filters** (`--given`, `--when`, `--then`) are additive — each flag includes that type; no flags means all types:
+
+```bash
+gherclj -s myapp.features.steps.* steps --given --when   # Given + When only
+```
+
+**Keyword filter** — pass a word as a positional argument to narrow results by phrase or docstring:
+
+```bash
+gherclj -s myapp.features.steps.* steps crew   # only steps mentioning "crew"
+```
+
+**Color** — colorized by default; suppress with `--no-color` for scripted or piped use:
+
+```bash
+gherclj -s myapp.features.steps.* steps --no-color
+```
+
+**Help:**
+
+```bash
+gherclj steps --help
+```
+
+## Unused Step Detection
+
+`gherclj unused` compares registered step definitions against all step texts in your feature files and reports any that are never referenced. Useful for keeping step namespaces clean as features evolve.
+
+```bash
+gherclj -f features -s myapp.features.steps.* unused
+```
+
+```
+Scanned 42 scenarios. No tag filtering applied.
+38 of 40 registered steps are in use (2 unused).
+Unused steps:
+
+Given:
+  setup legacy auth  (auth_steps.clj:87)
+
+When:
+  the legacy system responds  (auth_steps.clj:93)
+```
+
+**Tag filtering** — use the same `-t` flags as the pipeline. Steps that only appear in excluded scenarios are reported as unused, and the output is explicit about what was scanned:
+
+```bash
+gherclj -f features -s myapp.features.steps.* unused -t ~slow
+```
+
+```
+Scanned 35 of 42 scenarios. 7 scenarios filtered out by tags: ~slow.
+38 of 40 registered steps are in use (2 unused).
+```
+
+**Note:** Steps used as test data (looked up by name via the registry rather than matched by step text) will appear as unused. This is a known limitation.
 
 ## State Management
 

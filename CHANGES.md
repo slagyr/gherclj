@@ -1,5 +1,13 @@
 # Changes
 
+## v0.9.0
+
+- **Step docstrings**: `defgiven`, `defwhen`, and `defthen` accept an optional docstring between the template and arg vector; stored in the step registry alongside source file and line
+- **`gherclj steps` subcommand**: lists all registered step definitions grouped by Given/When/Then, with phrase, source location, and docstring; supports `--given`/`--when`/`--then` type filters (additive), keyword positional filter, and `--no-color`; colorized by default
+- **`gherclj unused` subcommand**: detects registered step definitions never referenced in any feature file; respects `-t` tag filters and reports exactly how many scenarios were scanned
+- Step definitions moved from `src/` to `spec/` (gherclj's own feature test infrastructure)
+- Reference step implementations in `gherclj.sample.app-steps` and `gherclj.sample.dragon-steps`
+
 ## v0.8.0
 
 - Bare `.feature` paths on the CLI run every scenario in the file, and may be mixed with `file:line` selectors in one invocation
