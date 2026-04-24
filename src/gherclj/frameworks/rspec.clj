@@ -1,13 +1,12 @@
 (ns gherclj.frameworks.rspec
   (:require [clojure.java.shell :as shell]
             [clojure.string :as str]
-            [gherclj.framework :as fw]
-            [gherclj.generator :as gen]))
+            [gherclj.framework :as fw]))
 
-(defn- ruby-string [s]
+(defn ruby-string [s]
   (str "'" (str/replace (str s) #"['\\]" #(str "\\" %)) "'"))
 
-(defn- ruby-literal [value]
+(defn ruby-literal [value]
   (cond
     (string? value) (ruby-string value)
     (keyword? value) (ruby-string (name value))
@@ -24,28 +23,39 @@
 (defn- ruby-method [name]
   (str/replace name "-" "_"))
 
-(defn- generate-step-call [{:keys [name args table doc-string]}]
+(defn- require-line [path]
+  (str "require File.expand_path(" (ruby-string path) ", Dir.pwd)\n"))
+
+(defn generate-step-call [{:keys [name args table doc-string]}]
   (let [all-args (cond-> (vec args)
                    table (conj table)
                    doc-string (conj doc-string))
         args-str (str/join ", " (map ruby-literal all-args))]
     (if (seq all-args)
-      (str "world." (ruby-method name) "(" args-str ")")
-      (str "world." (ruby-method name)))))
+      (str "subject." (ruby-method name) "(" args-str ")")
+      (str "subject." (ruby-method name)))))
+
+(defmethod fw/render-step :rspec [_config step]
+  (generate-step-call step))
 
 (defmethod fw/generate-preamble :rspec
-  [_config source _step-ns-syms]
+  [config source _step-ns-syms]
   (let [feature-name (-> source
                          (str/split #"/")
                          last
                          (str/replace #"\.feature$" "")
                          (str/replace #"_" " ")
-                         (str/capitalize))]
+                         (str/capitalize))
+        {:keys [rspec-requires rspec-subject]} config]
+    (when-not (seq rspec-subject)
+      (throw (ex-info "RSpec generation requires :rspec-subject"
+                      {:config-keys [:rspec-subject]})))
     (str "# generated from " source "\n"
          "require 'rspec'\n"
-         "require File.expand_path('spec/support/gherclj_world', Dir.pwd)\n\n"
+         (apply str (map require-line rspec-requires))
+         "\n"
          "RSpec.describe " (ruby-string feature-name) " do\n"
-         "  let(:world) { GhercljWorld.new }\n")))
+         "  subject { " rspec-subject " }\n")))
 
 (defmethod fw/wrap-feature :rspec
   [_config _feature-name scenario-blocks]
@@ -53,15 +63,11 @@
 
 (defmethod fw/wrap-scenario :rspec
   [_config scenario background]
-  (let [bg-calls (when background
-                   (->> (:steps background)
-                        (filter :classified?)
-                        (map generate-step-call)))
-        step-calls (->> (:steps scenario)
-                        (map generate-step-call))
-        body (->> (concat bg-calls step-calls)
-                  (map #(str "    " %))
-                  (str/join "\n"))]
+  (let [bg-calls   (:rendered-steps background)
+        step-calls (:rendered-steps scenario)
+        body       (->> (concat bg-calls step-calls)
+                        (map #(str "    " %))
+                        (str/join "\n"))]
     (str "  it " (ruby-string (:scenario scenario)) " do\n"
          body "\n"
          "  end")))
@@ -74,7 +80,12 @@
 
 (defmethod fw/run-specs :rspec
   [config]
-  (let [{:keys [exit err]} (shell/sh "bundle" "exec" "rspec" (or (:output-dir config) "target/gherclj/generated"))]
+  (let [{:keys [exit out err]} (shell/sh "bundle" "exec" "rspec" "--tty" (or (:output-dir config) "target/gherclj/generated"))]
+    (when (seq out)
+      (print out))
+    (when (seq err)
+      (binding [*out* *err*]
+        (print err)))
     (when-not (zero? exit)
       (throw (ex-info "rspec failed" {:exit exit :stderr err})))
     0))

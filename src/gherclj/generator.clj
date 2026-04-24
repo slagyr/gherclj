@@ -48,6 +48,18 @@
       (str "(" fn-sym " " args-str ")"))
     (generate-step-call step)))
 
+(defmethod fw/render-step :default [_config step]
+  (generate-step-call-with-extras step))
+
+(defn- render-background [config background]
+  (when background
+    (assoc background :rendered-steps (->> (:steps background)
+                                           (filter :classified?)
+                                           (mapv #(fw/render-step config %))))))
+
+(defn- render-scenario [config scenario]
+  (assoc scenario :rendered-steps (mapv #(fw/render-step config %) (:steps scenario))))
+
 (defn- step-ns-requires
   "Compute the set of step namespace symbols used in a feature's background and scenarios."
   [steps background scenarios]
@@ -56,7 +68,7 @@
        (keep (fn [node]
                (when-let [classified (core/classify-step steps (:text node))]
                  (:ns classified))))
-       (into #{})))
+        (into #{})))
 
 (defn source->ns-name
   "Convert a feature source path to a namespace name."
@@ -72,7 +84,7 @@
 (defn generate-spec
   "Generate a complete spec file string from a config and feature IR."
   [config ir]
-  (let [{:keys [step-namespaces extra-steps exclude-tags include-tags]} config
+  (let [{:keys [step-namespaces extra-steps exclude-tags include-tags framework]} config
         {:keys [source feature scenarios background]} ir
         effective-excludes (vec (or exclude-tags []))
         effective-includes (vec (or include-tags []))
@@ -83,13 +95,14 @@
         classified-scenarios (mapv #(classify-scenario steps %) filtered)]
     (when (seq classified-scenarios)
       (let [classified-bg (when background (classify-scenario steps background))
-            preamble (fw/generate-preamble config source
-                                           (step-ns-requires steps classified-bg filtered))
+            step-ns-syms (step-ns-requires steps classified-bg filtered)
+            rendered-bg (render-background config classified-bg)
+            preamble (fw/generate-preamble config source step-ns-syms)
             scenario-blocks (->> classified-scenarios
                                  (map (fn [scenario]
                                         (if (all-classified? scenario)
-                                          (fw/wrap-scenario config scenario classified-bg)
-                                          (fw/wrap-pending config scenario classified-bg))))
+                                          (fw/wrap-scenario config (render-scenario config scenario) rendered-bg)
+                                          (fw/wrap-pending config scenario rendered-bg))))
                                  (str/join "\n\n"))]
         (str preamble "\n\n"
              (fw/wrap-feature config feature scenario-blocks))))))

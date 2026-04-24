@@ -9,44 +9,53 @@
 
   (context "generate-preamble"
 
-    (it "generates a Ruby require prelude"
-      (let [result (fw/generate-preamble {:framework :rspec}
+    (it "generates a configurable Ruby require prelude"
+      (let [result (fw/generate-preamble {:framework :rspec
+                                         :rspec-requires ["lib/space_airlock"]
+                                         :rspec-subject "SpaceAirlock.new"}
                                          "features/auth.feature"
-                                         ['myapp.steps.auth])]
+                                         ['gherclj.frameworks.rspec-spec])]
         (should (str/includes? result "generated from features/auth.feature"))
-        (should (str/includes? result "require File.expand_path('spec/support/gherclj_world', Dir.pwd)"))
-        (should (str/includes? result "RSpec.describe 'Auth' do")))))
+        (should (str/includes? result "require File.expand_path('lib/space_airlock', Dir.pwd)"))
+        (should (str/includes? result "RSpec.describe 'Auth' do"))
+        (should (str/includes? result "subject { SpaceAirlock.new }")))))
 
   (context "wrap-scenario"
 
-    (it "generates Ruby world method calls"
+    (it "wraps pre-rendered Ruby lines"
       (let [scenario {:scenario "User can log in"
-                      :steps [{:type :given :text "a user exists" :classified? true
-                               :ns 'myapp.steps :name "create-user" :args ["alice"]}
-                              {:type :when :text "they log in" :classified? true
-                               :ns 'myapp.steps :name "log-in" :args []}]}
-            result (fw/wrap-scenario {:framework :rspec} scenario nil)]
+                      :rendered-steps ["subject.seed_user('alice')"
+                                       "subject.log_in"]}
+             result (fw/wrap-scenario {:framework :rspec} scenario nil)]
         (should (str/includes? result "it 'User can log in' do"))
-        (should (str/includes? result "world.create_user('alice')"))
-        (should (str/includes? result "world.log_in")))))
+        (should (str/includes? result "subject.seed_user('alice')"))
+        (should (str/includes? result "subject.log_in")))))
 
     (it "includes background steps before scenario steps"
-      (let [background {:steps [{:type :given :text "db is clean" :classified? true
-                                 :ns 'myapp.steps :name "clean-db" :args []}]}
-            scenario {:scenario "User can log in"
-                      :steps [{:type :when :text "they log in" :classified? true
-                               :ns 'myapp.steps :name "log-in" :args []}]}
-            result (fw/wrap-scenario {:framework :rspec} scenario background)]
-        (should (str/includes? result "world.clean_db"))
-        (should (str/includes? result "world.log_in")))))
+      (let [background {:rendered-steps ["subject.clean_db"]}
+             scenario {:scenario "User can log in"
+                       :rendered-steps ["subject.log_in"]}
+             result (fw/wrap-scenario {:framework :rspec} scenario background)]
+        (should (str/includes? result "subject.clean_db"))
+        (should (str/includes? result "subject.log_in")))))
 
   (context "run-specs"
 
-    (it "executes bundle exec rspec against the output directory"
+    (it "executes bundle exec rspec with tty against the output directory"
       (let [captured (atom nil)]
         (with-redefs [clojure.java.shell/sh (fn [& args]
                                              (reset! captured args)
                                              {:exit 0 :out "" :err ""})]
-          (fw/run-specs {:framework :rspec
-                          :output-dir "tmp/generated"}))
-        (should= ["bundle" "exec" "rspec" "tmp/generated"] @captured))))
+           (fw/run-specs {:framework :rspec
+                           :output-dir "tmp/generated"}))
+        (should= ["bundle" "exec" "rspec" "--tty" "tmp/generated"] @captured)))
+
+    (it "prints rspec stdout and stderr"
+      (let [stdout (with-out-str
+                     (with-redefs [clojure.java.shell/sh (fn [& _]
+                                                          {:exit 0 :out "..\nFinished\n" :err "warnings\n"})]
+                       (binding [*err* *out*]
+                         (fw/run-specs {:framework :rspec
+                                        :output-dir "tmp/generated"}))))]
+        (should (str/includes? stdout "..\nFinished\n"))
+        (should (str/includes? stdout "warnings\n")))))

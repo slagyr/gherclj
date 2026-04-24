@@ -80,7 +80,6 @@
 (defmulti should-be-nil     (fn [_]   (active-framework)))
 (defmulti should-not-be-nil (fn [_]   (active-framework)))
 
-;; Default implementations — fallback when no framework is set
 (defmethod should= :default [expected actual]
   (when (not= expected actual)
     (throw (AssertionError. (str "Expected: " (pr-str expected) "\n     got: " (pr-str actual))))))

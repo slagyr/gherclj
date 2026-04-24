@@ -1,7 +1,7 @@
 (ns gherclj.core-spec
   (:require [speclj.core :refer :all]
-            [gherclj.core :as core :refer [defgiven defwhen defthen]]
-            [gherclj.lifecycle :as lifecycle]))
+             [gherclj.core :as core :refer [defgiven defwhen defthen]]
+             [gherclj.lifecycle :as lifecycle]))
 
 ;; Sample step definitions — must be defined before the describe block
 
@@ -59,7 +59,9 @@
         (should-not-be-nil step)
         (should= "Sets project state in memory." (:doc step))
         (should= (:file var-meta) (:file step))
-        (should= (:line var-meta) (:line step)))))
+        (should= (:line var-meta) (:line step))))
+
+    )
 
   (context "defwhen"
 
