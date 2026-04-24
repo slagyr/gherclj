@@ -22,19 +22,19 @@ Feature: Step catalog
     And the output should contain "the response should be {status:int}  (app_steps.clj:"
 
   Scenario: Entry with docstring shows it on the line after the phrase
-    When running gherclj with "-s gherclj.features.steps.step-docstrings steps"
+    When running gherclj with "-s gherclj.sample.dragon-steps steps"
     Then the catalog output should include:
       """
-      a documented step  (step_docstrings.clj:
-        Sets :crew atom — does NOT write disk.
+      the dragon hoards {item:string}  (dragon_steps.clj:
+        Adds to hoard without duplicate checking.
       """
 
   Scenario: Entry without docstring has no extra line before the next entry
-    When running gherclj with "-s gherclj.features.steps.step-docstrings steps"
+    When running gherclj with "-s gherclj.sample.dragon-steps steps"
     Then the catalog output should include:
       """
-      a bare step with no doc  (step_docstrings.clj:
-      a documented step  (step_docstrings.clj:
+      a dragon named {name:string}  (dragon_steps.clj:
+      the dragon hoards {item:string}  (dragon_steps.clj:
       """
 
   # --- Keyword filter ---
@@ -46,9 +46,9 @@ Feature: Step catalog
     And the output should not contain "the response should be {status:int}"
 
   Scenario: Keyword filter matches against docstring content
-    When running gherclj with "-s gherclj.features.steps.step-docstrings steps disk"
-    Then the output should contain "a documented step"
-    And the output should not contain "Polls for up to 2s."
+    When running gherclj with "-s gherclj.sample.dragon-steps steps buried"
+    Then the output should contain "the hoard should include {item:string}"
+    And the output should not contain "Raises cave temperature"
 
   # --- Type filters ---
 

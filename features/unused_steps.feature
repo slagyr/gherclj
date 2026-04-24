@@ -6,6 +6,15 @@ Feature: Unused step detection
   narrow which scenarios count as "used"; the output always states
   exactly what was searched.
 
+  Scenario: unused --help describes the subcommand and its options
+    When running gherclj with "unused --help"
+    Then the output should contain lines:
+      | gherclj unused         |
+      | --features-dir         |
+      | --step-namespaces      |
+      | --tag                  |
+      | --help                 |
+
   Scenario: All steps referenced — reports none unused
     Given a features directory containing:
       | file         |

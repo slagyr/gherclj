@@ -1,34 +1,13 @@
 (ns gherclj.features.steps.step-docstrings
   (:require [clojure.string :as str]
-            [gherclj.core :as g :refer [defgiven defwhen defthen]]))
+            [gherclj.core :as g :refer [defgiven defthen]]
+            [gherclj.sample.dragon-steps]))
 
-;; --- Fixture steps ---
-
-(defgiven fixture-no-doc "a bare step with no doc"
-  []
-  :bare)
-
-(defgiven fixture-with-doc "a documented step"
-  "Sets :crew atom — does NOT write disk."
-  []
-  :documented)
-
-(defwhen fixture-async "the async fixture runs"
-  "Polls for up to 2s."
-  []
-  :async)
-
-(defthen fixture-check "the async fixture should match"
-  "Matches within 2s timeout."
-  []
-  (g/should true))
-
-;; --- Acceptance steps ---
-
-(defgiven lookup-registered-step-from-docstring-suite "the registered step {name} from docstring suite"
+(defgiven lookup-registered-step-from-dragon-suite "the registered step {name} from dragon suite"
+  "Looks up by function name from gherclj.sample.dragon-steps namespace. Stores the registry entry in :registered-step."
   [name]
   (let [normalized-name (str/replace name #"^\"|\"$" "")
-        steps (g/steps-in-ns 'gherclj.features.steps.step-docstrings)
+        steps (g/steps-in-ns 'gherclj.sample.dragon-steps)
         step (first (filter #(= normalized-name (:name %)) steps))]
     (g/assoc! :registered-step step)))
 

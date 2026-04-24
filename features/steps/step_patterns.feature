@@ -25,11 +25,11 @@ Feature: Step patterns
     And the match args should be [3]
 
   Scenario: Macro accepts a raw regex pattern
-    Given the registered step "raw-output-match"
-    Then the step "raw-output-match" should match "the output contains hello world"
+    Given the registered step "cave-contains"
+    Then the step "cave-contains" should match "the cave contains hello world"
     And the match args should be ["hello world"]
 
   Scenario: Regex captures are strings, not coerced
-    Given the registered step "raw-digit-match"
-    Then the step "raw-digit-match" should match "count is 42"
+    Given the registered step "dragon-count"
+    Then the step "dragon-count" should match "the dragon has 42 treasures"
     And the match args should be ["42"]
