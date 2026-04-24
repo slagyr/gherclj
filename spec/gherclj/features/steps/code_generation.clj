@@ -59,9 +59,10 @@
                   :test-framework fw}]
       (g/assoc! :generated-output (gen/generate-spec config (g/get :feature-ir))))))
 
-(defthen output-should-contain "the output should contain {expected:string}"
+(defthen output-should-contain #"^the output should contain (?!lines:$)(.+)$"
   [expected]
-  (let [raw-output (or (g/get :cli-output) (g/get :generated-output) (g/get :pipeline-output) "")
+  (let [expected (str/replace expected #"^\"|\"$" "")
+        raw-output (or (g/get :cli-output) (g/get :generated-output) (g/get :pipeline-output) "")
         output (str/replace raw-output (str pipeline-base-dir "/") "")]
     (g/should (str/includes? output expected))))
 

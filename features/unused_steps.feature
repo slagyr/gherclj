@@ -1,4 +1,3 @@
-@wip
 Feature: Unused step detection
 
   `gherclj unused` compares registered step definitions against all

@@ -33,3 +33,10 @@
 (defthen output-should-have-color-codes "the output should have color codes"
   []
   (g/should (re-find ansi-code-pattern (g/get :cli-output ""))))
+
+(defthen output-should-contain-lines "the output should contain lines:"
+  [table]
+  (let [output (g/get :cli-output "")
+        lines (concat (:headers table) (mapcat identity (:rows table)))]
+    (doseq [line lines]
+      (g/should (str/includes? output line)))))

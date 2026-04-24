@@ -4,6 +4,7 @@
              [gherclj.catalog :as catalog]
              [gherclj.config :as config]
              [gherclj.generator :as gen]
+             [gherclj.unused :as unused]
              [gherclj.pipeline :as pipeline]
              [gherclj.main :as main]))
 
@@ -115,7 +116,17 @@
     (it "parses --no-color for the steps subcommand"
       (let [result (main/parse-args ["steps" "--no-color"])]
         (should= :steps (get-in result [:options :subcommand]))
-        (should= true (get-in result [:options :no-color])))))
+        (should= true (get-in result [:options :no-color]))))
+
+    (it "detects the unused subcommand as the first positional arg"
+      (let [result (main/parse-args ["-s" "gherclj.sample.app-steps" "unused"])]
+        (should= :unused (get-in result [:options :subcommand]))
+        (should-be-nil (get-in result [:options :locations]))))
+
+    (it "captures the remaining positional args for the unused subcommand"
+      (let [result (main/parse-args ["unused" "keyword"])]
+        (should= :unused (get-in result [:options :subcommand]))
+        (should= ["keyword"] (get-in result [:options :subcommand-args])))))
 
   (context "usage"
 
@@ -177,6 +188,17 @@
             (should= 0 (main/run ["-s" "gherclj.features.steps.step-docstrings" "steps"])))
           (should= [['gherclj.features.steps.step-docstrings] []]
                    ((juxt #(get-in % [0 :step-namespaces]) second) @catalog-config)))))
+
+    (it "dispatches the unused subcommand without running the pipeline"
+      (let [unused-config (atom nil)]
+        (with-redefs [config/load-config (fn [] {:step-namespaces ['gherclj.sample.app-steps]})
+                      pipeline/run!      (fn [_] (throw (RuntimeException. "pipeline should not run")))
+                      unused/run!        (fn [config args]
+                                           (reset! unused-config [config args]))]
+          (with-out-str
+            (should= 0 (main/run ["-s" "gherclj.sample.app-steps" "unused" "extra"])))
+          (should= [['gherclj.sample.app-steps] ["extra"]]
+                   ((juxt #(get-in % [0 :step-namespaces]) second) @unused-config)))))
 
     (context "pipeline execution"
       (around [it]
