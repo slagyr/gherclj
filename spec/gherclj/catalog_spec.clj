@@ -50,4 +50,26 @@
                                      :file "/tmp/step_docstrings.clj"
                                      :line 8}])]
         (should (str/includes? output "a documented step  (step_docstrings.clj:8)\n  Sets :crew atom - does NOT write disk."))
-        (should (str/includes? output "a bare step with no doc  (step_docstrings.clj:5)\na documented step  (step_docstrings.clj:8)"))))))
+        (should (str/includes? output "a bare step with no doc  (step_docstrings.clj:5)\na documented step  (step_docstrings.clj:8)"))))
+
+    (it "filters steps by keyword against phrase and docstring"
+      (let [steps [{:type :given :template "a user {name:string}" :file "/tmp/sample_app.clj" :line 4}
+                   {:type :when :template "the user logs in" :file "/tmp/sample_app.clj" :line 8}
+                   {:type :given :template "a documented step"
+                    :doc "Sets :crew atom - does NOT write disk."
+                    :file "/tmp/step_docstrings.clj" :line 11}]]
+        (should= ["a user {name:string}" "the user logs in"]
+                 (mapv :template (catalog/filter-steps steps {:keyword "user"})))
+        (should= ["a documented step"]
+                 (mapv :template (catalog/filter-steps steps {:keyword "disk"})))))
+
+    (it "filters steps by selected types additively"
+      (let [steps [{:type :given :template "a user {name:string}" :file "/tmp/sample_app.clj" :line 4}
+                   {:type :when :template "the user logs in" :file "/tmp/sample_app.clj" :line 8}
+                   {:type :then :template "the response should be {status:int}" :file "/tmp/sample_app.clj" :line 12}]]
+        (should= ["a user {name:string}"]
+                 (mapv :template (catalog/filter-steps steps {:types #{:given}})))
+        (should= ["a user {name:string}" "the user logs in"]
+                 (mapv :template (catalog/filter-steps steps {:types #{:given :when}})))
+        (should= ["a user {name:string}" "the user logs in" "the response should be {status:int}"]
+                 (mapv :template (catalog/filter-steps steps {})))))))

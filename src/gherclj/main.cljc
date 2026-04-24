@@ -25,6 +25,9 @@
     :default :none
     :default-desc ""
     :update-fn (fn [acc v] (conj (if (= :none acc) [] acc) v))]
+   [nil "--given" "Show Given steps"]
+   [nil "--when" "Show When steps"]
+   [nil "--then" "Show Then steps"]
    ["-T" "--test-framework FRAMEWORK" "Test framework: speclj, clojure.test (default: speclj)"
     :parse-fn keyword]
    ["-v" "--verbose" "Print progress to stdout"]

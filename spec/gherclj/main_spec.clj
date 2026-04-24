@@ -102,7 +102,15 @@
     (it "captures the remaining positional args for the steps subcommand"
       (let [result (main/parse-args ["steps" "user"])]
         (should= :steps (get-in result [:options :subcommand]))
-        (should= ["user"] (get-in result [:options :subcommand-args])))))
+        (should= ["user"] (get-in result [:options :subcommand-args]))))
+
+    (it "parses type filters for the steps subcommand"
+      (let [result (main/parse-args ["steps" "--given" "--when" "user"])]
+        (should= :steps (get-in result [:options :subcommand]))
+        (should= ["user"] (get-in result [:options :subcommand-args]))
+        (should= true (get-in result [:options :given]))
+        (should= true (get-in result [:options :when]))
+        (should-be-nil (get-in result [:options :then])))))
 
   (context "usage"
 

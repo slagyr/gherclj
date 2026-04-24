@@ -32,18 +32,39 @@
        (when doc
          (str "\n  " doc))))
 
+(defn- type-filter [{:keys [given then] when-flag :when}]
+  (let [selected (cond-> #{}
+                   given (conj :given)
+                   when-flag (conj :when)
+                   then (conj :then))]
+    (when (seq selected) selected)))
+
+(defn- matches-keyword? [{:keys [doc] :as step} keyword]
+  (let [needle (str/lower-case keyword)
+        haystacks [(some-> step step-text str/lower-case)
+                   (some-> doc str/lower-case)]]
+    (some #(and % (str/includes? % needle)) haystacks)))
+
+(defn filter-steps [steps {:keys [keyword types]}]
+  (->> steps
+       (filter #(or (nil? types) (contains? types (:type %))))
+       (filter #(or (nil? keyword) (matches-keyword? % keyword)))
+       vec))
+
 (defn render [steps]
   (->> ordered-types
        (map (fn [[step-type header]]
               (let [group-lines (->> steps
                                      (filter #(= step-type (:type %)))
                                      (map render-step))]
-                (if (seq group-lines)
-                  (str header "\n" (str/join "\n" group-lines))
-                  header))))
+                (when (seq group-lines)
+                  (str header "\n" (str/join "\n" group-lines))))))
+       (remove nil?)
        (str/join "\n\n")))
 
-(defn run! [config _args]
+(defn run! [config args]
   (let [step-namespaces (pipeline/load-step-namespaces! (:step-namespaces config))
-        steps (core/collect-steps step-namespaces)]
-    (println (render steps))))
+        steps (core/collect-steps step-namespaces)
+        filtered (filter-steps steps {:keyword (first args)
+                                      :types (type-filter config)})]
+    (println (render filtered))))
