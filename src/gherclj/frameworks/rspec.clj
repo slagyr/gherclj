@@ -3,14 +3,14 @@
             [clojure.string :as str]
             [gherclj.framework :as fw]))
 
-(defonce requires-registry (atom {}))
-(defonce setup-registry (atom {}))
+(defonce file-setup-registry (atom {}))
+(defonce describe-setup-registry (atom {}))
 
-(defmacro add-require [requirement]
-  `(swap! requires-registry update '~(ns-name *ns*) (fnil conj []) ~requirement))
+(defmacro file-setup! [line]
+  `(swap! file-setup-registry update '~(ns-name *ns*) (fnil conj []) ~line))
 
-(defmacro add-setup [setup-line]
-  `(swap! setup-registry update '~(ns-name *ns*) (fnil conj []) ~setup-line))
+(defmacro describe-setup! [line]
+  `(swap! describe-setup-registry update '~(ns-name *ns*) (fnil conj []) ~line))
 
 (defn ruby-string [s]
   (str "'" (str/replace (str s) #"['\\]" #(str "\\" %)) "'"))
@@ -32,9 +32,6 @@
 (defn- ruby-method [name]
   (str/replace name "-" "_"))
 
-(defn- require-line [path]
-  (str "require File.expand_path(" (ruby-string path) ", Dir.pwd)\n"))
-
 (defn generate-step-call [{:keys [name args table doc-string]}]
   (let [all-args (cond-> (vec args)
                    table (conj table)
@@ -55,19 +52,19 @@
                          (str/replace #"\.feature$" "")
                          (str/replace #"_" " ")
                          (str/capitalize))
-        requires (->> step-ns-syms
-                      (mapcat #(get @requires-registry % []))
-                      distinct)
-        setup    (->> step-ns-syms
-                      (mapcat #(get @setup-registry % []))
-                      distinct)]
+        file-setup    (->> step-ns-syms
+                          (mapcat #(get @file-setup-registry % []))
+                          distinct)
+        desc-setup    (->> step-ns-syms
+                           (mapcat #(get @describe-setup-registry % []))
+                           distinct)]
     (str "# generated from " source "\n"
          "require 'rspec'\n"
-         (str/join (map require-line requires))
+         (str/join (map #(str % "\n") file-setup))
          "\n"
          "RSpec.describe " (ruby-string feature-name) " do\n"
-         (when (seq setup)
-           (str (str/join "\n" (map #(str "  " %) setup)) "\n")))))
+         (when (seq desc-setup)
+           (str (str/join "\n" (map #(str "  " %) desc-setup)) "\n")))))
 
 (defmethod fw/wrap-feature :rspec
   [_config _feature-name scenario-blocks]

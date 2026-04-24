@@ -4,8 +4,8 @@
             [gherclj.frameworks.rspec :as rspec]
             [speclj.core :refer :all]))
 
-(rspec/add-require "lib/space_airlock")
-(rspec/add-setup "subject { SpaceAirlock.new }")
+(rspec/file-setup! "require File.expand_path('lib/space_airlock', Dir.pwd)")
+(rspec/describe-setup! "subject { SpaceAirlock.new }")
 
 (describe "RSpec framework"
 
