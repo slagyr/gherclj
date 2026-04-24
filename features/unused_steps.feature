@@ -83,7 +83,7 @@ Feature: Unused step detection
       """
     When running gherclj with "-f features -s gherclj.sample.app-steps unused -t ~slow"
     Then the output should contain lines:
-      | Scanned 1 scenario. 1 scenario unscanned due to tag filters: ~slow. |
+      | Scanned 1 of 2 scenarios. 1 scenario filtered out by tags: ~slow.   |
       | 2 of 3 registered steps are in use (1 unused).                       |
       | Unused steps:                                                        |
       | the response should be {status:int}  (app_steps.clj:                |
