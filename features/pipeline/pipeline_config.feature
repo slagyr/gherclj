@@ -16,6 +16,7 @@ Feature: Pipeline configuration
        :framework :speclj
        :verbose false
        :framework-opts []
+       :rspec-requires []
        :include-tags []
        :exclude-tags []}
       """
@@ -37,6 +38,7 @@ Feature: Pipeline configuration
        :framework :clojure.test
        :verbose true
        :framework-opts []
+       :rspec-requires []
        :include-tags []
        :exclude-tags []}
       """
