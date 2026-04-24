@@ -1,5 +1,5 @@
 (ns gherclj.sample.dragon-steps
-  (:require [gherclj.core :refer [defgiven defwhen defthen]]))
+  (:require [gherclj.core :as g :refer [defgiven defwhen defthen]]))
 
 (defgiven summon-dragon "a dragon named {name:string}"
   [name]
@@ -19,6 +19,11 @@
   "Checks visible hoard only — buried treasure excluded."
   [item]
   :checked)
+
+(defthen dragon-vanishes "the dragon vanishes unexpectedly"
+  "Always fails — use in lifecycle scenarios to verify hooks fire on step failure."
+  []
+  (g/should= :present :gone))
 
 (defgiven cave-contains #"^the cave contains (.+)$"
   [contents]

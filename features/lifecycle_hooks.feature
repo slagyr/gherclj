@@ -58,6 +58,19 @@ Feature: Lifecycle hooks
       | after-scenario  |
       | after-feature   |
 
+  Scenario: After-scenario hook fires even when a step fails
+    Given lifecycle event recording is enabled
+    And an after-scenario hook records "after-scenario"
+    And a feature named "Failure" from source "failure.feature"
+    And a scenario "Crashes" with steps:
+      | type | text                          |
+      | then | the dragon vanishes unexpectedly |
+    When the generated scenarios run directly with framework :clojure.test
+    Then the run should fail
+    And the recorded lifecycle events should be:
+      | event          |
+      | after-scenario |
+
   Scenario: Gherclj runs record all lifecycle events
     Given lifecycle event recording is enabled
     And a before-all hook records "before-all"

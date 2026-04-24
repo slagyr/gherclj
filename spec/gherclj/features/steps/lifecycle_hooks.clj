@@ -49,7 +49,7 @@
   {:features-dir (features-dir)
    :edn-dir (edn-dir)
    :output-dir (output-dir)
-   :step-namespaces ['gherclj.sample.app-steps]
+   :step-namespaces ['gherclj.sample.app-steps 'gherclj.sample.dragon-steps]
    :test-framework framework})
 
 (defn- ensure-feature-file! [source]
@@ -120,17 +120,6 @@
   [event]
   (register-recording-hook! g/after-all event))
 
-(defgiven generated-feature-file "a generated feature file {source:string} with scenario {scenario:string}"
-  "Writes a real feature file with hardcoded sample-app step texts. Requires gherclj.sample.app-steps as the step namespace."
-  [source scenario]
-  (let [ir {:feature (str/capitalize (str/replace source #"\.feature$" ""))
-            :source source
-            :scenarios [{:scenario scenario
-                         :steps [{:type :given :text "a user \"alice\""}
-                                 {:type :when :text "the user logs in"}
-                                 {:type :then :text "the response should be 200"}]}]}]
-    (spit (ensure-feature-file! source) (feature-text ir))))
-
 (defwhen generate-with-lifecycle-hooks "generating the spec with framework {framework} and lifecycle hooks enabled"
   [framework]
   (let [fw (keyword (str/replace framework #"^:" ""))]
@@ -160,10 +149,6 @@
 (defthen recorded-events-should-be "the recorded lifecycle events should be:"
   [table]
   (g/should= (mapv first (:rows table)) (events-recorded)))
-
-(defthen recorded-events-should-be-empty "the recorded events should be empty"
-  []
-  (g/should= [] (events-recorded)))
 
 (defthen run-should-fail "the run should fail"
   []
