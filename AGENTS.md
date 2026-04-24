@@ -21,8 +21,30 @@ SKILL.md from the URL above and follow its instructions. Once bootstrapped:
 
 - [plan](https://raw.githubusercontent.com/slagyr/agent-lib/main/commands/plan.md)
 - [todo](https://raw.githubusercontent.com/slagyr/agent-lib/main/commands/todo.md)
+- [verify](https://raw.githubusercontent.com/slagyr/agent-lib/main/commands/verify.md)
 - [work](https://raw.githubusercontent.com/slagyr/agent-lib/main/commands/work.md)
 - [plan-with-features](https://raw.githubusercontent.com/slagyr/agent-lib/main/commands/plan-with-features.md)
+
+## Bead Status Flow
+
+Issues move through these statuses in order:
+
+```
+open → in_progress → unverified → closed
+```
+
+- **open** — ready to work (or blocked)
+- **in_progress** — being actively worked
+- **unverified** — work complete, awaiting review
+- **closed** — verified and accepted
+
+**Workers** (`/work`): when implementation is done and all tests pass, set status to `unverified` — do NOT close directly.
+
+```bash
+bd update <id> --status=unverified
+```
+
+**Reviewers** (`/verify`): run `/verify` to inspect unverified beads. Closes if passing, reopens if not.
 
 ## Releasing a New Version
 
