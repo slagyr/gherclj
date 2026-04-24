@@ -86,7 +86,8 @@ Feature: Step catalog
 
   Scenario: --no-color suppresses ANSI escape sequences
     When running gherclj with "-s gherclj.sample.app-steps steps --no-color"
-    Then the output should have no color codes
+    Then the output should not contain "Unknown option"
+    And the output should have no color codes
 
   # --- Help ---
 
