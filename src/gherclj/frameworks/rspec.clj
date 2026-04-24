@@ -3,6 +3,15 @@
             [clojure.string :as str]
             [gherclj.framework :as fw]))
 
+(defonce requires-registry (atom {}))
+(defonce setup-registry (atom {}))
+
+(defmacro add-require [requirement]
+  `(swap! requires-registry update '~(ns-name *ns*) (fnil conj []) ~requirement))
+
+(defmacro add-setup [setup-line]
+  `(swap! setup-registry update '~(ns-name *ns*) (fnil conj []) ~setup-line))
+
 (defn ruby-string [s]
   (str "'" (str/replace (str s) #"['\\]" #(str "\\" %)) "'"))
 
@@ -32,30 +41,33 @@
                    doc-string (conj doc-string))
         args-str (str/join ", " (map ruby-literal all-args))]
     (if (seq all-args)
-      (str "subject." (ruby-method name) "(" args-str ")")
-      (str "subject." (ruby-method name)))))
+      (str (ruby-method name) "(" args-str ")")
+      (ruby-method name))))
 
 (defmethod fw/render-step :rspec [_config step]
   (generate-step-call step))
 
 (defmethod fw/generate-preamble :rspec
-  [config source _step-ns-syms]
+  [_config source step-ns-syms]
   (let [feature-name (-> source
                          (str/split #"/")
                          last
                          (str/replace #"\.feature$" "")
                          (str/replace #"_" " ")
                          (str/capitalize))
-        {:keys [rspec-requires rspec-subject]} config]
-    (when-not (seq rspec-subject)
-      (throw (ex-info "RSpec generation requires :rspec-subject"
-                      {:config-keys [:rspec-subject]})))
+        requires (->> step-ns-syms
+                      (mapcat #(get @requires-registry % []))
+                      distinct)
+        setup    (->> step-ns-syms
+                      (mapcat #(get @setup-registry % []))
+                      distinct)]
     (str "# generated from " source "\n"
          "require 'rspec'\n"
-         (apply str (map require-line rspec-requires))
+         (str/join (map require-line requires))
          "\n"
          "RSpec.describe " (ruby-string feature-name) " do\n"
-         "  subject { " rspec-subject " }\n")))
+         (when (seq setup)
+           (str (str/join "\n" (map #(str "  " %) setup)) "\n")))))
 
 (defmethod fw/wrap-feature :rspec
   [_config _feature-name scenario-blocks]

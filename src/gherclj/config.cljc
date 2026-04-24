@@ -22,9 +22,6 @@
                      :coerce (fn [v] (boolean v))}
    :framework-opts  {:type   :seq
                      :coerce (fn [v] (or v []))}
-   :rspec-requires  {:type   :seq
-                     :coerce (fn [v] (or v []))}
-   :rspec-subject   {:type :string}
    :include-tags    {:type   :seq
                      :coerce (fn [v] (or v []))}
    :exclude-tags    {:type   :seq

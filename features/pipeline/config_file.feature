@@ -54,7 +54,6 @@ Feature: Config file loading
        :framework :speclj
        :verbose false
        :framework-opts []
-       :rspec-requires []
        :include-tags []
        :exclude-tags []}
       """
