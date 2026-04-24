@@ -99,3 +99,8 @@ Feature: CLI
     When running gherclj with "--turbo-mode"
     Then the output should contain "Unknown option"
     And the output should contain "turbo-mode"
+
+  Scenario: Help mentions the steps subcommand
+    When running gherclj with "--help"
+    Then the output should contain "gherclj steps"
+    And the output should contain "gherclj steps --help"
