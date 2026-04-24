@@ -1,11 +1,11 @@
 (ns gherclj.generator-spec
   (:require [speclj.core :refer :all]
-             [gherclj.generator :as gen]
-             [gherclj.core :as core]
-             [gherclj.core :refer [defgiven defwhen defthen]]
-             [clojure.string :as str]
-             [gherclj.frameworks.speclj]
-             [gherclj.sample.app-steps]))
+   [gherclj.generator :as gen]
+   [gherclj.core :as core]
+   [gherclj.core :refer [defgiven defwhen defthen]]
+   [clojure.string :as str]
+   [gherclj.frameworks.speclj]
+   [gherclj.sample.app-steps]))
 
 ;; Sample steps for generation tests
 
@@ -126,9 +126,10 @@
                 :scenarios [{:scenario "Does the thing"
                              :steps [{:type :when :text "running the action"}
                                      {:type :then :text "the result should be ok"}]}]}
-            result (gen/generate-spec config ir)]
+             result (gen/generate-spec config ir)]
         (should (str/includes? result "[gherclj.sample.app-steps :as app-steps]"))
         (should (str/includes? result "(app-steps/create-adventurer \"alice\")"))))
+
 
   (context "generate-step-call with string args"
 
