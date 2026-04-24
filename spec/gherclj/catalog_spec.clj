@@ -31,7 +31,8 @@
                                     {:type :then
                                      :template "the response should be {status:int}"
                                      :file "/tmp/app_steps.clj"
-                                     :line 12}])]
+                                     :line 12}]
+                                   {:color? false})]
         (should (str/includes? output "Given:"))
         (should (str/includes? output "When:"))
         (should (str/includes? output "Then:"))
@@ -48,7 +49,8 @@
                                      :template "a documented step"
                                      :doc "Sets :crew atom - does NOT write disk."
                                      :file "/tmp/step_docstrings.clj"
-                                     :line 8}])]
+                                     :line 8}]
+                                   {:color? false})]
         (should (str/includes? output "a documented step  (step_docstrings.clj:8)\n  Sets :crew atom - does NOT write disk."))
         (should (str/includes? output "a bare step with no doc  (step_docstrings.clj:5)\na documented step  (step_docstrings.clj:8)"))))
 
@@ -72,4 +74,21 @@
         (should= ["a user {name:string}" "the user logs in"]
                  (mapv :template (catalog/filter-steps steps {:types #{:given :when}})))
         (should= ["a user {name:string}" "the user logs in" "the response should be {status:int}"]
-                 (mapv :template (catalog/filter-steps steps {})))))))
+                 (mapv :template (catalog/filter-steps steps {})))))
+
+    (it "colorizes catalog output by default"
+      (let [output (catalog/render [{:type :given
+                                     :template "a documented step"
+                                     :doc "Sets :crew atom - does NOT write disk."
+                                     :file "/tmp/app_steps.clj"
+                                     :line 4}])]
+        (should (re-find #"\u001b\[[0-9;]*m" output))))
+
+    (it "disables color codes when requested"
+      (let [output (catalog/render [{:type :given
+                                     :template "a documented step"
+                                     :doc "Sets :crew atom - does NOT write disk."
+                                     :file "/tmp/app_steps.clj"
+                                     :line 4}]
+                                   {:color? false})]
+        (should-not (re-find #"\u001b\[[0-9;]*m" output))))))

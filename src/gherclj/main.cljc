@@ -28,6 +28,8 @@
    [nil "--given" "Show Given steps"]
    [nil "--when" "Show When steps"]
    [nil "--then" "Show Then steps"]
+   [nil "--color" "Force ANSI color output"]
+   [nil "--no-color" "Disable ANSI color output"]
    ["-T" "--test-framework FRAMEWORK" "Test framework: speclj, clojure.test (default: speclj)"
     :parse-fn keyword]
    ["-v" "--verbose" "Print progress to stdout"]

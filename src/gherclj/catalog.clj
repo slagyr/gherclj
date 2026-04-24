@@ -10,6 +10,16 @@
                               [:when "When:"]
                               [:then "Then:"]])
 
+(def ^:private ansi-reset "\u001b[0m")
+
+(defn- ansi [code text]
+  (str "\u001b[" code "m" text ansi-reset))
+
+(defn- color-enabled? [{:keys [color no-color]}]
+  (if (some? no-color)
+    (not no-color)
+    (not= false color)))
+
 (defn usage-message []
   (str "\nUsage:  gherclj steps [option]...\n\n"
        "List registered step definitions grouped by type.\n\n"
@@ -27,10 +37,19 @@
 (defn- source-location [{:keys [file line]}]
   (str (.getName (io/file file)) ":" line))
 
-(defn- render-step [{:keys [doc] :as step}]
-  (str (step-text step) "  (" (source-location step) ")"
+(defn- style-header [text color?]
+  (if color? (ansi "1;36" text) text))
+
+(defn- style-location [text color?]
+  (if color? (ansi "2;90" text) text))
+
+(defn- style-doc [text color?]
+  (if color? (ansi "3;33" text) text))
+
+(defn- render-step [{:keys [doc] :as step} color?]
+  (str (step-text step) "  " (style-location (str "(" (source-location step) ")") color?)
        (when doc
-         (str "\n  " doc))))
+         (str "\n  " (style-doc doc color?)))))
 
 (defn- type-filter [{:keys [given then] when-flag :when}]
   (let [selected (cond-> #{}
@@ -51,20 +70,23 @@
        (filter #(or (nil? keyword) (matches-keyword? % keyword)))
        vec))
 
-(defn render [steps]
-  (->> ordered-types
-       (map (fn [[step-type header]]
-              (let [group-lines (->> steps
-                                     (filter #(= step-type (:type %)))
-                                     (map render-step))]
-                (when (seq group-lines)
-                  (str header "\n" (str/join "\n" group-lines))))))
-       (remove nil?)
-       (str/join "\n\n")))
+(defn render
+  ([steps]
+   (render steps {:color? true}))
+  ([steps {:keys [color?] :or {color? true}}]
+   (->> ordered-types
+        (map (fn [[step-type header]]
+               (let [group-lines (->> steps
+                                      (filter #(= step-type (:type %)))
+                                      (map #(render-step % color?)))]
+                 (when (seq group-lines)
+                   (str (style-header header color?) "\n" (str/join "\n" group-lines))))))
+        (remove nil?)
+        (str/join "\n\n"))))
 
 (defn run! [config args]
   (let [step-namespaces (pipeline/load-step-namespaces! (:step-namespaces config))
         steps (core/collect-steps step-namespaces)
         filtered (filter-steps steps {:keyword (first args)
                                       :types (type-filter config)})]
-    (println (render filtered))))
+    (println (render filtered {:color? (color-enabled? config)}))))

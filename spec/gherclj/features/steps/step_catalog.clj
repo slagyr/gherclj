@@ -2,6 +2,8 @@
   (:require [clojure.string :as str]
             [gherclj.core :as g :refer [defthen]]))
 
+(def ansi-code-pattern #"\u001b\[[0-9;]*m")
+
 (defn- trim-blank-lines [lines]
   (->> lines
        (drop-while str/blank?)
@@ -23,3 +25,11 @@
 (defthen catalog-output-should-include "the catalog output should include:"
   [doc-string]
   (g/should (adjacent-lines-present? (g/get :cli-output "") doc-string)))
+
+(defthen output-should-have-no-color-codes "the output should have no color codes"
+  []
+  (g/should-not (re-find ansi-code-pattern (g/get :cli-output ""))))
+
+(defthen output-should-have-color-codes "the output should have color codes"
+  []
+  (g/should (re-find ansi-code-pattern (g/get :cli-output ""))))

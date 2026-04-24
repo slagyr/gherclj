@@ -110,7 +110,12 @@
         (should= ["user"] (get-in result [:options :subcommand-args]))
         (should= true (get-in result [:options :given]))
         (should= true (get-in result [:options :when]))
-        (should-be-nil (get-in result [:options :then])))))
+        (should-be-nil (get-in result [:options :then]))))
+
+    (it "parses --no-color for the steps subcommand"
+      (let [result (main/parse-args ["steps" "--no-color"])]
+        (should= :steps (get-in result [:options :subcommand]))
+        (should= true (get-in result [:options :no-color])))))
 
   (context "usage"
 
