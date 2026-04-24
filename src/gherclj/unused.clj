@@ -11,6 +11,14 @@
                               [:when "When:"]
                               [:then "Then:"]])
 
+(defn usage-message []
+  (str "\nUsage:  gherclj unused [option]...\n\n"
+       "List registered steps that are never referenced by scanned feature scenarios.\n\n"
+       "  -f, --features-dir DIR            Features directory (default: features)\n"
+       "  -s, --step-namespaces NS          Step namespace (repeatable, supports globs)\n"
+       "  -t, --tag TAG                     Limit scanned scenarios using the normal tag filter semantics\n"
+       "  -h, --help                        Show usage\n"))
+
 (defn- pluralize [n singular plural]
   (str n " " (if (= 1 n) singular plural)))
 
@@ -72,7 +80,7 @@
                                                       (map #(str (or (:template %) (some-> (:regex %) str))
                                                                  "  (" (source-location %) ")")))]
                                        (when (seq lines)
-                                         [header (str/join "\n" lines)]))))
+                                         (into [header] lines)))))
                            vec)
         distinct-types (count (into #{} (map :type unused-steps)))
         unused-body (cond
@@ -82,7 +90,7 @@
                                                             "  (" (source-location %) ")")
                                                       unused-steps))
                       :else (into ["Unused steps:"] grouped-lines))]
-    (str/join "\n\n" (concat [summary usage-summary] unused-body))))
+    (str/join "\n" (concat [summary usage-summary] unused-body))))
 
 (defn run! [config _args]
   (let [step-namespaces (pipeline/load-step-namespaces! (:step-namespaces config))

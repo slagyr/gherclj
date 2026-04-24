@@ -8,6 +8,7 @@
   (str (System/getProperty "java.io.tmpdir") "/gherclj-pipeline-test"))
 
 (defgiven setup-feature "a feature named {name:string} from source {source:string}"
+  "Initializes :feature-ir with an empty scenarios list. source is the .feature file path embedded in generated code."
   [name source]
   (g/assoc! :feature-ir {:feature name :source source :scenarios []}))
 
@@ -33,6 +34,7 @@
     (g/assoc-in! [:feature-ir :background] {:steps steps})))
 
 (defgiven add-wip-scenario "a wip scenario {title:string} with steps:"
+  "Adds scenario with [\"wip\"] tag hardcoded — simulates a scenario tagged @wip."
   [title table]
   (let [{:keys [headers rows]} table
         steps (mapv (fn [row]
@@ -51,6 +53,7 @@
     (require fw-ns)))
 
 (defwhen generate-spec "generating the spec with framework {framework}"
+  "Uses gherclj.sample.app-steps as hardcoded step namespace, merged with any :extra-steps in state."
   [framework]
   (let [fw (keyword (str/replace framework #"^:" ""))]
     (ensure-framework-loaded! fw)
@@ -67,6 +70,7 @@
     (g/should (str/includes? output expected))))
 
 (defthen output-should-not-contain "the output should not contain {text:string}"
+  "Checks :cli-output → :generated-output → :pipeline-output in fallback order. Strips pipeline temp dir prefix from paths."
   [text]
   (let [raw-output (or (g/get :cli-output) (g/get :generated-output) (g/get :pipeline-output) "")
         output (str/replace raw-output (str pipeline-base-dir "/") "")]

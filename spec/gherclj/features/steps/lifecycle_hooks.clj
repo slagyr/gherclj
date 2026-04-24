@@ -92,6 +92,7 @@
         (apply clojure.test/run-tests nses)))))
 
 (defgiven lifecycle-recording-enabled "lifecycle event recording is enabled"
+  "Must be the first step in any lifecycle scenario. Resets state, clears recorded events, and clears all registered lifecycle hooks."
   []
   (reset-lifecycle-state!))
 
@@ -120,6 +121,7 @@
   (register-recording-hook! g/after-all event))
 
 (defgiven generated-feature-file "a generated feature file {source:string} with scenario {scenario:string}"
+  "Writes a real feature file with hardcoded sample-app step texts. Requires gherclj.sample.app-steps as the step namespace."
   [source scenario]
   (let [ir {:feature (str/capitalize (str/replace source #"\.feature$" ""))
             :source source
@@ -137,6 +139,7 @@
                                                    (g/get :feature-ir)))))
 
 (defwhen run-directly "the generated scenarios run directly with framework {framework}"
+  "Loads generated .clj files into the current JVM. Removes pre-existing namespaces before loading to avoid stale state."
   [framework]
   (let [fw (keyword (str/replace framework #"^:" ""))]
     (write-feature-ir!)

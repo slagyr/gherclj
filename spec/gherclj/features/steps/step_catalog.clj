@@ -23,6 +23,7 @@
            (partition window-size 1 actual-lines)))))
 
 (defthen catalog-output-should-include "the catalog output should include:"
+  "Checks that expected lines appear adjacent and in order in :cli-output. Leading/trailing blank lines in expected are trimmed."
   [doc-string]
   (g/should (adjacent-lines-present? (g/get :cli-output "") doc-string)))
 
@@ -35,6 +36,7 @@
   (g/should (re-find ansi-code-pattern (g/get :cli-output ""))))
 
 (defthen output-should-contain-lines "the output should contain lines:"
+  "Each table row is a substring check against :cli-output. All rows must be present; order is not checked."
   [table]
   (let [output (g/get :cli-output "")
         lines (concat (:headers table) (mapcat identity (:rows table)))]

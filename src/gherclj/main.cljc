@@ -97,7 +97,6 @@
          "                   file:line the scenario containing that line in the file\n\n"
          "  subcommands\n"
          "                   gherclj steps        list registered step definitions\n"
-         "                   gherclj steps --help show catalog-specific help\n"
          "                   gherclj unused       list registered steps unused by features\n\n"
          summary "\n")))
 
@@ -120,6 +119,7 @@
       help
       (do (println (case (:subcommand options)
                      :steps (catalog/usage-message)
+                     :unused (unused/usage-message)
                      (usage-message)))
           0)
 

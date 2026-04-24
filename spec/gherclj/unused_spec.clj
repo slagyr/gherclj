@@ -50,6 +50,15 @@
         (should (.contains text "3 of 3 registered steps are in use."))
         (should (.contains text "No unused steps found."))))
 
+    (it "does not insert blank lines between summary lines"
+      (let [text (unused/render {:scanned-scenarios 1
+                                 :unscanned-scenarios 0
+                                 :used-step-count 3
+                                 :total-step-count 3
+                                 :unused-steps []
+                                 :filters []})]
+        (should-not (.contains text "Scanned 1 scenario. No tag filtering applied.\n\n3 of 3 registered steps are in use."))))
+
     (it "renders filtered grouped unused output"
       (let [text (unused/render {:scanned-scenarios 1
                                  :unscanned-scenarios 1
@@ -63,4 +72,14 @@
         (should (.contains text "When:"))
         (should (.contains text "Then:"))
         (should (.contains text "the user logs in  (app_steps.clj:8)"))
-        (should (.contains text "the response should be {status:int}  (app_steps.clj:12)"))))))
+        (should (.contains text "the response should be {status:int}  (app_steps.clj:12)"))))
+
+    (it "does not insert blank lines between unused sections"
+      (let [text (unused/render {:scanned-scenarios 1
+                                 :unscanned-scenarios 1
+                                 :used-step-count 1
+                                 :total-step-count 3
+                                 :unused-steps [(second sample-steps) (nth sample-steps 2)]
+                                 :filters ["~slow"]})]
+        (should-not (.contains text "Unused steps:\n\nWhen:"))
+        (should-not (.contains text "When:\n\nthe user logs in  (app_steps.clj:8)"))))))

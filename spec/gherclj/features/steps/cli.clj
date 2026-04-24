@@ -8,6 +8,7 @@
             [clojure.string :as str]))
 
 (defgiven cli-config-file "a config file:"
+  "Stores EDN config in :cli-config state. NOT written to disk — used as file-config override when 'running gherclj with' executes."
   [doc-string]
   (g/assoc! :cli-config (edn/read-string doc-string)))
 
@@ -57,6 +58,7 @@
   (rewrite-sandbox-path-options args))
 
 (defwhen run-gherclj "running gherclj with {args:string}"
+  "Invokes main/run in a sandbox. Rewrites -f/-e/-o paths to be relative to the temp pipeline dir. Captures output to :cli-output when pipeline-base-dir exists or when the command is a subcommand or help call."
   [args]
   (let [arg-vec (str/split args #"\s+")
          {:keys [options help errors]} (main/parse-args arg-vec)]

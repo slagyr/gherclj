@@ -23,8 +23,8 @@
   (spit (str test-root "/gherclj.edn") doc-string))
 
 (defgiven config-on-classpath "a gherclj.edn file on the classpath:"
+  "Stores to :classpath-config in state. NOT written to disk yet — written as root config when 'the config is loaded' runs if no root file exists."
   [doc-string]
-  ;; Store as classpath config — will be used as fallback if no root file exists
   (g/assoc! :classpath-config doc-string))
 
 (defgiven no-config-file "no gherclj.edn file exists"
@@ -34,8 +34,8 @@
 ;; --- When steps ---
 
 (defwhen load-config "the config is loaded"
+  "If :classpath-config is set and no root file exists, writes it to disk first. Then loads config from the test root dir."
   []
-  ;; If no root file exists but classpath config was set, write it as root
   (when (and (g/get :classpath-config)
              (not (.exists (io/file test-root "gherclj.edn"))))
     (io/make-parents (io/file test-root "dummy"))

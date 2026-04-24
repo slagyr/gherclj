@@ -8,6 +8,7 @@
   (g/assoc! :test-config (edn/read-string doc-string)))
 
 (defgiven namespaces-on-classpath "namespaces on the classpath:"
+  "Provides a mock classpath to the resolver — does NOT reflect the real JVM classpath."
   [table]
   (let [nses (mapv #(symbol (first %)) (:rows table))]
     (g/assoc! :available-nses nses)))

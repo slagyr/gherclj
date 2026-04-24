@@ -103,4 +103,3 @@ Feature: CLI
   Scenario: Help mentions the steps subcommand
     When running gherclj with "--help"
     Then the output should contain "gherclj steps"
-    And the output should contain "gherclj steps --help"

@@ -5,6 +5,7 @@
             [clojure.string :as str]))
 
 (defgiven define-given-step "a given step named {name:string} with template {template:string}"
+  "Creates a step entry in :steps state (not the global registry). Uses a fake ns symbol."
   [name template]
   (let [compiled (template/compile-template template)
         entry {:name name :type :given :ns 'gherclj.features.steps.step-definitions
@@ -12,6 +13,7 @@
     (g/update! :steps (fnil conj []) entry)))
 
 (defgiven define-when-step "a when step named {name:string} with template {template:string}"
+  "Creates a step entry in :steps state (not the global registry). Uses a fake ns symbol."
   [name template]
   (let [compiled (template/compile-template template)
         entry {:name name :type :when :ns 'gherclj.features.steps.step-definitions
@@ -19,6 +21,7 @@
     (g/update! :steps (fnil conj []) entry)))
 
 (defgiven define-then-step "a then step named {name:string} with template {template:string}"
+  "Creates a step entry in :steps state (not the global registry). Uses a fake ns symbol."
   [name template]
   (let [compiled (template/compile-template template)
         entry {:name name :type :then :ns 'gherclj.features.steps.step-definitions
@@ -43,6 +46,7 @@
   (g/should= (edn/read-string args) (:args (g/get :classify-result))))
 
 (defwhen classify-text "classifying {text:string}"
+  "Catches ambiguous-match exceptions and stores the error message to :error."
   [text]
   (try
     (g/assoc! :classify-result (g/classify-step (g/get :steps) text))

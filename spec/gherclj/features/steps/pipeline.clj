@@ -36,6 +36,7 @@
 ;; --- Given steps ---
 
 (defgiven setup-features-dir "a features directory containing:"
+  "Creates real files under the pipeline temp dir and deletes the entire base dir first. Sets :pipeline-dir."
   [table]
   (let [dir (str base-dir "/features")]
     (clean-base-dir!)
@@ -48,15 +49,18 @@
     (g/assoc! :pipeline-dir dir)))
 
 (defgiven write-feature-content "the feature {name:string} contains:"
+  "Writes content to :pipeline-dir/{name}. Requires 'a features directory containing' to have run first."
   [name doc-string]
   (spit (io/file (g/get :pipeline-dir) name) doc-string))
 
 (defgiven parse-stage-has-run "the parse stage has run"
+  "Runs the parse stage silently (stdout suppressed). Use as a Given prerequisite, not as the When step under test."
   []
   (let [output (with-out-str (pipeline/parse! (pipeline-config)))]
     (g/assoc! :pipeline-output output)))
 
 (defgiven step-namespace-pattern "step namespaces include pattern {pattern:string}"
+  "Stores glob pattern to :step-namespaces for use by subsequent pipeline runs."
   [pattern]
   (g/assoc! :step-namespaces [pattern]))
 

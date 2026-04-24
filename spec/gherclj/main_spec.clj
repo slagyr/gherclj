@@ -150,10 +150,9 @@
         (should (str/includes? text "file      all scenarios in the file"))
         (should (str/includes? text "file:line the scenario containing that line in the file"))))
 
-    (it "mentions the steps subcommand and its help"
+    (it "mentions the steps subcommand"
       (let [text (main/usage-message)]
-        (should (str/includes? text "gherclj steps"))
-        (should (str/includes? text "gherclj steps --help")))))
+        (should (str/includes? text "gherclj steps")))))
 
   (context "run"
 
@@ -171,6 +170,14 @@
                      (should= 0 (main/run ["steps" "--help"])))]
         (should (str/includes? output "gherclj steps"))
         (should (str/includes? output "--given"))))
+
+    (it "prints unused usage for unused --help"
+      (let [output (with-out-str
+                     (should= 0 (main/run ["unused" "--help"])))]
+        (should (str/includes? output "gherclj unused"))
+        (should (str/includes? output "--features-dir"))
+        (should (str/includes? output "--step-namespaces"))
+        (should (str/includes? output "--tag"))))
 
     (it "returns 1 and prints message for unknown flags"
       (let [output (with-out-str

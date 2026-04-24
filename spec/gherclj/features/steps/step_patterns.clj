@@ -15,6 +15,7 @@
 ;; --- Steps ---
 
 (defgiven lookup-registered-step "the registered step {name}"
+  "Looks up by name from step-patterns namespace only (not :steps state). Silently no-ops if not found."
   [name]
   (let [normalized-name (str/replace name #"^\"|\"$" "")
         steps (g/steps-in-ns 'gherclj.features.steps.step-patterns)
