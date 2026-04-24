@@ -1,0 +1,25 @@
+(ns gherclj.features.steps.step-catalog
+  (:require [clojure.string :as str]
+            [gherclj.core :as g :refer [defthen]]))
+
+(defn- trim-blank-lines [lines]
+  (->> lines
+       (drop-while str/blank?)
+       reverse
+       (drop-while str/blank?)
+       reverse
+       vec))
+
+(defn- adjacent-lines-present? [output expected]
+  (let [actual-lines (str/split-lines output)
+        expected-lines (-> expected str/split-lines trim-blank-lines)
+        window-size (count expected-lines)]
+    (boolean
+     (some (fn [window]
+             (every? true?
+                     (map str/includes? window expected-lines)))
+           (partition window-size 1 actual-lines)))))
+
+(defthen catalog-output-should-include "the catalog output should include:"
+  [doc-string]
+  (g/should (adjacent-lines-present? (g/get :cli-output "") doc-string)))

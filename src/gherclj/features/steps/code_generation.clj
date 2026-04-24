@@ -67,7 +67,9 @@
 
 (defthen output-should-not-contain "the output should not contain {text:string}"
   [text]
-  (g/should-not (str/includes? (g/get :generated-output) text)))
+  (let [raw-output (or (g/get :cli-output) (g/get :generated-output) (g/get :pipeline-output) "")
+        output (str/replace raw-output (str pipeline-base-dir "/") "")]
+    (g/should-not (str/includes? output text))))
 
 (defthen generated-code-should-be "the generated code should be:"
   [doc-string]

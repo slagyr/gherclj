@@ -50,7 +50,7 @@
                   vec))
         ["src"])))
 
-(defn- ensure-steps-loaded!
+(defn load-step-namespaces!
   "Resolve glob patterns and require all step namespaces."
   [step-namespaces]
   (let [has-globs? (some string? step-namespaces)
@@ -208,7 +208,7 @@
                output-dir "target/gherclj/generated"
                features-dir "features"}} config]
     (ensure-framework-loaded! test-framework)
-    (let [resolved-steps (ensure-steps-loaded! step-namespaces)
+    (let [resolved-steps (load-step-namespaces! step-namespaces)
           config (assoc config :step-namespaces resolved-steps)
           selected-scenarios (when (seq locations)
                                (selected-scenarios-by-source features-dir locations))

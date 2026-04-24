@@ -1,10 +1,11 @@
 (ns gherclj.main-spec
   (:require [speclj.core :refer :all]
-            [clojure.string :as str]
-            [gherclj.config :as config]
-            [gherclj.generator :as gen]
-            [gherclj.pipeline :as pipeline]
-            [gherclj.main :as main]))
+             [clojure.string :as str]
+             [gherclj.catalog :as catalog]
+             [gherclj.config :as config]
+             [gherclj.generator :as gen]
+             [gherclj.pipeline :as pipeline]
+             [gherclj.main :as main]))
 
 (describe "Main"
 
@@ -91,7 +92,17 @@
 
     (it "captures positional args as :framework-opts"
       (let [result (main/parse-args ["--" "-f" "documentation"])]
-        (should= ["-f" "documentation"] (get-in result [:options :framework-opts])))))
+        (should= ["-f" "documentation"] (get-in result [:options :framework-opts]))))
+
+    (it "detects the steps subcommand as the first positional arg"
+      (let [result (main/parse-args ["-s" "gherclj.features.steps.sample-app" "steps"])]
+        (should= :steps (get-in result [:options :subcommand]))
+        (should-be-nil (get-in result [:options :locations]))))
+
+    (it "captures the remaining positional args for the steps subcommand"
+      (let [result (main/parse-args ["steps" "user"])]
+        (should= :steps (get-in result [:options :subcommand]))
+        (should= ["user"] (get-in result [:options :subcommand-args])))))
 
   (context "usage"
 
@@ -113,7 +124,12 @@
         (should (str/includes? text "feature targets"))
         (should (str/includes? text "[file|file:line]"))
         (should (str/includes? text "file      all scenarios in the file"))
-        (should (str/includes? text "file:line the scenario containing that line in the file")))))
+        (should (str/includes? text "file:line the scenario containing that line in the file"))))
+
+    (it "mentions the steps subcommand and its help"
+      (let [text (main/usage-message)]
+        (should (str/includes? text "gherclj steps"))
+        (should (str/includes? text "gherclj steps --help")))))
 
   (context "run"
 
@@ -126,11 +142,28 @@
       (with-out-str
         (should= 0 (main/run ["-h"]))))
 
+    (it "prints steps usage for steps --help"
+      (let [output (with-out-str
+                     (should= 0 (main/run ["steps" "--help"])))]
+        (should (str/includes? output "gherclj steps"))
+        (should (str/includes? output "--given"))))
+
     (it "returns 1 and prints message for unknown flags"
       (let [output (with-out-str
                      (should= 1 (main/run ["--turbo-mode"])))]
         (should (str/includes? output "Unknown option"))
         (should (str/includes? output "turbo-mode"))))
+
+    (it "dispatches the steps subcommand without running the pipeline"
+      (let [catalog-config (atom nil)]
+        (with-redefs [config/load-config (fn [] {:step-namespaces ['gherclj.features.steps.sample-app]})
+                      pipeline/run!      (fn [_] (throw (RuntimeException. "pipeline should not run")))
+                      catalog/run!       (fn [config args]
+                                           (reset! catalog-config [config args]))]
+          (with-out-str
+            (should= 0 (main/run ["-s" "gherclj.features.steps.step-docstrings" "steps"])))
+          (should= [['gherclj.features.steps.step-docstrings] []]
+                   ((juxt #(get-in % [0 :step-namespaces]) second) @catalog-config)))))
 
     (context "pipeline execution"
       (around [it]

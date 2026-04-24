@@ -1,10 +1,11 @@
 (ns gherclj.main
   (:require [clojure.java.io :as io]
-            [clojure.tools.cli :as cli]
-            [clojure.string :as str]
-            [gherclj.config :as config]
-            [gherclj.pipeline :as pipeline]
-            [gherclj.generator :as gen]))
+             [clojure.tools.cli :as cli]
+             [clojure.string :as str]
+             [gherclj.catalog :as catalog]
+             [gherclj.config :as config]
+             [gherclj.pipeline :as pipeline]
+             [gherclj.generator :as gen]))
 
 (def version (str/trim (slurp (io/resource "gherclj/VERSION"))))
 
@@ -45,14 +46,19 @@
       {:source arg})))
 
 (defn- parse-positional-args [arguments]
-  (reduce (fn [{:keys [locations framework-opts]} arg]
-            (if-let [location (parse-location-arg arg)]
-              {:locations (conj locations location)
-               :framework-opts framework-opts}
-              {:locations locations
-               :framework-opts (conj framework-opts arg)}))
-          {:locations [] :framework-opts []}
-          arguments))
+  (if (= "steps" (first arguments))
+    {:locations []
+     :framework-opts []
+     :subcommand :steps
+     :subcommand-args (vec (rest arguments))}
+    (reduce (fn [{:keys [locations framework-opts]} arg]
+              (if-let [location (parse-location-arg arg)]
+                {:locations (conj locations location)
+                 :framework-opts framework-opts}
+                {:locations locations
+                 :framework-opts (conj framework-opts arg)}))
+            {:locations [] :framework-opts []}
+            arguments)))
 
 (defn parse-args
   "Parse CLI arguments. Returns {:options map :help bool :errors seq}."
@@ -61,12 +67,14 @@
         tags (let [t (:tag options)] (when-not (= :none t) t))
         tag-opts (parse-tag-flags tags)
         step-ns (let [s (:step-namespaces options)] (when-not (= :none s) s))
-        {:keys [locations framework-opts]} (parse-positional-args arguments)
+        {:keys [locations framework-opts subcommand subcommand-args]} (parse-positional-args arguments)
         opts (-> (dissoc options :help :tag :step-namespaces)
                   (merge tag-opts)
-                 (cond-> step-ns (assoc :step-namespaces step-ns)
-                         (seq locations) (assoc :locations locations)
-                         (seq framework-opts) (assoc :framework-opts framework-opts)))]
+                  (cond-> step-ns (assoc :step-namespaces step-ns)
+                          (seq locations) (assoc :locations locations)
+                          (seq framework-opts) (assoc :framework-opts framework-opts)
+                          subcommand (assoc :subcommand subcommand)
+                          (seq subcommand-args) (assoc :subcommand-args subcommand-args)))]
     (cond-> {:options opts
              :help (:help options)
              :errors errors
@@ -77,10 +85,13 @@
     (str "\nGherclj " version " - pronounced /\u0261\u025c\u02d0rk\u0259l/, gur-kull: a Gherkin -> test code transducer.\n"
          "Copyright (c) 2026 Micah Martin under The MIT License.\n\n"
          "Usage:  gherclj [option]... [feature target]... [-- framework option...]\n\n"
-         "  feature targets  [file|file:line]... The union of all targeted scenarios get run. (default: all scenarios in --features-dir).\n"
-         "                   file      all scenarios in the file\n"
-         "                   file:line the scenario containing that line in the file\n\n"
-         summary "\n")))
+          "  feature targets  [file|file:line]... The union of all targeted scenarios get run. (default: all scenarios in --features-dir).\n"
+          "                   file      all scenarios in the file\n"
+          "                   file:line the scenario containing that line in the file\n\n"
+         "  subcommands\n"
+         "                   gherclj steps        list registered step definitions\n"
+         "                   gherclj steps --help show catalog-specific help\n\n"
+          summary "\n")))
 
 (defn- failures? [run-specs-result]
   (cond
@@ -99,16 +110,23 @@
           1)
 
       help
-      (do (println (usage-message))
+      (do (println (if (= :steps (:subcommand options))
+                     (catalog/usage-message)
+                     (usage-message)))
           0)
 
       :else
       (let [file-config (config/load-config)
             cli-overrides (into {} (filter (fn [[_ v]] (some? v))) options)
             merged (merge file-config cli-overrides)]
-        (pipeline/run! merged)
-        (let [result (gen/run-specs merged)]
-          (if (failures? result) 1 0))))))
+        (if (= :steps (:subcommand options))
+          (do
+            (catalog/run! merged (or (:subcommand-args options) []))
+            0)
+          (do
+            (pipeline/run! merged)
+            (let [result (gen/run-specs merged)]
+              (if (failures? result) 1 0))))))))
 
 (defn -main [& args]
   (let [exit-code (run args)]

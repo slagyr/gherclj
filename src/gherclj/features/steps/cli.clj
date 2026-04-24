@@ -59,13 +59,10 @@
 (defwhen run-gherclj "running gherclj with {args:string}"
   [args]
   (let [arg-vec (str/split args #"\s+")
-        {:keys [options help errors]} (main/parse-args arg-vec)]
+         {:keys [options help errors]} (main/parse-args arg-vec)]
     (cond
       (seq errors)
       (g/assoc! :cli-output (str/join "\n" errors))
-
-      help
-      (g/assoc! :cli-output (main/usage-message))
 
       :else
       (let [file-config (or (g/get :cli-config) {})
@@ -73,16 +70,16 @@
             merged (merge (config/resolve-config file-config) cli-overrides)
             run-args (with-sandbox-defaults arg-vec)]
         (g/assoc! :loaded-config merged)
-        (when (pipeline-base-dir)
+        (when (or help (pipeline-base-dir) (= :steps (:subcommand options)))
           (let [previous-framework (g/get :_test-framework)
                 output (with-out-str
                          (try
                            (main/run run-args)
                            (catch RuntimeException e
                              (println (.getMessage e)))
-                           (finally
-                             (when previous-framework
-                               (g/set-test-framework! previous-framework)))))]
+                            (finally
+                              (when previous-framework
+                                (g/set-test-framework! previous-framework)))))]
             (g/assoc! :cli-output output)))))))
 
 (defwhen run-speclj-with-framework-options "speclj runs with framework options {opts:string}"
