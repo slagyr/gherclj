@@ -1,4 +1,5 @@
-(ns gherclj.lifecycle)
+(ns gherclj.lifecycle
+  (:refer-clojure :exclude [run!]))
 
 (def ^:private stages
   [:before-all :before-feature :before-scenario :after-scenario :after-feature :after-all])

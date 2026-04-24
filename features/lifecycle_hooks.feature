@@ -38,12 +38,12 @@ Feature: Lifecycle hooks
     And an after-scenario hook records "after-scenario"
     And an after-feature hook records "after-feature"
     And a feature named "Hooks" from source "hooks.feature"
-    And a scenario "First" with steps:
+    And a scenario "Passes first" with steps:
       | type  | text                       |
       | given | a user "alice"             |
       | when  | the user logs in           |
       | then  | the response should be 200 |
-    And a scenario "Second" with steps:
+    And a scenario "Passes second" with steps:
       | type  | text                       |
       | given | a user "bob"               |
       | when  | the user logs in           |
