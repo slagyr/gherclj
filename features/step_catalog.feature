@@ -40,9 +40,9 @@ Feature: Step catalog
   # --- Keyword filter ---
 
   Scenario: Keyword filter shows only steps with matching phrase
-    When running gherclj with "-s gherclj.features.steps.sample-app steps name"
+    When running gherclj with "-s gherclj.features.steps.sample-app steps user"
     Then the output should contain "a user {name:string}"
-    And the output should not contain "the user logs in"
+    And the output should contain "the user logs in"
     And the output should not contain "the response should be {status:int}"
 
   Scenario: Keyword filter matches against docstring content
