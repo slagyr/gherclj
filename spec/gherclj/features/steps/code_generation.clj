@@ -1,7 +1,7 @@
 (ns gherclj.features.steps.code-generation
   (:require [gherclj.core :as g :refer [defgiven defwhen defthen]]
             [gherclj.generator :as gen]
-            [gherclj.features.steps.sample-app]
+            [gherclj.sample.app-steps]
             [clojure.string :as str]))
 
 (def ^:private pipeline-base-dir
@@ -54,7 +54,7 @@
   [framework]
   (let [fw (keyword (str/replace framework #"^:" ""))]
     (ensure-framework-loaded! fw)
-    (let [config {:step-namespaces ['gherclj.features.steps.sample-app]
+    (let [config {:step-namespaces ['gherclj.sample.app-steps]
                   :extra-steps (g/get :steps)
                   :test-framework fw}]
       (g/assoc! :generated-output (gen/generate-spec config (g/get :feature-ir))))))

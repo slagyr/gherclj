@@ -19,7 +19,7 @@ Feature: IR to code generation
         (:require [speclj.core :refer :all]
                   [gherclj.core :as g]
                   [gherclj.lifecycle :as lifecycle]
-                  [gherclj.features.steps.sample-app :as sample-app]))
+                  [gherclj.sample.app-steps :as app-steps]))
 
       (describe "Login"
 
@@ -29,9 +29,9 @@ Feature: IR to code generation
         (after-all (lifecycle/run-after-feature-hooks!))
 
         (it "Valid credentials"
-          (sample-app/create-adventurer "alice")
-          (sample-app/enter-the-realm)
-          (sample-app/verify-outcome 200)))
+          (app-steps/create-adventurer "alice")
+          (app-steps/enter-the-realm)
+          (app-steps/verify-outcome 200)))
       """
 
   Scenario: Generate a clojure.test spec
@@ -48,7 +48,7 @@ Feature: IR to code generation
         (:require [clojure.test :refer :all]
                   [gherclj.core :as g]
                   [gherclj.lifecycle :as lifecycle]
-                  [gherclj.features.steps.sample-app :as sample-app]))
+                  [gherclj.sample.app-steps :as app-steps]))
 
       (defn ^:private feature-fixture [f]
         (lifecycle/run-before-feature-hooks!)
@@ -70,9 +70,9 @@ Feature: IR to code generation
 
       (deftest valid-credentials
         (testing "Valid credentials"
-          (sample-app/create-adventurer "alice")
-          (sample-app/enter-the-realm)
-          (sample-app/verify-outcome 200)))
+          (app-steps/create-adventurer "alice")
+          (app-steps/enter-the-realm)
+          (app-steps/verify-outcome 200)))
       """
 
   Scenario: clojure.test with multiple scenarios
@@ -94,7 +94,7 @@ Feature: IR to code generation
         (:require [clojure.test :refer :all]
                   [gherclj.core :as g]
                   [gherclj.lifecycle :as lifecycle]
-                  [gherclj.features.steps.sample-app :as sample-app]))
+                  [gherclj.sample.app-steps :as app-steps]))
 
       (defn ^:private feature-fixture [f]
         (lifecycle/run-before-feature-hooks!)
@@ -116,15 +116,15 @@ Feature: IR to code generation
 
       (deftest valid-credentials
         (testing "Valid credentials"
-          (sample-app/create-adventurer "alice")
-          (sample-app/enter-the-realm)
-          (sample-app/verify-outcome 200)))
+          (app-steps/create-adventurer "alice")
+          (app-steps/enter-the-realm)
+          (app-steps/verify-outcome 200)))
 
       (deftest invalid-credentials
         (testing "Invalid credentials"
-          (sample-app/create-adventurer "nobody")
-          (sample-app/enter-the-realm)
-          (sample-app/verify-outcome 401)))
+          (app-steps/create-adventurer "nobody")
+          (app-steps/enter-the-realm)
+          (app-steps/verify-outcome 401)))
       """
 
   Scenario: clojure.test with background
@@ -143,7 +143,7 @@ Feature: IR to code generation
         (:require [clojure.test :refer :all]
                   [gherclj.core :as g]
                   [gherclj.lifecycle :as lifecycle]
-                  [gherclj.features.steps.sample-app :as sample-app]))
+                  [gherclj.sample.app-steps :as app-steps]))
 
       (defn ^:private feature-fixture [f]
         (lifecycle/run-before-feature-hooks!)
@@ -165,9 +165,9 @@ Feature: IR to code generation
 
       (deftest check-response
         (testing "Check response"
-          (sample-app/create-adventurer "alice")
-          (sample-app/enter-the-realm)
-          (sample-app/verify-outcome 200)))
+          (app-steps/create-adventurer "alice")
+          (app-steps/enter-the-realm)
+          (app-steps/verify-outcome 200)))
       """
 
   Scenario: clojure.test pending scenario
@@ -220,9 +220,9 @@ Feature: IR to code generation
       | type  | text                       |
       | then  | the response should be 200 |
     When generating the spec with framework :speclj
-    Then the output should contain "(sample-app/create-adventurer"
-    And the output should contain "(sample-app/enter-the-realm)"
-    And the output should contain "(sample-app/verify-outcome 200)"
+    Then the output should contain "(app-steps/create-adventurer"
+    And the output should contain "(app-steps/enter-the-realm)"
+    And the output should contain "(app-steps/verify-outcome 200)"
 
   Scenario: State is reset before each scenario
     Given a feature named "Login" from source "login.feature"

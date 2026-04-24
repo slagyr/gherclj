@@ -182,12 +182,12 @@
             {:features-dir features-dir
              :edn-dir edn-dir
              :output-dir output-dir
-             :step-namespaces ["gherclj.features.steps.sample-*"]
+             :step-namespaces ["gherclj.sample.*"]
              :test-framework :speclj})
 
           (should (.exists (io/file output-dir "auth_spec.clj")))
           (let [content (slurp (io/file output-dir "auth_spec.clj"))]
-            (should (str/includes? content "sample-app/create-adventurer")))
+            (should (str/includes? content "app-steps/create-adventurer")))
           (finally (cleanup features-dir edn-dir output-dir)))))
 
     (it "generates clojure.test files with _test suffix"

@@ -95,7 +95,7 @@
         (should= ["-f" "documentation"] (get-in result [:options :framework-opts]))))
 
     (it "detects the steps subcommand as the first positional arg"
-      (let [result (main/parse-args ["-s" "gherclj.features.steps.sample-app" "steps"])]
+      (let [result (main/parse-args ["-s" "gherclj.sample.app-steps" "steps"])]
         (should= :steps (get-in result [:options :subcommand]))
         (should-be-nil (get-in result [:options :locations]))))
 
@@ -164,7 +164,7 @@
 
     (it "dispatches the steps subcommand without running the pipeline"
       (let [catalog-config (atom nil)]
-        (with-redefs [config/load-config (fn [] {:step-namespaces ['gherclj.features.steps.sample-app]})
+        (with-redefs [config/load-config (fn [] {:step-namespaces ['gherclj.sample.app-steps]})
                       pipeline/run!      (fn [_] (throw (RuntimeException. "pipeline should not run")))
                       catalog/run!       (fn [config args]
                                            (reset! catalog-config [config args]))]

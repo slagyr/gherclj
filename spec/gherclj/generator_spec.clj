@@ -5,7 +5,7 @@
              [gherclj.core :refer [defgiven defwhen defthen]]
              [clojure.string :as str]
              [gherclj.frameworks.speclj]
-             [gherclj.features.steps.sample-app]))
+             [gherclj.sample.app-steps]))
 
 ;; Sample steps for generation tests
 
@@ -118,7 +118,7 @@
         (should (str/includes? result "(it \"Not ready\""))))
 
     (it "includes namespaces referenced only by background steps"
-      (let [config {:step-namespaces ['gherclj.generator-spec 'gherclj.features.steps.sample-app]
+      (let [config {:step-namespaces ['gherclj.generator-spec 'gherclj.sample.app-steps]
                     :test-framework :speclj}
             ir {:feature "Sample feature"
                 :source "sample.feature"
@@ -127,8 +127,8 @@
                              :steps [{:type :when :text "running the action"}
                                      {:type :then :text "the result should be ok"}]}]}
             result (gen/generate-spec config ir)]
-        (should (str/includes? result "[gherclj.features.steps.sample-app :as sample-app]"))
-        (should (str/includes? result "(sample-app/create-adventurer \"alice\")"))))
+        (should (str/includes? result "[gherclj.sample.app-steps :as app-steps]"))
+        (should (str/includes? result "(app-steps/create-adventurer \"alice\")"))))
 
   (context "generate-step-call with string args"
 

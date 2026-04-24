@@ -20,7 +20,7 @@
                  :task (p/parse! {:features-dir "features" :verbose true})}
 
   generate      {:doc      "Run generate stage only (parse must have run first)"
-                 :requires ([gherclj.features.steps.sample-app])
+                 :requires ([gherclj.sample.app-steps])
                  :task     (p/generate! {:edn-dir         "target/gherclj/edn"
                                          :output-dir      "target/gherclj/generated"
                                          :step-namespaces []

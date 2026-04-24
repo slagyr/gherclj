@@ -1,4 +1,4 @@
-(ns gherclj.features.steps.sample-app
+(ns gherclj.sample.app-steps
   (:require [gherclj.core :refer [defgiven defwhen defthen]]))
 
 (defgiven create-adventurer "a user {name:string}"

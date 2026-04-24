@@ -3,7 +3,7 @@
             [clojure.string :as str]
             [gherclj.core :as g :refer [defgiven defwhen defthen]]
             [gherclj.lifecycle :as lifecycle]
-            [gherclj.features.steps.sample-app]
+            [gherclj.sample.app-steps]
             [gherclj.frameworks.clojure-test]
             [gherclj.frameworks.speclj]
             [gherclj.generator :as gen]
@@ -49,7 +49,7 @@
   {:features-dir (features-dir)
    :edn-dir (edn-dir)
    :output-dir (output-dir)
-   :step-namespaces ['gherclj.features.steps.sample-app]
+   :step-namespaces ['gherclj.sample.app-steps]
    :test-framework framework})
 
 (defn- ensure-feature-file! [source]
@@ -132,7 +132,7 @@
 (defwhen generate-with-lifecycle-hooks "generating the spec with framework {framework} and lifecycle hooks enabled"
   [framework]
   (let [fw (keyword (str/replace framework #"^:" ""))]
-    (g/assoc! :generated-output (gen/generate-spec {:step-namespaces ['gherclj.features.steps.sample-app]
+    (g/assoc! :generated-output (gen/generate-spec {:step-namespaces ['gherclj.sample.app-steps]
                                                     :test-framework fw}
                                                    (g/get :feature-ir)))))
 

@@ -10,16 +10,16 @@ Feature: Step catalog
   # --- Output format ---
 
   Scenario: Catalog groups steps under Given, When, Then headers
-    When running gherclj with "-s gherclj.features.steps.sample-app steps"
+    When running gherclj with "-s gherclj.sample.app-steps steps"
     Then the output should contain "Given:"
     And the output should contain "When:"
     And the output should contain "Then:"
 
   Scenario: Each entry shows phrase and source location on one line
-    When running gherclj with "-s gherclj.features.steps.sample-app steps"
-    Then the output should contain "a user {name:string}  (sample_app.clj:"
-    And the output should contain "the user logs in  (sample_app.clj:"
-    And the output should contain "the response should be {status:int}  (sample_app.clj:"
+    When running gherclj with "-s gherclj.sample.app-steps steps"
+    Then the output should contain "a user {name:string}  (app_steps.clj:"
+    And the output should contain "the user logs in  (app_steps.clj:"
+    And the output should contain "the response should be {status:int}  (app_steps.clj:"
 
   Scenario: Entry with docstring shows it on the line after the phrase
     When running gherclj with "-s gherclj.features.steps.step-docstrings steps"
@@ -40,7 +40,7 @@ Feature: Step catalog
   # --- Keyword filter ---
 
   Scenario: Keyword filter shows only steps with matching phrase
-    When running gherclj with "-s gherclj.features.steps.sample-app steps user"
+    When running gherclj with "-s gherclj.sample.app-steps steps user"
     Then the output should contain "a user {name:string}"
     And the output should contain "the user logs in"
     And the output should not contain "the response should be {status:int}"
@@ -53,27 +53,27 @@ Feature: Step catalog
   # --- Type filters ---
 
   Scenario: --given shows only Given steps
-    When running gherclj with "-s gherclj.features.steps.sample-app steps --given"
+    When running gherclj with "-s gherclj.sample.app-steps steps --given"
     Then the output should contain "Given:"
     And the output should contain "a user {name:string}"
     And the output should not contain "When:"
     And the output should not contain "Then:"
 
   Scenario: --when shows only When steps
-    When running gherclj with "-s gherclj.features.steps.sample-app steps --when"
+    When running gherclj with "-s gherclj.sample.app-steps steps --when"
     Then the output should contain "When:"
     And the output should contain "the user logs in"
     And the output should not contain "Given:"
     And the output should not contain "Then:"
 
   Scenario: --given and --when together show both types but not Then
-    When running gherclj with "-s gherclj.features.steps.sample-app steps --given --when"
+    When running gherclj with "-s gherclj.sample.app-steps steps --given --when"
     Then the output should contain "Given:"
     And the output should contain "When:"
     And the output should not contain "Then:"
 
   Scenario: --given --when --then shows all steps
-    When running gherclj with "-s gherclj.features.steps.sample-app steps --given --when --then"
+    When running gherclj with "-s gherclj.sample.app-steps steps --given --when --then"
     Then the output should contain "Given:"
     And the output should contain "When:"
     And the output should contain "Then:"
@@ -81,11 +81,11 @@ Feature: Step catalog
   # --- Color ---
 
   Scenario: --no-color produces output without ANSI escape sequences
-    When running gherclj with "-s gherclj.features.steps.sample-app steps --no-color"
+    When running gherclj with "-s gherclj.sample.app-steps steps --no-color"
     Then the output should have no color codes
 
   Scenario: --color forces ANSI color codes in output
-    When running gherclj with "-s gherclj.features.steps.sample-app steps --color"
+    When running gherclj with "-s gherclj.sample.app-steps steps --color"
     Then the output should have color codes
 
   # --- Help ---
