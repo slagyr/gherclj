@@ -44,22 +44,35 @@
 (defmethod fw/render-step :rspec [_config step]
   (generate-step-call step))
 
+(defn- ruby-require-line
+  "Translate a helper-import value into a Ruby require statement.
+   Strings are treated as paths relative to project root."
+  [import-val]
+  (cond
+    (string? import-val) (str "require File.expand_path('" import-val "', Dir.pwd)")
+    :else                (str "require " (pr-str (str import-val)))))
+
 (defmethod fw/generate-preamble :rspec
-  [_config source step-ns-syms]
+  [_config source used-nses]
   (let [feature-name (-> source
                          (str/split #"/")
                          last
                          (str/replace #"\.feature$" "")
                          (str/replace #"_" " ")
                          (str/capitalize))
-        file-setup    (->> step-ns-syms
+        helper-reqs  (->> used-nses
+                          (mapcat #(gherclj.core/helper-imports-in-ns %))
+                          distinct
+                          (map ruby-require-line))
+        file-setup   (->> used-nses
                           (mapcat #(get @file-setup-registry % []))
                           distinct)
-        desc-setup    (->> step-ns-syms
-                           (mapcat #(get @describe-setup-registry % []))
-                           distinct)]
+        desc-setup   (->> used-nses
+                          (mapcat #(get @describe-setup-registry % []))
+                          distinct)]
     (str "# generated from " source "\n"
          "require 'rspec'\n"
+         (str/join (map #(str % "\n") helper-reqs))
          (str/join (map #(str % "\n") file-setup))
          "\n"
          "RSpec.describe " (ruby-string feature-name) " do\n"
@@ -89,7 +102,10 @@
 
 (defmethod fw/run-specs :rspec
   [config]
-  (let [{:keys [exit out err]} (shell/sh "bundle" "exec" "rspec" "--tty" (or (:output-dir config) "target/gherclj/generated"))]
+  (let [output-dir (or (:output-dir config) "target/gherclj/generated")
+        opts       (or (:framework-opts config) [])
+        cmd        (concat ["bundle" "exec" "rspec" "--tty"] opts [output-dir])
+        {:keys [exit out err]} (apply shell/sh cmd)]
     (when (seq out)
       (print out))
     (when (seq err)

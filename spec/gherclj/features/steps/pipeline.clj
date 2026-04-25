@@ -1,9 +1,11 @@
 (ns gherclj.features.steps.pipeline
-  (:require [gherclj.core :as g :refer [defgiven defwhen defthen]]
+  (:require [gherclj.core :as g :refer [defgiven defwhen defthen helper!]]
             [gherclj.pipeline :as pipeline]
             [clojure.java.io :as io]
             [clojure.edn :as edn]
             [clojure.string :as str]))
+
+(helper! gherclj.features.steps.pipeline)
 
 (def ^:private base-dir
   (str (System/getProperty "java.io.tmpdir") "/gherclj-pipeline-test"))
@@ -33,11 +35,9 @@
     (subs s 1 (dec (count s)))
     s))
 
-;; --- Given steps ---
+;; --- Helper fns ---
 
-(defgiven setup-features-dir "a features directory containing:"
-  "Creates real files under the pipeline temp dir and deletes the entire base dir first. Sets :pipeline-dir."
-  [table]
+(defn setup-features-dir! [table]
   (let [dir (str base-dir "/features")]
     (clean-base-dir!)
     (io/make-parents (io/file dir "dummy"))
@@ -48,54 +48,40 @@
         (spit f "")))
     (g/assoc! :pipeline-dir dir)))
 
-(defgiven write-feature-content "the feature {name:string} contains:"
-  "Writes content to :pipeline-dir/{name}. Requires 'a features directory containing' to have run first."
-  [name doc-string]
+(defn write-feature-content! [name doc-string]
   (spit (io/file (g/get :pipeline-dir) name) doc-string))
 
-(defgiven parse-stage-has-run "the parse stage has run"
-  "Runs the parse stage silently (stdout suppressed). Use as a Given prerequisite, not as the When step under test."
-  []
+(defn parse-stage-has-run! []
   (let [output (with-out-str (pipeline/parse! (pipeline-config)))]
     (g/assoc! :pipeline-output output)))
 
-(defgiven step-namespace-pattern "step namespaces include pattern {pattern:string}"
-  "Stores glob pattern to :step-namespaces for use by subsequent pipeline runs."
-  [pattern]
+(defn step-namespace-pattern! [pattern]
   (g/assoc! :step-namespaces [pattern]))
 
-;; --- When steps ---
-
-(defwhen run-parse-stage "the parse stage runs"
-  []
+(defn run-parse-stage! []
   (let [output (with-out-str (pipeline/parse! (pipeline-config)))]
     (g/assoc! :pipeline-output output)))
 
-(defwhen run-parse-stage-verbose "the parse stage runs with :verbose"
-  []
+(defn run-parse-stage-verbose! []
   (let [output (with-out-str (pipeline/parse! (pipeline-config :verbose true)))]
     (g/assoc! :pipeline-output output)))
 
-(defwhen run-generate-stage "the generate stage runs with framework {fw}"
-  [fw]
+(defn run-generate-stage! [fw]
   (let [framework (keyword (str/replace fw #"^:" ""))
         output (with-out-str (pipeline/generate! (pipeline-config :framework framework)))]
     (g/assoc! :pipeline-output output)))
 
-(defwhen run-generate-stage-verbose "the generate stage runs with framework {fw} and :verbose"
-  [fw]
+(defn run-generate-stage-verbose! [fw]
   (let [framework (keyword (str/replace fw #"^:" ""))
         output (with-out-str (pipeline/generate! (pipeline-config :framework framework :verbose true)))]
     (g/assoc! :pipeline-output output)))
 
-(defwhen run-full-pipeline "the full pipeline runs with framework {fw}"
-  [fw]
+(defn run-full-pipeline! [fw]
   (let [framework (keyword (str/replace fw #"^:" ""))
         output (with-out-str (pipeline/run! (pipeline-config :framework framework)))]
     (g/assoc! :pipeline-output output)))
 
-(defwhen run-full-pipeline-with-tags "the full pipeline runs with framework {fw} and tags:"
-  [fw table]
+(defn run-full-pipeline-with-tags! [fw table]
   (let [framework (keyword (str/replace fw #"^:" ""))
         tags (mapv first (:rows table))
         includes (vec (remove #(str/starts-with? % "~") tags))
@@ -106,8 +92,7 @@
                                                  :exclude-tags excludes)))]
     (g/assoc! :pipeline-output output)))
 
-(defwhen run-full-pipeline-with-locations "the full pipeline runs with framework {fw} and locations:"
-  [fw table]
+(defn run-full-pipeline-with-locations! [fw table]
   (let [framework (keyword (str/replace fw #"^:" ""))
         locations (mapv (fn [[selector]]
                           (if-let [[_ source line] (re-matches #"^(.+\.feature):(\d+)$" selector)]
@@ -119,18 +104,13 @@
                                                 :locations locations)))]
     (g/assoc! :pipeline-output output)))
 
-;; --- Then steps ---
-
-(defthen file-should-exist "{path} should exist"
-  [path]
+(defn file-should-exist [path]
   (g/should (.exists (io/file base-dir (strip-quotes path)))))
 
-(defthen file-should-not-exist "{path} should not exist"
-  [path]
+(defn file-should-not-exist [path]
   (g/should-not (.exists (io/file base-dir (strip-quotes path)))))
 
-(defthen file-should-exist-and "{path} should exist and:"
-  [path table]
+(defn file-should-exist-and [path table]
   (let [file (io/file base-dir (strip-quotes path))]
     (g/should (.exists file))
     (let [content (slurp file)
@@ -145,18 +125,55 @@
           "not-contains" (g/should-not (str/includes? content value))
           nil)))))
 
-(defthen file-should-contain-ir #"^(\S+) should contain IR:$"
-  [path doc-string]
+(defn file-should-contain-ir [path doc-string]
   (let [p (strip-quotes path)
         actual (edn/read-string (slurp (io/file base-dir p)))
         expected (edn/read-string doc-string)]
     (g/should= expected actual)))
 
-(defthen file-should-contain-ir-with-n-scenarios "{path} should contain IR with {n:int} scenarios"
-  [path n]
+(defn file-should-contain-ir-with-n-scenarios [path n]
   (let [ir (edn/read-string (slurp (io/file base-dir (strip-quotes path))))]
     (g/should= n (count (:scenarios ir)))))
 
-(defthen pipeline-output-should-be-empty "the output should be empty"
-  []
+(defn pipeline-output-should-be-empty []
   (g/should= "" (g/get :pipeline-output)))
+
+;; --- Step defs ---
+
+(defgiven "a features directory containing:" pipeline/setup-features-dir!
+  "Creates real files under the pipeline temp dir and deletes the entire base dir first. Sets :pipeline-dir.")
+
+(defgiven "the feature {name:string} contains:" pipeline/write-feature-content!
+  "Writes content to :pipeline-dir/{name}. Requires 'a features directory containing' to have run first.")
+
+(defgiven "the parse stage has run" pipeline/parse-stage-has-run!
+  "Runs the parse stage silently (stdout suppressed). Use as a Given prerequisite, not as the When step under test.")
+
+(defgiven "step namespaces include pattern {pattern:string}" pipeline/step-namespace-pattern!
+  "Stores glob pattern to :step-namespaces for use by subsequent pipeline runs.")
+
+(defwhen "the parse stage runs" pipeline/run-parse-stage!)
+
+(defwhen "the parse stage runs with :verbose" pipeline/run-parse-stage-verbose!)
+
+(defwhen "the generate stage runs with framework {fw}" pipeline/run-generate-stage!)
+
+(defwhen "the generate stage runs with framework {fw} and :verbose" pipeline/run-generate-stage-verbose!)
+
+(defwhen "the full pipeline runs with framework {fw}" pipeline/run-full-pipeline!)
+
+(defwhen "the full pipeline runs with framework {fw} and tags:" pipeline/run-full-pipeline-with-tags!)
+
+(defwhen "the full pipeline runs with framework {fw} and locations:" pipeline/run-full-pipeline-with-locations!)
+
+(defthen "{path} should exist" pipeline/file-should-exist)
+
+(defthen "{path} should not exist" pipeline/file-should-not-exist)
+
+(defthen "{path} should exist and:" pipeline/file-should-exist-and)
+
+(defthen #"^(\S+) should contain IR:$" pipeline/file-should-contain-ir)
+
+(defthen "{path} should contain IR with {n:int} scenarios" pipeline/file-should-contain-ir-with-n-scenarios)
+
+(defthen "the output should be empty" pipeline/pipeline-output-should-be-empty)

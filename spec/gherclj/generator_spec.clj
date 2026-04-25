@@ -2,28 +2,24 @@
   (:require [speclj.core :refer :all]
    [gherclj.generator :as gen]
    [gherclj.core :as core]
-   [gherclj.core :refer [defgiven defwhen defthen]]
+   [gherclj.core :refer [defgiven defwhen defthen helper!]]
    [clojure.string :as str]
    [gherclj.frameworks.speclj]
    [gherclj.sample.app-steps]))
 
-;; Sample steps for generation tests
+(helper! gherclj.generator-spec)
 
-(defgiven setup-project "a project {slug:string} with timeout {timeout:int}"
-  [slug timeout]
-  :setup)
+;; Sample helpers and step routing
 
-(defwhen run-action "running the action"
-  []
-  :action)
+(defn setup-project [_slug _timeout] :setup)
+(defn run-action [] :action)
+(defn check-result [_expected] :check)
+(defn setup-table [_table] :table-setup)
 
-(defthen check-result "the result should be {expected:string}"
-  [expected]
-  :check)
-
-(defgiven setup-table "a table of projects:"
-  [table]
-  :table-setup)
+(defgiven "a project {slug:string} with timeout {timeout:int}" generator-spec/setup-project)
+(defwhen  "running the action"                                 generator-spec/run-action)
+(defthen  "the result should be {expected:string}"             generator-spec/check-result)
+(defgiven "a table of projects:"                               generator-spec/setup-table)
 
 (describe "Generator"
 
@@ -42,19 +38,27 @@
         (should= [] (:args (second (:steps result))))
         (should= ["ok"] (:args (nth (:steps result) 2))))))
 
-  (context "generate-step-call"
+  (context "call-step-renderer"
 
-    (it "generates an aliased function call with args"
+    (it "produces a form invoking the helper-ref with matched args"
       (let [steps (core/collect-steps ['gherclj.generator-spec])
-            classified (core/classify-step steps "a project \"alpha\" with timeout 300")
-            code (gen/generate-step-call classified)]
-        (should= "(generator-spec/setup-project \"alpha\" 300)" code)))
+            classified (core/classify-step steps "a project \"alpha\" with timeout 300")]
+        (should= '(generator-spec/setup-project "alpha" 300)
+                 (gen/call-step-renderer classified))))
 
-    (it "generates an aliased no-arg function call"
+    (it "appends table when present"
       (let [steps (core/collect-steps ['gherclj.generator-spec])
-            classified (core/classify-step steps "running the action")
-            code (gen/generate-step-call classified)]
-        (should= "(generator-spec/run-action)" code))))
+            classified (assoc (core/classify-step steps "a table of projects:")
+                              :table {:headers ["name"] :rows [["alpha"]]})]
+        (should= '(generator-spec/setup-table {:headers ["name"] :rows [["alpha"]]})
+                 (gen/call-step-renderer classified))))
+
+    (it "appends doc-string when present"
+      (let [steps (core/collect-steps ['gherclj.generator-spec])
+            classified (assoc (core/classify-step steps "the result should be \"ok\"")
+                              :doc-string "some content")]
+        (should= '(generator-spec/check-result "ok" "some content")
+                 (gen/call-step-renderer classified)))))
 
   (context "generate-spec"
 
@@ -86,7 +90,7 @@
                 :scenarios [{:scenario "Slow only"
                              :tags ["slow"]
                              :steps [{:type :given :text "a project alpha with timeout 300"}]}]}]
-        (should-be-nil (gen/generate-spec config ir)))))
+        (should-be-nil (gen/generate-spec config ir))))
 
     (it "includes wip-tagged scenarios when no tag filters are configured"
       (let [config {:step-namespaces ['gherclj.generator-spec]
@@ -117,7 +121,7 @@
         (should-not (str/includes? result "(it \"Ready\""))
         (should (str/includes? result "(it \"Not ready\""))))
 
-    (it "includes namespaces referenced only by background steps"
+    (it "includes helper imports referenced only by background steps"
       (let [config {:step-namespaces ['gherclj.generator-spec 'gherclj.sample.app-steps]
                     :framework :speclj}
             ir {:feature "Sample feature"
@@ -128,16 +132,7 @@
                                      {:type :then :text "the result should be ok"}]}]}
              result (gen/generate-spec config ir)]
         (should (str/includes? result "[gherclj.sample.app-steps :as app-steps]"))
-        (should (str/includes? result "(app-steps/create-adventurer \"alice\")"))))
-
-
-  (context "generate-step-call with string args"
-
-    (it "properly escapes string args containing quotes"
-      (let [steps (core/collect-steps ['gherclj.generator-spec])
-            classified (core/classify-step steps "a project alpha with timeout 300")
-            code (gen/generate-step-call classified)]
-        (should= "(generator-spec/setup-project \"alpha\" 300)" code))))
+        (should (str/includes? result "(app-steps/create-adventurer \"alice\")")))))
 
   (context "generate-spec with tables and doc-strings"
 

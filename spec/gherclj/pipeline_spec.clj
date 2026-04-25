@@ -3,10 +3,12 @@
             [gherclj.pipeline :as pipeline]
             [gherclj.generator :as gen]
             [gherclj.framework :as fw]
-            [gherclj.core :refer [defgiven defwhen defthen]]
+            [gherclj.core :refer [defgiven defwhen defthen helper!]]
             [clojure.java.io :as io]
             [clojure.edn :as edn]
             [clojure.string :as str]))
+
+(helper! gherclj.pipeline-spec)
 
 ;; Minimal custom framework for fallback-path coverage
 (defmethod fw/generate-preamble :custom-pipeline-fw [_ source _]
@@ -18,19 +20,14 @@
 (defmethod fw/wrap-pending :custom-pipeline-fw [_ scenario _]
   (str "(pending \"" (:scenario scenario) "\")"))
 
-;; Sample steps for pipeline test
+;; Sample helpers for pipeline test
+(defn summon-hero [name role] :setup)
+(defn enter-the-realm [] :login)
+(defn check-the-gate [status] :check)
 
-(defgiven summon-hero "a user {name:string} with role {role:string}"
-  [name role]
-  :setup)
-
-(defwhen enter-the-realm "the user logs in"
-  []
-  :login)
-
-(defthen check-the-gate "the response status should be {status:int}"
-  [status]
-  :check)
+(defgiven "a user {name:string} with role {role:string}"      pipeline-spec/summon-hero)
+(defwhen  "the user logs in"                                   pipeline-spec/enter-the-realm)
+(defthen  "the response status should be {status:int}"        pipeline-spec/check-the-gate)
 
 (def feature-content
   (str "Feature: Authentication\n"

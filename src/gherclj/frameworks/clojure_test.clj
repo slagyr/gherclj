@@ -13,17 +13,20 @@
       (str/replace #"^-|-$" "")))
 
 (defmethod fw/generate-preamble :clojure.test
-  [_config source step-ns-syms]
+  [_config source used-nses]
   (let [ns-name (str (gen/source->ns-name source "-test"))
-        step-reqs (->> step-ns-syms
-                       sort
-                       (map #(str "            [" % " :as " (gen/ns->alias %) "]")))]
+        helper-imports (->> used-nses
+                            (mapcat g/helper-imports-in-ns)
+                            distinct)
+        helper-reqs (->> helper-imports
+                         sort
+                         (map #(str "            [" % " :as " (gen/ns->alias %) "]")))]
     (str "(ns " ns-name "\n"
          "  (:require [clojure.test :refer :all]\n"
          "            [gherclj.core :as g]\n"
          "            [gherclj.lifecycle :as lifecycle]"
-         (when (seq step-reqs)
-           (str "\n" (str/join "\n" step-reqs)))
+         (when (seq helper-reqs)
+           (str "\n" (str/join "\n" helper-reqs)))
          "))")))
 
 (defmethod fw/wrap-feature :clojure.test
@@ -47,18 +50,13 @@
 
 (defmethod fw/wrap-scenario :clojure.test
   [_config scenario background]
-  (let [title (:scenario scenario)
-        test-name (slugify title)
-        bg-calls (when background
-                   (->> (:steps background)
-                        (filter :classified?)
-                        (map gen/generate-step-call-with-extras)))
-        step-calls (->> (:steps scenario)
-                        (map gen/generate-step-call-with-extras))
-        all-calls (concat bg-calls step-calls)
-        body (->> all-calls
-                  (map #(str "    " %))
-                  (str/join "\n"))]
+  (let [title      (:scenario scenario)
+        test-name  (slugify title)
+        bg-calls   (:rendered-steps background)
+        step-calls (:rendered-steps scenario)
+        body       (->> (concat bg-calls step-calls)
+                        (map #(str "    " %))
+                        (str/join "\n"))]
     (str "(deftest " test-name "\n"
          "  (testing \"" title "\"\n"
          body "))")))

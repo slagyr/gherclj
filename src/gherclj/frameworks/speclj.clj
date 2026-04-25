@@ -8,17 +8,20 @@
             [speclj.core :as sc]))
 
 (defmethod fw/generate-preamble :speclj
-  [_config source step-ns-syms]
+  [_config source used-nses]
   (let [ns-name (str (gen/source->ns-name source "-spec"))
-        step-reqs (->> step-ns-syms
-                       sort
-                       (map #(str "            [" % " :as " (gen/ns->alias %) "]")))]
+        helper-imports (->> used-nses
+                            (mapcat g/helper-imports-in-ns)
+                            distinct)
+        helper-reqs (->> helper-imports
+                         sort
+                         (map #(str "            [" % " :as " (gen/ns->alias %) "]")))]
     (str "(ns " ns-name "\n"
          "  (:require [speclj.core :refer :all]\n"
          "            [gherclj.core :as g]\n"
          "            [gherclj.lifecycle :as lifecycle]"
-         (when (seq step-reqs)
-           (str "\n" (str/join "\n" step-reqs)))
+         (when (seq helper-reqs)
+           (str "\n" (str/join "\n" helper-reqs)))
          "))")))
 
 (defmethod fw/wrap-feature :speclj
@@ -32,17 +35,12 @@
 
 (defmethod fw/wrap-scenario :speclj
   [_config scenario background]
-  (let [title (:scenario scenario)
-        bg-calls (when background
-                   (->> (:steps background)
-                        (filter :classified?)
-                        (map gen/generate-step-call-with-extras)))
-        step-calls (->> (:steps scenario)
-                        (map gen/generate-step-call-with-extras))
-        all-calls (concat bg-calls step-calls)
-        body (->> all-calls
-                  (map #(str "    " %))
-                  (str/join "\n"))]
+  (let [title      (:scenario scenario)
+        bg-calls   (:rendered-steps background)
+        step-calls (:rendered-steps scenario)
+        body       (->> (concat bg-calls step-calls)
+                        (map #(str "    " %))
+                        (str/join "\n"))]
     (str "  (it \"" title "\"\n"
          body ")")))
 

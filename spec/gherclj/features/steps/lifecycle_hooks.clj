@@ -1,7 +1,7 @@
 (ns gherclj.features.steps.lifecycle-hooks
   (:require [clojure.java.io :as io]
             [clojure.string :as str]
-            [gherclj.core :as g :refer [defgiven defwhen defthen]]
+            [gherclj.core :as g :refer [defgiven defwhen defthen helper!]]
             [gherclj.framework :as fw]
             [gherclj.lifecycle :as lifecycle]
             [gherclj.sample.app-steps]
@@ -9,6 +9,8 @@
             [gherclj.frameworks.speclj]
             [gherclj.generator :as gen]
             [gherclj.pipeline :as pipeline]))
+
+(helper! gherclj.features.steps.lifecycle-hooks)
 
 (def ^:private base-dir
   (str (System/getProperty "java.io.tmpdir") "/gherclj-lifecycle-test"))
@@ -92,45 +94,34 @@
       (binding [clojure.test/*test-out* (java.io.StringWriter.)]
         (apply clojure.test/run-tests nses)))))
 
-(defgiven lifecycle-recording-enabled "lifecycle event recording is enabled"
-  "Must be the first step in any lifecycle scenario. Resets state, clears recorded events, and clears all registered lifecycle hooks."
-  []
+(defn lifecycle-recording-enabled! []
   (reset-lifecycle-state!))
 
-(defgiven before-all-records "a before-all hook records {event:string}"
-  [event]
+(defn before-all-records! [event]
   (register-recording-hook! g/before-all event))
 
-(defgiven before-feature-records "a before-feature hook records {event:string}"
-  [event]
+(defn before-feature-records! [event]
   (register-recording-hook! g/before-feature event))
 
-(defgiven before-scenario-records "a before-scenario hook records {event:string}"
-  [event]
+(defn before-scenario-records! [event]
   (register-recording-hook! g/before-scenario event))
 
-(defgiven after-scenario-records "an after-scenario hook records {event:string}"
-  [event]
+(defn after-scenario-records! [event]
   (register-recording-hook! g/after-scenario event))
 
-(defgiven after-feature-records "an after-feature hook records {event:string}"
-  [event]
+(defn after-feature-records! [event]
   (register-recording-hook! g/after-feature event))
 
-(defgiven after-all-records "an after-all hook records {event:string}"
-  [event]
+(defn after-all-records! [event]
   (register-recording-hook! g/after-all event))
 
-(defwhen generate-with-lifecycle-hooks "generating the spec with framework {framework} and lifecycle hooks enabled"
-  [framework]
+(defn generate-with-lifecycle-hooks! [framework]
   (let [fw (keyword (str/replace framework #"^:" ""))]
     (g/assoc! :generated-output (gen/generate-spec {:step-namespaces ['gherclj.sample.app-steps]
                                                     :framework fw}
                                                    (g/get :feature-ir)))))
 
-(defwhen run-directly "the generated scenarios run directly with framework {framework}"
-  "Loads generated .clj files into the current JVM. Removes pre-existing namespaces before loading to avoid stale state."
-  [framework]
+(defn run-directly! [framework]
   (let [fw (keyword (str/replace framework #"^:" ""))]
     (write-feature-ir!)
     (pipeline/run! (pipeline-config fw))
@@ -138,8 +129,7 @@
                             :clojure.test (direct-clojure-test-run!)
                             :speclj (throw (ex-info "direct speclj run not implemented for lifecycle feature" {}))))))
 
-(defwhen run-through-gherclj "the generated scenarios run through gherclj with framework {framework}"
-  [framework]
+(defn run-through-gherclj! [framework]
   (let [fw (keyword (str/replace framework #"^:" ""))]
     (write-feature-ir!)
     (pipeline/run! (pipeline-config fw))
@@ -147,12 +137,10 @@
               (fw/run-specs {:output-dir (output-dir)
                               :framework fw}))))
 
-(defthen recorded-events-should-be "the recorded lifecycle events should be:"
-  [table]
+(defn recorded-events-should-be [table]
   (g/should= (mapv first (:rows table)) (events-recorded)))
 
-(defthen run-should-fail "the run should fail"
-  []
+(defn run-should-fail []
   (let [result (g/get :run-result)]
     (g/should (or (number? result)
                   (map? result)))
@@ -160,3 +148,29 @@
                 (number? result) (pos? result)
                 (map? result) (pos? (+ (:fail result 0) (:error result 0)))
                 :else false))))
+
+(defgiven "lifecycle event recording is enabled" lifecycle-hooks/lifecycle-recording-enabled!
+  "Must be the first step in any lifecycle scenario. Resets state, clears recorded events, and clears all registered lifecycle hooks.")
+
+(defgiven "a before-all hook records {event:string}" lifecycle-hooks/before-all-records!)
+
+(defgiven "a before-feature hook records {event:string}" lifecycle-hooks/before-feature-records!)
+
+(defgiven "a before-scenario hook records {event:string}" lifecycle-hooks/before-scenario-records!)
+
+(defgiven "an after-scenario hook records {event:string}" lifecycle-hooks/after-scenario-records!)
+
+(defgiven "an after-feature hook records {event:string}" lifecycle-hooks/after-feature-records!)
+
+(defgiven "an after-all hook records {event:string}" lifecycle-hooks/after-all-records!)
+
+(defwhen "generating the spec with framework {framework} and lifecycle hooks enabled" lifecycle-hooks/generate-with-lifecycle-hooks!)
+
+(defwhen "the generated scenarios run directly with framework {framework}" lifecycle-hooks/run-directly!
+  "Loads generated .clj files into the current JVM. Removes pre-existing namespaces before loading to avoid stale state.")
+
+(defwhen "the generated scenarios run through gherclj with framework {framework}" lifecycle-hooks/run-through-gherclj!)
+
+(defthen "the recorded lifecycle events should be:" lifecycle-hooks/recorded-events-should-be)
+
+(defthen "the run should fail" lifecycle-hooks/run-should-fail)

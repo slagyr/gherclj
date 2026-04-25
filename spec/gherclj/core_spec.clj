@@ -1,101 +1,74 @@
 (ns gherclj.core-spec
   (:require [speclj.core :refer :all]
-             [gherclj.core :as core :refer [defgiven defwhen defthen]]
+             [gherclj.core :as core :refer [defgiven defwhen defthen helper!]]
              [gherclj.lifecycle :as lifecycle]))
 
-;; Sample step definitions — must be defined before the describe block
+(helper! gherclj.core-spec)
 
-(defgiven sample-given-step "a project {slug:string} with timeout {timeout:int}"
-  [slug timeout]
-  :setup-result)
+;; Sample helpers (real defns) and step routing entries
 
-(defgiven sample-documented-given-step "a documented project step"
-  "Sets project state in memory."
-  []
-  :documented-setup-result)
+(defn setup-project [_slug _timeout] :setup-result)
+(defn documented-setup [] :documented-setup-result)
+(defn check-zombies [] :action-result)
+(defn poll-docs [] :documented-action-result)
+(defn assert-zombie [_session-id _reason] :assert-result)
+(defn assert-docs [] :documented-assert-result)
+(defn assert-headers [_headers-str] :regex-result)
 
-(defwhen sample-when-step "checking for zombies"
-  []
-  :action-result)
-
-(defwhen sample-documented-when-step "waiting for the project docs"
-  "Polls for up to 2s."
-  []
-  :documented-action-result)
-
-(defthen sample-then-step "session {session-id:string} should be a zombie with reason {reason:string}"
-  [session-id reason]
-  :assert-result)
-
-(defthen sample-documented-then-step "the project docs should match"
-  "Matches within 2s timeout."
-  []
-  :documented-assert-result)
-
-(defthen sample-regex-step #"^the output should contain headers (.+)$"
-  [headers-str]
-  :regex-result)
+(defgiven "a project {slug:string} with timeout {timeout:int}" core-spec/setup-project)
+(defgiven "a documented project step" core-spec/documented-setup
+  "Sets project state in memory.")
+(defwhen  "checking for zombies" core-spec/check-zombies)
+(defwhen  "waiting for the project docs" core-spec/poll-docs
+  "Polls for up to 2s.")
+(defthen  "session {session-id:string} should be a zombie with reason {reason:string}" core-spec/assert-zombie)
+(defthen  "the project docs should match" core-spec/assert-docs
+  "Matches within 2s timeout.")
+(defthen  #"^the output should contain headers (.+)$" core-spec/assert-headers)
 
 (describe "Core"
 
   (context "defgiven"
 
-    (it "defines a callable function"
-      (should (fn? sample-given-step))
-      (should= :setup-result (sample-given-step "alpha" 300)))
-
-    (it "registers a :given step"
+    (it "registers a :given step keyed by helper-ref"
       (let [steps (core/steps-in-ns 'gherclj.core-spec)
-             step (first (filter #(= "sample-given-step" (:name %)) steps))]
+            step (first (filter #(= 'core-spec/setup-project (:helper-ref %)) steps))]
         (should-not-be-nil step)
         (should= :given (:type step))
         (should= "a project {slug:string} with timeout {timeout:int}" (:template step))
         (should-be-nil (:doc step))))
 
-    (it "stores the optional docstring and source location in the registry"
+    (it "stores an optional docstring on the registered step"
       (let [steps (core/steps-in-ns 'gherclj.core-spec)
-            step (first (filter #(= "sample-documented-given-step" (:name %)) steps))
-            var-meta (meta #'sample-documented-given-step)]
+            step (first (filter #(= 'core-spec/documented-setup (:helper-ref %)) steps))]
         (should-not-be-nil step)
-        (should= "Sets project state in memory." (:doc step))
-        (should= (:file var-meta) (:file step))
-        (should= (:line var-meta) (:line step))))
-
-    )
+        (should= "Sets project state in memory." (:doc step)))))
 
   (context "defwhen"
 
-    (it "defines a callable function"
-      (should (fn? sample-when-step))
-      (should= :action-result (sample-when-step)))
-
     (it "registers a :when step"
       (let [steps (core/steps-in-ns 'gherclj.core-spec)
-            step (first (filter #(= "sample-when-step" (:name %)) steps))]
+            step (first (filter #(= 'core-spec/check-zombies (:helper-ref %)) steps))]
         (should-not-be-nil step)
         (should= :when (:type step))))
 
     (it "stores an optional docstring for a :when step"
       (let [steps (core/steps-in-ns 'gherclj.core-spec)
-            step (first (filter #(= "sample-documented-when-step" (:name %)) steps))]
+            step (first (filter #(= 'core-spec/poll-docs (:helper-ref %)) steps))]
         (should-not-be-nil step)
         (should= "Polls for up to 2s." (:doc step)))))
 
   (context "defthen"
 
-    (it "defines a callable function"
-      (should (fn? sample-then-step))
-      (should= :assert-result (sample-then-step "sess-1" "timeout")))
-
     (it "registers a :then step"
       (let [steps (core/steps-in-ns 'gherclj.core-spec)
-            step (first (filter #(= "sample-then-step" (:name %)) steps))]
+            step (first (filter #(= 'core-spec/assert-zombie (:helper-ref %)) steps))]
         (should-not-be-nil step)
         (should= :then (:type step))))
 
     (it "stores an optional docstring for a :then step"
       (let [steps (core/steps-in-ns 'gherclj.core-spec)
-            step (first (filter #(= "sample-documented-then-step" (:name %)) steps))]
+            step (first (filter #(= 'core-spec/assert-docs (:helper-ref %)) steps))]
         (should-not-be-nil step)
         (should= "Matches within 2s timeout." (:doc step)))))
 
@@ -103,10 +76,24 @@
 
     (it "accepts a regex pattern instead of a template string"
       (let [steps (core/steps-in-ns 'gherclj.core-spec)
-            step (first (filter #(= "sample-regex-step" (:name %)) steps))]
+            step (first (filter #(= 'core-spec/assert-headers (:helper-ref %)) steps))]
         (should-not-be-nil step)
         (should-be-nil (:template step))
         (should-not-be-nil (:regex step)))))
+
+  (context "step renderer"
+
+    (it "produces a form invoking the helper-ref with matched args"
+      (let [steps (core/collect-steps ['gherclj.core-spec])
+            classified (core/classify-step steps "a project \"alpha\" with timeout 300")
+            renderer (:renderer classified)]
+        (should= '(core-spec/setup-project "alpha" 300)
+                 (apply renderer (:args classified))))))
+
+  (context "helper imports"
+
+    (it "records the namespace declared via helper!"
+      (should (some #{'gherclj.core-spec} (core/helper-imports-in-ns 'gherclj.core-spec)))))
 
   (context "classify-step"
 
@@ -115,7 +102,7 @@
             result (core/classify-step steps "a project \"alpha\" with timeout 300")]
         (should-not-be-nil result)
         (should= 'gherclj.core-spec (:ns result))
-        (should= "sample-given-step" (:name result))
+        (should= 'core-spec/setup-project (:helper-ref result))
         (should= ["alpha" 300] (:args result))))
 
     (it "returns nil for unrecognized step text"

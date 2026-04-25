@@ -1,5 +1,5 @@
 (ns gherclj.features.steps.cli
-  (:require [gherclj.core :as g :refer [defgiven defwhen defthen]]
+  (:require [gherclj.core :as g :refer [defgiven defwhen defthen helper!]]
             [gherclj.frameworks.speclj :as speclj-fw]
             [gherclj.main :as main]
             [gherclj.config :as config]
@@ -7,13 +7,12 @@
             [clojure.java.io :as io]
             [clojure.string :as str]))
 
-(defgiven cli-config-file "a config file:"
-  "Stores EDN config in :cli-config state. NOT written to disk — used as file-config override when 'running gherclj with' executes."
-  [doc-string]
+(helper! gherclj.features.steps.cli)
+
+(defn cli-config-file! [doc-string]
   (g/assoc! :cli-config (edn/read-string doc-string)))
 
-(defgiven generated-specs-dir "generated specs in {dir:string}"
-  [dir]
+(defn generated-specs-dir! [dir]
   (g/assoc! :generated-specs-dir dir))
 
 (defn- pipeline-base-dir []
@@ -57,9 +56,7 @@
 (defn- with-sandbox-defaults [args]
   (rewrite-sandbox-path-options args))
 
-(defwhen run-gherclj "running gherclj with {args:string}"
-  "Invokes main/run in a sandbox. Rewrites -f/-e/-o paths to be relative to the temp pipeline dir. Captures output to :cli-output when pipeline-base-dir exists or when the command is a subcommand or help call."
-  [args]
+(defn run-gherclj! [args]
   (let [arg-vec (str/split args #"\s+")
          {:keys [options help errors]} (main/parse-args arg-vec)]
     (cond
@@ -84,16 +81,27 @@
                                 (g/set-framework! previous-framework)))))]
             (g/assoc! :cli-output output)))))))
 
-(defwhen run-speclj-with-framework-options "speclj runs with framework options {opts:string}"
-  [opts]
+(defn run-speclj-with-framework-options! [opts]
   (g/assoc! :speclj-run-args
             (speclj-fw/run-args {:output-dir (g/get :generated-specs-dir)
                                  :framework-opts (edn/read-string opts)})))
 
-(defthen framework-should-receive "the framework should receive options {opts:string}"
-  [opts]
+(defn framework-should-receive [opts]
   (g/should= (edn/read-string opts) (:framework-opts (g/get :loaded-config))))
 
-(defthen speclj-should-receive-args "speclj should receive args {args:string}"
-  [args]
+(defn speclj-should-receive-args [args]
   (g/should= (edn/read-string args) (g/get :speclj-run-args)))
+
+(defgiven "a config file:" cli/cli-config-file!
+  "Stores EDN config in :cli-config state. NOT written to disk — used as file-config override when 'running gherclj with' executes.")
+
+(defgiven "generated specs in {dir:string}" cli/generated-specs-dir!)
+
+(defwhen "running gherclj with {args:string}" cli/run-gherclj!
+  "Invokes main/run in a sandbox. Rewrites -f/-e/-o paths to be relative to the temp pipeline dir. Captures output to :cli-output when pipeline-base-dir exists or when the command is a subcommand or help call.")
+
+(defwhen "speclj runs with framework options {opts:string}" cli/run-speclj-with-framework-options!)
+
+(defthen "the framework should receive options {opts:string}" cli/framework-should-receive)
+
+(defthen "speclj should receive args {args:string}" cli/speclj-should-receive-args)

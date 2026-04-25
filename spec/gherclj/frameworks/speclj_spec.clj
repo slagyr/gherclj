@@ -21,19 +21,24 @@
 
   (context "generate-preamble"
 
-    (it "generates a namespace form with required imports and step requires"
+    (around [it]
+      (g/register-helper-import! 'preamble-fixture-a 'myapp.steps.auth)
+      (g/register-helper-import! 'preamble-fixture-b 'myapp.steps.cart)
+      (it))
+
+    (it "emits requires for helper imports declared by the used step namespaces"
       (let [result (fw/generate-preamble {:framework :speclj}
                                          "features/auth.feature"
-                                         ['myapp.steps.auth 'myapp.steps.cart])]
+                                         #{'preamble-fixture-a 'preamble-fixture-b})]
         (should (str/includes? result "speclj.core :refer :all"))
         (should (str/includes? result "gherclj.core :as g"))
         (should (str/includes? result "myapp.steps.auth"))
         (should (str/includes? result "myapp.steps.cart"))))
 
-    (it "generates a namespace form with no step requires"
+    (it "emits no helper requires when no step namespaces are in scope"
       (let [result (fw/generate-preamble {:framework :speclj}
                                          "features/auth.feature"
-                                         [])]
+                                         #{})]
         (should (str/includes? result "speclj.core :refer :all"))
         (should-not (str/includes? result "myapp")))))
 
@@ -52,23 +57,19 @@
 
   (context "wrap-scenario"
 
-    (it "wraps steps in an it block with the scenario title"
+    (it "wraps pre-rendered step strings in an it block"
       (let [scenario {:scenario "User can log in"
-                      :steps [{:type :given :text "a user exists" :classified? true
-                               :ns 'myapp.steps :name "summon-hero" :args []}
-                              {:type :when :text "they log in" :classified? true
-                               :ns 'myapp.steps :name "log-in" :args []}]}
+                      :rendered-steps ["(steps/summon-hero)"
+                                       "(steps/log-in)"]}
             result (fw/wrap-scenario {:framework :speclj} scenario nil)]
         (should (str/includes? result "(it \"User can log in\""))
         (should (str/includes? result "steps/summon-hero"))
         (should (str/includes? result "steps/log-in"))))
 
     (it "includes background steps before scenario steps"
-      (let [background {:steps [{:type :given :text "db is clean" :classified? true
-                                 :ns 'myapp.steps :name "clean-db" :args []}]}
-            scenario {:scenario "User can log in"
-                      :steps [{:type :when :text "they log in" :classified? true
-                               :ns 'myapp.steps :name "log-in" :args []}]}
+      (let [background {:rendered-steps ["(steps/clean-db)"]}
+            scenario   {:scenario "User can log in"
+                        :rendered-steps ["(steps/log-in)"]}
             result (fw/wrap-scenario {:framework :speclj} scenario background)]
         (should (str/includes? result "steps/clean-db"))
         (should (str/includes? result "steps/log-in")))))
