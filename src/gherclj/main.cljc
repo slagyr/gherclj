@@ -10,7 +10,7 @@
 
 (def version (str/trim (slurp (io/resource "gherclj/VERSION"))))
 
-(def ^:private cli-options
+(def ^:private base-cli-options
   [["-f" "--features-dir DIR" "Features directory (default: features)"]
    ["-e" "--edn-dir DIR" "EDN IR output directory (default: target/gherclj/edn)"]
    ["-o" "--output-dir DIR" "Generated spec output directory (default: target/gherclj/generated)"]
@@ -26,16 +26,22 @@
     :default :none
     :default-desc ""
     :update-fn (fn [acc v] (conj (if (= :none acc) [] acc) v))]
-   [nil "--given" "Show Given steps"]
+   [nil "--ir-edn" "Persist EDN IR files during full pipeline runs"]
+   ["-F" "--framework FRAMEWORK" "Test framework: clojure/speclj, clojure/test, bash/testing, javascript/node-test, ruby/rspec, python/pytest, go/testing, java/junit5, typescript/node-test, rust/rustc-test, csharp/xunit (default: clojure/speclj)"
+    :parse-fn keyword]
+   ["-v" "--verbose" "Print progress to stdout"]
+   ["-h" "--help" "Show usage"]])
+
+;; Subcommand-only flags. Parsed alongside the base set so `gherclj steps
+;; --given` etc. work, but excluded from the base `--help` output.
+(def ^:private steps-cli-options
+  [[nil "--given" "Show Given steps"]
    [nil "--when" "Show When steps"]
    [nil "--then" "Show Then steps"]
    [nil "--color" "Force ANSI color output"]
-   [nil "--no-color" "Disable ANSI color output"]
-   [nil "--ir-edn" "Persist EDN IR files during full pipeline runs"]
-        ["-F" "--framework FRAMEWORK" "Test framework: clojure/speclj, clojure/test, bash/testing, javascript/node-test, ruby/rspec, python/pytest, go/testing, java/junit5, typescript/node-test, rust/rustc-test, csharp/xunit (default: clojure/speclj)"
-         :parse-fn keyword]
-   ["-v" "--verbose" "Print progress to stdout"]
-   ["-h" "--help" "Show usage"]])
+   [nil "--no-color" "Disable ANSI color output"]])
+
+(def ^:private cli-options (vec (concat base-cli-options steps-cli-options)))
 
 (defn- parse-tag-flags [tags]
   (when (seq tags)
@@ -88,7 +94,7 @@
              :summary summary})))
 
 (defn usage-message []
-  (let [{:keys [summary]} (cli/parse-opts [] cli-options)]
+  (let [{:keys [summary]} (cli/parse-opts [] base-cli-options)]
     (str "\nGherclj " version " - pronounced /\u0261\u025c\u02d0rk\u0259l/, gur-kull: a Gherkin -> test code transducer.\n"
          "Copyright (c) 2026 Micah Martin under The MIT License.\n\n"
          "Usage:  gherclj [option]... [feature target]... [-- framework option...]\n"
