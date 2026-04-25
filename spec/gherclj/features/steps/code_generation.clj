@@ -48,10 +48,16 @@
                 (symbol (str "gherclj.frameworks." (name fw))))]
     (require fw-ns)))
 
+(defn use-step-namespace! [ns-name]
+  (let [ns-sym (symbol (str/replace ns-name #"^\"|\"$" ""))]
+    (require ns-sym)
+    (g/assoc! :step-ns ns-sym)))
+
 (defn generate-spec! [framework]
-  (let [fw (keyword (str/replace framework #"^:" ""))]
+  (let [fw (keyword (str/replace framework #"^:" ""))
+        step-ns (or (g/get :step-ns) 'gherclj.sample.app-steps)]
     (ensure-framework-loaded! fw)
-    (let [config {:step-namespaces ['gherclj.sample.app-steps]
+    (let [config {:step-namespaces [step-ns]
                   :extra-steps (g/get :steps)
                   :framework fw}]
       (g/assoc! :generated-output (gen/generate-spec config (g/get :feature-ir))))))
@@ -80,8 +86,11 @@
 (defgiven "a wip scenario {title:string} with steps:" code-generation/add-wip-scenario!
   "Adds scenario with [\"wip\"] tag hardcoded — simulates a scenario tagged @wip.")
 
+(defgiven "step namespace {ns-name:string}" code-generation/use-step-namespace!
+  "Loads ns-name and uses it as the step namespace for the next generation. Defaults to gherclj.sample.app-steps if not set.")
+
 (defwhen "generating the spec with framework {framework}" code-generation/generate-spec!
-  "Uses gherclj.sample.app-steps as hardcoded step namespace, merged with any :extra-steps in state.")
+  "Uses the step namespace set by 'Given step namespace ...' or gherclj.sample.app-steps by default. Merges with any :extra-steps in state.")
 
 (defthen #"^the output should contain (?!lines:$)(.+)$" code-generation/output-should-contain)
 
