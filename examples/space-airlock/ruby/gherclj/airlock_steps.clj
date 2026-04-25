@@ -1,4 +1,4 @@
-(ns gherclj.airlock
+(ns gherclj.airlock-steps
   "Step routing for the Ruby implementation of SpaceAirlock.
    Each entry maps a Gherkin phrase to a method call on `subject`.
    The subject is an AirlockStepsHelper, which subclasses SpaceAirlock

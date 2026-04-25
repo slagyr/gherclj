@@ -10,5 +10,5 @@
   features {:doc      "Run the shared space-airlock features against the Ruby implementation"
             :requires ([gherclj.main :as main])
             :task     (main/-main "-f" "../features"
-                        "-s" "gherclj.airlock"
+                        "-s" "gherclj.airlock-steps"
                         "-F" "rspec")}}}
