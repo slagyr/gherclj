@@ -16,8 +16,8 @@
     :step-namespaces {:type   :seq
                       :coerce (fn [v] (or v []))}
     :framework  {:type     :keyword
-                      :coerce   (fn [v] (or v :clojure/speclj))
-                      :validate #(contains? #{:clojure/speclj :clojure/test :ruby/rspec} %)}
+                       :coerce   (fn [v] (or v :clojure/speclj))
+                       :validate #(contains? #{:clojure/speclj :clojure/test :ruby/rspec :python/pytest :go/testing} %)}
    :verbose         {:type   :boolean
                      :coerce (fn [v] (boolean v))}
    :framework-opts  {:type   :seq

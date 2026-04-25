@@ -94,9 +94,13 @@
         classified-scenarios (mapv #(classify-scenario steps %) filtered)]
     (when (seq classified-scenarios)
       (let [classified-bg (when background (classify-scenario steps background))
-            used-nses (step-namespaces-used steps classified-bg filtered)
-            rendered-bg (render-background config classified-bg)
-            preamble (fw/generate-preamble config source used-nses)
+            used-nses     (step-namespaces-used steps classified-bg filtered)
+            ;; Make used-nses available to all framework adapter calls so
+            ;; per-scenario setup registries (e.g. go.testing) can look up
+            ;; their declarations.
+            config        (assoc config :_used-nses used-nses)
+            rendered-bg   (render-background config classified-bg)
+            preamble      (fw/generate-preamble config source used-nses)
             scenario-blocks (->> classified-scenarios
                                  (map (fn [scenario]
                                         (if (all-classified? scenario)

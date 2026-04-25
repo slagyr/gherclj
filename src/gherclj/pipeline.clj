@@ -70,9 +70,11 @@
 
 (defn- source->spec-filename [source framework]
   (let [suffix (case framework
-                 :clojure/test "_test.clj"
-                 :ruby/rspec "_spec.rb"
-                 "_spec.clj")]
+                  :clojure/test "_test.clj"
+                  :ruby/rspec   "_spec.rb"
+                  :python/pytest "_test.py"
+                  :go/testing   "_test.go"
+                  "_spec.clj")]
     (-> source
         (str/replace #"\.(feature|edn)$" "")
         (str suffix))))
