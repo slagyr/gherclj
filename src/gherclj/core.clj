@@ -130,13 +130,15 @@
   `(register-helper-import! '~(ns-name *ns*) (quote ~module)))
 
 (defn- helper-ref-name
-  "Extract the bare name part from a helper-ref symbol or string."
+  "Extract the bare name part from a helper-ref. Symbols have their Clojure
+   namespace stripped via clojure.core/name; strings pass through verbatim
+   so dot-style identifiers like \"subject.door-state\" or \"Helpers.do_swap\"
+   keep their receiver. Other values are stringified."
   [helper-ref]
   (cond
     (symbol? helper-ref) (name helper-ref)
-    (string? helper-ref) (let [parts (str/split helper-ref #"\.|/|::")]
-                           (last parts))
-    :else (str helper-ref)))
+    (string? helper-ref) helper-ref
+    :else                (str helper-ref)))
 
 (defn register-step!
   "Register a step definition. Called by the defgiven/defwhen/defthen macros.
