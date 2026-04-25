@@ -8,8 +8,11 @@
             [speclj.core :as sc]))
 
 (defmethod fw/generate-preamble :speclj
-  [_config source helper-imports]
+  [_config source used-nses]
   (let [ns-name (str (gen/source->ns-name source "-spec"))
+        helper-imports (->> used-nses
+                            (mapcat g/helper-imports-in-ns)
+                            distinct)
         helper-reqs (->> helper-imports
                          sort
                          (map #(str "            [" % " :as " (gen/ns->alias %) "]")))]

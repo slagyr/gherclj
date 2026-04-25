@@ -55,19 +55,19 @@
 (defn- render-scenario [config scenario]
   (assoc scenario :rendered-steps (mapv #(fw/render-step config %) (:steps scenario))))
 
-(defn- step-ns-imports
-  "Collect helper-import declarations from the step namespaces used in a feature."
+(defn- step-namespaces-used
+  "Return the set of step namespace symbols that have at least one step
+   matching a step in this feature's background or scenarios. Framework
+   adapters get this set in `generate-preamble` and decide what to look up
+   from each — Clojure adapters query helper-imports; the rspec adapter
+   queries its own file-setup and describe-setup registries."
   [steps background scenarios]
-  (let [used-nses (->> (concat (when background (:steps background))
-                               (mapcat :steps scenarios))
-                       (keep (fn [node]
-                               (when-let [classified (core/classify-step steps (:text node))]
-                                 (:ns classified))))
-                       (into #{}))]
-    (->> used-nses
-         (mapcat core/helper-imports-in-ns)
-         distinct
-         vec)))
+  (->> (concat (when background (:steps background))
+               (mapcat :steps scenarios))
+       (keep (fn [node]
+               (when-let [classified (core/classify-step steps (:text node))]
+                 (:ns classified))))
+       (into #{})))
 
 (defn source->ns-name
   "Convert a feature source path to a namespace name."
@@ -94,9 +94,9 @@
         classified-scenarios (mapv #(classify-scenario steps %) filtered)]
     (when (seq classified-scenarios)
       (let [classified-bg (when background (classify-scenario steps background))
-            helper-imports (step-ns-imports steps classified-bg filtered)
+            used-nses (step-namespaces-used steps classified-bg filtered)
             rendered-bg (render-background config classified-bg)
-            preamble (fw/generate-preamble config source helper-imports)
+            preamble (fw/generate-preamble config source used-nses)
             scenario-blocks (->> classified-scenarios
                                  (map (fn [scenario]
                                         (if (all-classified? scenario)

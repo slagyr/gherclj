@@ -13,8 +13,11 @@
       (str/replace #"^-|-$" "")))
 
 (defmethod fw/generate-preamble :clojure.test
-  [_config source helper-imports]
+  [_config source used-nses]
   (let [ns-name (str (gen/source->ns-name source "-test"))
+        helper-imports (->> used-nses
+                            (mapcat g/helper-imports-in-ns)
+                            distinct)
         helper-reqs (->> helper-imports
                          sort
                          (map #(str "            [" % " :as " (gen/ns->alias %) "]")))]

@@ -21,19 +21,24 @@
 
   (context "generate-preamble"
 
-    (it "generates a namespace form with required imports and step requires"
+    (around [it]
+      (g/register-helper-import! 'preamble-fixture-a 'myapp.steps.auth)
+      (g/register-helper-import! 'preamble-fixture-b 'myapp.steps.cart)
+      (it))
+
+    (it "emits requires for helper imports declared by the used step namespaces"
       (let [result (fw/generate-preamble {:framework :speclj}
                                          "features/auth.feature"
-                                         ['myapp.steps.auth 'myapp.steps.cart])]
+                                         #{'preamble-fixture-a 'preamble-fixture-b})]
         (should (str/includes? result "speclj.core :refer :all"))
         (should (str/includes? result "gherclj.core :as g"))
         (should (str/includes? result "myapp.steps.auth"))
         (should (str/includes? result "myapp.steps.cart"))))
 
-    (it "generates a namespace form with no step requires"
+    (it "emits no helper requires when no step namespaces are in scope"
       (let [result (fw/generate-preamble {:framework :speclj}
                                          "features/auth.feature"
-                                         [])]
+                                         #{})]
         (should (str/includes? result "speclj.core :refer :all"))
         (should-not (str/includes? result "myapp")))))
 

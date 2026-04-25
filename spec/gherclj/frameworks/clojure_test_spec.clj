@@ -12,26 +12,31 @@
 
   (context "generate-preamble"
 
-    (it "generates a namespace form with clojure.test require and step requires"
+    (around [it]
+      (g/register-helper-import! 'ct-preamble-fixture-a 'myapp.steps.auth)
+      (g/register-helper-import! 'ct-preamble-fixture-b 'myapp.steps.cart)
+      (it))
+
+    (it "emits requires for helper imports declared by the used step namespaces"
       (let [result (fw/generate-preamble {:framework :clojure.test}
                                          "features/auth.feature"
-                                         ['myapp.steps.auth 'myapp.steps.cart])]
+                                         #{'ct-preamble-fixture-a 'ct-preamble-fixture-b})]
         (should (str/includes? result "clojure.test :refer :all"))
         (should (str/includes? result "gherclj.core :as g"))
         (should (str/includes? result "myapp.steps.auth"))
         (should (str/includes? result "myapp.steps.cart"))))
 
-    (it "generates a namespace form with no step requires"
+    (it "emits no helper requires when no step namespaces are in scope"
       (let [result (fw/generate-preamble {:framework :clojure.test}
                                          "features/auth.feature"
-                                         [])]
+                                         #{})]
         (should (str/includes? result "clojure.test :refer :all"))
         (should-not (str/includes? result "myapp"))))
 
     (it "uses -test suffix instead of -spec"
       (let [result (fw/generate-preamble {:framework :clojure.test}
                                          "features/auth.feature"
-                                         [])]
+                                         #{})]
         (should (str/includes? result "auth-test")))))
 
   (context "wrap-feature"

@@ -45,19 +45,19 @@
   (generate-step-call step))
 
 (defmethod fw/generate-preamble :rspec
-  [_config source step-ns-syms]
+  [_config source used-nses]
   (let [feature-name (-> source
                          (str/split #"/")
                          last
                          (str/replace #"\.feature$" "")
                          (str/replace #"_" " ")
                          (str/capitalize))
-        file-setup    (->> step-ns-syms
+        file-setup   (->> used-nses
                           (mapcat #(get @file-setup-registry % []))
                           distinct)
-        desc-setup    (->> step-ns-syms
-                           (mapcat #(get @describe-setup-registry % []))
-                           distinct)]
+        desc-setup   (->> used-nses
+                          (mapcat #(get @describe-setup-registry % []))
+                          distinct)]
     (str "# generated from " source "\n"
          "require 'rspec'\n"
          (str/join (map #(str % "\n") file-setup))

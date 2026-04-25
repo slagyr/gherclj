@@ -4,10 +4,8 @@
    The actual logic lives in lib/space_airlock.rb (the production code)
    and lib/space_airlock_steps.rb (a thin module that delegates each
    method to subject)."
-  (:require [gherclj.core :refer [defgiven defwhen defthen helper!]]
+  (:require [gherclj.core :refer [defgiven defwhen defthen]]
             [gherclj.frameworks.rspec :as rspec]))
-
-(helper! gherclj.airlock)
 
 ;; Ruby file-level setup
 (rspec/file-setup! "require File.expand_path('lib/space_airlock_steps', Dir.pwd)")
