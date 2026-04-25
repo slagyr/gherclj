@@ -1,18 +1,12 @@
 (ns gherclj.airlock-steps
   "Step routing for the Ruby implementation of SpaceAirlock.
-   Each entry maps a Gherkin phrase to a method call on `subject`.
-   The subject is an AirlockStepsHelper, which subclasses SpaceAirlock
-   and is the natural place to add test-only methods if needed."
+   Each entry maps a Gherkin phrase to a method call on subject."
   (:require [gherclj.core :refer [defgiven defwhen defthen helper!]]
             [gherclj.frameworks.rspec :as rspec]))
 
-;; Declare the Ruby file we depend on. The rspec adapter emits this as
-;; a require_relative-style line at the top of the generated spec.
-(helper! "lib/airlock_steps_helper")
+(helper! "lib/space_airlock")
 
-;; describe-block setup — the subject IS the helper, so every step
-;; method is callable as subject.method.
-(rspec/describe-setup! "subject { AirlockStepsHelper.new }")
+(rspec/describe-setup! "subject { SpaceAirlock.new }")
 
 ;; --- Step routing (phrase → method call on subject) ---
 
