@@ -5,20 +5,20 @@ Go implementation.
 
 The production logic lives in `airlock/airlock.go`. The Clojure step
 definitions in `gherclj/airlock_steps.clj` are pure routing — each entry
-maps a Gherkin phrase to a method call on a per-scenario `subject`.
+maps a Gherkin phrase to a method call on a per-scenario `airlock`.
 gherclj generates Go `*_test.go` files into `target/gherclj/generated/`
 and runs them with `go test`.
 
 A representative step def reads:
 
 ```clojure
-(defgiven "the {door} door is {state}" subject.door-state)
+(defgiven "the {door} door is {state}" airlock.door-state)
 ```
 
 and produces:
 
 ```go
-subject.DoorState("inner", "open")
+airlock.DoorState("inner", "open")
 ```
 
 inside a `t.Run` block. Helper-ref names get kebab→PascalCase translated
@@ -28,11 +28,15 @@ Per-scenario setup is declared in the same step namespace via
 `gotest/scenario-setup!`:
 
 ```clojure
-(gotest/scenario-setup! "subject := airlock.NewSpaceAirlock(t)")
+(gotest/scenario-setup! "airlock := airlock.NewSpaceAirlock(t)")
 ```
 
 Each `t.Run` closure starts with that line, giving every scenario a
-fresh `*SpaceAirlock` bound to the subtest's `*testing.T`.
+fresh `*SpaceAirlock` bound to the subtest's `*testing.T`. The local
+`airlock` variable shadows the package import within the closure —
+Go evaluates the RHS before the LHS binds, so this is well-defined.
+After that line, `airlock` refers to the variable; we don't need the
+package again inside the scenario.
 
 ## Running
 

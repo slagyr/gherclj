@@ -10,29 +10,31 @@
 (helper! "airlock example.com/space_airlock/airlock")
 
 ;; Per-scenario setup: every t.Run closure starts with this line.
-(gotest/scenario-setup! "subject := airlock.NewSpaceAirlock(t)")
+;; The local `airlock` variable shadows the package import within the
+;; closure — Go evaluates the RHS first, so this is well-defined.
+(gotest/scenario-setup! "airlock := airlock.NewSpaceAirlock(t)")
 
 ;; --- Step routing (phrase → method call on subject) ---
 
-(defgiven #"^([A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+)*) is inside the airlock$"     subject.crew-member-inside)
-(defgiven "a visitor is inside the airlock"                                   subject.visitor-inside)
-(defgiven #"^([A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+)*) is wearing a suit$"         subject.wearing-suit)
-(defgiven #"^([A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+)*) is not wearing a suit$"     subject.not-wearing-suit)
-(defgiven #"^([A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+)*) has a valid badge$"         subject.valid-badge)
-(defgiven "the visitor does not have a valid badge"                           subject.visitor-invalid-badge)
-(defgiven "the {door} door is {state}"                                        subject.door-state)
-(defgiven "the chamber is {pressure}"                                         subject.chamber-pressure)
-(defgiven "the emergency override is engaged"                                 subject.emergency-override-engaged)
+(defgiven #"^([A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+)*) is inside the airlock$"     airlock.crew-member-inside)
+(defgiven "a visitor is inside the airlock"                                   airlock.visitor-inside)
+(defgiven #"^([A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+)*) is wearing a suit$"         airlock.wearing-suit)
+(defgiven #"^([A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+)*) is not wearing a suit$"     airlock.not-wearing-suit)
+(defgiven #"^([A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+)*) has a valid badge$"         airlock.valid-badge)
+(defgiven "the visitor does not have a valid badge"                           airlock.visitor-invalid-badge)
+(defgiven "the {door} door is {state}"                                        airlock.door-state)
+(defgiven "the chamber is {pressure}"                                         airlock.chamber-pressure)
+(defgiven "the emergency override is engaged"                                 airlock.emergency-override-engaged)
 
-(defwhen  #"^([A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+)*|the visitor) requests exit$" subject.request-exit)
-(defwhen  "the {door} door is commanded open"                                 subject.open-door)
-(defwhen  "depressurization is commanded"                                     subject.depressurization-commanded)
-(defwhen  "repressurization is commanded"                                     subject.repressurization-commanded)
+(defwhen  #"^([A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+)*|the visitor) requests exit$" airlock.request-exit)
+(defwhen  "the {door} door is commanded open"                                 airlock.open-door)
+(defwhen  "depressurization is commanded"                                     airlock.depressurization-commanded)
+(defwhen  "repressurization is commanded"                                     airlock.repressurization-commanded)
 
-(defthen  "the chamber should depressurize"                                   subject.chamber-should-depressurize)
-(defthen  "the chamber should remain {pressure}"                              subject.chamber-should-remain)
-(defthen  "the {door} door should unlock"                                     subject.door-should-unlock)
-(defthen  "the {door} door should remain locked"                              subject.door-should-remain-locked)
-(defthen  "the request should be denied"                                      subject.request-should-be-denied)
-(defthen  "the system should display {message:string}"                        subject.system-should-display)
-(defthen  "the airlock status should be {status:string}"                      subject.airlock-status-should-be)
+(defthen  "the chamber should depressurize"                                   airlock.chamber-should-depressurize)
+(defthen  "the chamber should remain {pressure}"                              airlock.chamber-should-remain)
+(defthen  "the {door} door should unlock"                                     airlock.door-should-unlock)
+(defthen  "the {door} door should remain locked"                              airlock.door-should-remain-locked)
+(defthen  "the request should be denied"                                      airlock.request-should-be-denied)
+(defthen  "the system should display {message:string}"                        airlock.system-should-display)
+(defthen  "the airlock status should be {status:string}"                      airlock.airlock-status-should-be)
