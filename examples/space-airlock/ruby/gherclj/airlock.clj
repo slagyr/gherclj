@@ -1,68 +1,42 @@
 (ns gherclj.airlock
-  (:require [gherclj.core :refer [defgiven defwhen defthen]]
+  "Step routing for the Ruby implementation of SpaceAirlock.
+   Each entry maps a Gherkin phrase to the matching Ruby method name.
+   The actual logic lives in lib/space_airlock.rb (the production code)
+   and lib/space_airlock_steps.rb (a thin module that delegates each
+   method to subject)."
+  (:require [gherclj.core :refer [defgiven defwhen defthen helper!]]
             [gherclj.frameworks.rspec :as rspec]))
 
-(rspec/file-setup! "require File.expand_path('lib/space_airlock', Dir.pwd)")
+(helper! gherclj.airlock)
+
+;; Ruby file-level setup
+(rspec/file-setup! "require File.expand_path('lib/space_airlock_steps', Dir.pwd)")
+
+;; describe-block setup — define the subject and bring step methods into scope
 (rspec/describe-setup! "subject { SpaceAirlock.new }")
+(rspec/describe-setup! "include SpaceAirlockSteps")
 
-(defn- rspec-only [] (throw (UnsupportedOperationException. "rspec step — not executable in Clojure")))
+;; --- Step routing (phrase → Ruby method name) ---
 
-(defgiven crew-member-inside #"^([A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+)*) is inside the airlock$"
-  [name] (rspec-only))
+(defgiven #"^([A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+)*) is inside the airlock$"     crew-member-inside)
+(defgiven "a visitor is inside the airlock"                                   visitor-inside)
+(defgiven #"^([A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+)*) is wearing a suit$"         wearing-suit)
+(defgiven #"^([A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+)*) is not wearing a suit$"     not-wearing-suit)
+(defgiven #"^([A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+)*) has a valid badge$"         valid-badge)
+(defgiven "the visitor does not have a valid badge"                           visitor-invalid-badge)
+(defgiven "the {door} door is {state}"                                        door-state)
+(defgiven "the chamber is {pressure}"                                         chamber-pressure)
+(defgiven "the emergency override is engaged"                                 emergency-override-engaged)
 
-(defgiven visitor-inside "a visitor is inside the airlock"
-  [] (rspec-only))
+(defwhen  #"^([A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+)*|the visitor) requests exit$" request-exit)
+(defwhen  "the {door} door is commanded open"                                 open-door)
+(defwhen  "depressurization is commanded"                                     depressurization-commanded)
+(defwhen  "repressurization is commanded"                                     repressurization-commanded)
 
-(defgiven wearing-suit #"^([A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+)*) is wearing a suit$"
-  [name] (rspec-only))
-
-(defgiven not-wearing-suit #"^([A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+)*) is not wearing a suit$"
-  [name] (rspec-only))
-
-(defgiven valid-badge #"^([A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+)*) has a valid badge$"
-  [name] (rspec-only))
-
-(defgiven visitor-invalid-badge "the visitor does not have a valid badge"
-  [] (rspec-only))
-
-(defgiven door-state "the {door} door is {state}"
-  [door state] (rspec-only))
-
-(defgiven chamber-pressure "the chamber is {pressure}"
-  [pressure] (rspec-only))
-
-(defgiven emergency-override-engaged "the emergency override is engaged"
-  [] (rspec-only))
-
-(defwhen request-exit #"^([A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+)*|the visitor) requests exit$"
-  [name] (rspec-only))
-
-(defwhen open-door "the {door} door is commanded open"
-  [door] (rspec-only))
-
-(defwhen depressurization-commanded "depressurization is commanded"
-  [] (rspec-only))
-
-(defwhen repressurization-commanded "repressurization is commanded"
-  [] (rspec-only))
-
-(defthen chamber-should-depressurize "the chamber should depressurize"
-  [] (rspec-only))
-
-(defthen chamber-should-remain "the chamber should remain {pressure}"
-  [pressure] (rspec-only))
-
-(defthen door-should-unlock "the {door} door should unlock"
-  [door] (rspec-only))
-
-(defthen door-should-remain-locked "the {door} door should remain locked"
-  [door] (rspec-only))
-
-(defthen request-should-be-denied "the request should be denied"
-  [] (rspec-only))
-
-(defthen system-should-display "the system should display {message:string}"
-  [message] (rspec-only))
-
-(defthen airlock-status-should-be "the airlock status should be {status:string}"
-  [status] (rspec-only))
+(defthen  "the chamber should depressurize"                                   chamber-should-depressurize)
+(defthen  "the chamber should remain {pressure}"                              chamber-should-remain)
+(defthen  "the {door} door should unlock"                                     door-should-unlock)
+(defthen  "the {door} door should remain locked"                              door-should-remain-locked)
+(defthen  "the request should be denied"                                      request-should-be-denied)
+(defthen  "the system should display {message:string}"                        system-should-display)
+(defthen  "the airlock status should be {status:string}"                      airlock-status-should-be)
