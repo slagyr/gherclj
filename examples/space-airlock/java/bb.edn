@@ -1,0 +1,14 @@
+{:paths ["."]
+ :deps  {io.github.slagyr/gherclj {:local/root "../../.."}
+         speclj/speclj            {:mvn/version "3.13.0"}}
+ :tasks
+ {clean    {:doc  "Remove generated EDN and *Test.java files"
+            :task (do
+                    (babashka.fs/delete-tree "target/gherclj")
+                    (println "Cleaned target/gherclj/"))}
+
+  features {:doc      "Run the shared space-airlock features against the Java implementation"
+            :requires ([gherclj.main :as main])
+            :task     (main/-main "-f" "../features"
+                        "-s" "gherclj.airlock-steps"
+                        "-F" "java/junit5")}}}

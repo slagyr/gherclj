@@ -209,6 +209,156 @@
             (should (str/includes? content "clojure.test")))
           (finally (cleanup features-dir edn-dir output-dir)))))
 
+    (it "generates TypeScript node:test files with _test.ts suffix"
+      (let [features-dir (tmp "features")
+            edn-dir (tmp "edn")
+            output-dir (tmp "output")
+            feature-file (io/file features-dir "auth.feature")]
+        (io/make-parents feature-file)
+        (spit feature-file
+              (str "Feature: Authentication\n"
+                   "\n"
+                   "  Scenario: User can log in\n"
+                   "    Given a TypeScript user \"alice\"\n"
+                   "    When the TypeScript user logs in\n"
+                   "    Then the TypeScript response should be 200\n"))
+        (try
+          (pipeline/run!
+            {:features-dir features-dir
+             :edn-dir edn-dir
+             :output-dir output-dir
+             :step-namespaces ['gherclj.sample.typescript-app-steps]
+             :framework :typescript/node-test})
+
+          (should (.exists (io/file output-dir "auth_test.ts")))
+           (let [content (slurp (io/file output-dir "auth_test.ts"))]
+            (should (str/includes? content "node:test"))
+            (should (str/includes? content "subject.createAdventurer('alice')")))
+          (finally (cleanup features-dir edn-dir output-dir)))))
+
+    (it "generates pytest files with _test.py suffix"
+      (let [features-dir (tmp "features")
+            edn-dir (tmp "edn")
+            output-dir (tmp "output")
+            feature-file (io/file features-dir "auth.feature")]
+        (io/make-parents feature-file)
+        (spit feature-file feature-content)
+        (try
+          (pipeline/run!
+            {:features-dir features-dir
+             :edn-dir edn-dir
+             :output-dir output-dir
+             :step-namespaces ['gherclj.sample.pytest-app-steps]
+             :framework :python/pytest})
+
+          (should (.exists (io/file output-dir "auth_test.py")))
+          (let [content (slurp (io/file output-dir "auth_test.py"))]
+            (should (str/includes? content "def test_user_can_log_in():"))
+            (should (str/includes? content "import pytest")))
+          (finally (cleanup features-dir edn-dir output-dir)))))
+
+    (it "generates JavaScript node:test files with _test.js suffix"
+      (let [features-dir (tmp "features")
+            edn-dir (tmp "edn")
+            output-dir (tmp "output")
+            feature-file (io/file features-dir "auth.feature")]
+        (io/make-parents feature-file)
+        (spit feature-file feature-content)
+        (try
+          (pipeline/run!
+            {:features-dir features-dir
+             :edn-dir edn-dir
+             :output-dir output-dir
+             :step-namespaces ['gherclj.sample.javascript-app-steps]
+             :framework :javascript/node-test})
+
+          (should (.exists (io/file output-dir "auth_test.js")))
+          (let [content (slurp (io/file output-dir "auth_test.js"))]
+            (should (str/includes? content "test('User can log in', () => {"))
+            (should (str/includes? content "import test from 'node:test'")))
+          (finally (cleanup features-dir edn-dir output-dir)))))
+
+    (it "generates Bash test files with _test.sh suffix"
+      (let [features-dir (tmp "features")
+            edn-dir (tmp "edn")
+            output-dir (tmp "output")
+            feature-file (io/file features-dir "auth.feature")
+            bash-feature (str "Feature: Authentication\n"
+                              "\n"
+                              "  Scenario: User can log in\n"
+                              "    Given a Bash user \"alice\"\n"
+                              "    When the Bash user logs in\n"
+                              "    Then the Bash response should be 200\n")]
+        (io/make-parents feature-file)
+        (spit feature-file bash-feature)
+        (try
+          (pipeline/run!
+            {:features-dir features-dir
+             :edn-dir edn-dir
+             :output-dir output-dir
+             :step-namespaces ['gherclj.sample.bash-app-steps]
+             :framework :bash/testing})
+
+          (should (.exists (io/file output-dir "auth_test.sh")))
+          (let [content (slurp (io/file output-dir "auth_test.sh"))]
+            (should (str/includes? content "#!/usr/bin/env bash"))
+            (should (str/includes? content "user_can_log_in() {")))
+          (finally (cleanup features-dir edn-dir output-dir)))))
+
+    (it "generates C# xUnit files with _test.cs suffix"
+      (let [features-dir (tmp "features")
+            edn-dir (tmp "edn")
+            output-dir (tmp "output")
+            feature-file (io/file features-dir "auth.feature")]
+        (io/make-parents feature-file)
+        (spit feature-file
+              (str "Feature: Authentication\n"
+                   "\n"
+                   "  Scenario: User can log in\n"
+                   "    Given a CSharp user \"alice\"\n"
+                   "    When the CSharp user logs in\n"
+                   "    Then the CSharp response should be 200\n"))
+        (try
+          (pipeline/run!
+            {:features-dir features-dir
+             :edn-dir edn-dir
+             :output-dir output-dir
+             :step-namespaces ['gherclj.sample.csharp-app-steps]
+             :framework :csharp/xunit})
+
+          (should (.exists (io/file output-dir "auth_test.cs")))
+          (let [content (slurp (io/file output-dir "auth_test.cs"))]
+            (should (str/includes? content "[Fact]"))
+            (should (str/includes? content "subject.CreateAdventurer(\"alice\");")))
+          (finally (cleanup features-dir edn-dir output-dir)))))
+
+    (it "generates Rust rustc-test files with _test.rs suffix"
+      (let [features-dir (tmp "features")
+            edn-dir (tmp "edn")
+            output-dir (tmp "output")
+            feature-file (io/file features-dir "auth.feature")]
+        (io/make-parents feature-file)
+        (spit feature-file
+              (str "Feature: Authentication\n"
+                   "\n"
+                   "  Scenario: User can log in\n"
+                   "    Given a Rust user \"alice\"\n"
+                   "    When the Rust user logs in\n"
+                   "    Then the Rust response should be 200\n"))
+        (try
+          (pipeline/run!
+            {:features-dir features-dir
+             :edn-dir edn-dir
+             :output-dir output-dir
+             :step-namespaces ['gherclj.sample.rust-app-steps]
+             :framework :rust/rustc-test})
+
+          (should (.exists (io/file output-dir "auth_test.rs")))
+          (let [content (slurp (io/file output-dir "auth_test.rs"))]
+            (should (str/includes? content "#[test]"))
+            (should (str/includes? content "subject.create_adventurer(\"alice\");")))
+          (finally (cleanup features-dir edn-dir output-dir)))))
+
     (it "generates spec directly from EDN files via generate!"
       (let [edn-dir (tmp "edn-direct")
             output-dir (tmp "output-direct")

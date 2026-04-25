@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../SpaceAirlock/SpaceAirlock.csproj" />
+    <PackageReference Include="xunit.assert" Version="2.4.2" />
+  </ItemGroup>
+</Project>

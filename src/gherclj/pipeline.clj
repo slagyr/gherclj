@@ -68,16 +68,32 @@
 (defn- source->edn-filename [source]
   (str/replace source #"\.feature$" ".edn"))
 
+(defn- pascal-base
+  "PascalCase the basename of a path, preserving any leading directories.
+   E.g. \"sub/airlock_exit\" -> \"sub/AirlockExit\"."
+  [path]
+  (let [parts  (str/split path #"/")
+        dir    (when (> (count parts) 1) (str/join "/" (butlast parts)))
+        base   (last parts)
+        pascal (->> (str/split base #"[_-]")
+                    (map #(if (seq %) (str (str/upper-case (subs % 0 1)) (subs % 1)) ""))
+                    (apply str))]
+    (if dir (str dir "/" pascal) pascal)))
+
 (defn- source->spec-filename [source framework]
-  (let [suffix (case framework
-                  :clojure/test "_test.clj"
-                  :ruby/rspec   "_spec.rb"
-                  :python/pytest "_test.py"
-                  :go/testing   "_test.go"
-                  "_spec.clj")]
-    (-> source
-        (str/replace #"\.(feature|edn)$" "")
-        (str suffix))))
+  (let [bare (str/replace source #"\.(feature|edn)$" "")]
+    (case framework
+      :clojure/test         (str bare "_test.clj")
+      :bash/testing         (str bare "_test.sh")
+      :javascript/node-test (str bare "_test.js")
+      :ruby/rspec           (str bare "_spec.rb")
+      :python/pytest        (str bare "_test.py")
+      :go/testing           (str bare "_test.go")
+      :typescript/node-test (str bare "_test.ts")
+      :rust/rustc-test      (str bare "_test.rs")
+      :csharp/xunit         (str bare "_test.cs")
+      :java/junit5          (str "airlock/" (pascal-base bare) "Test.java")
+      (str bare "_spec.clj"))))
 
 (defn- write-edn [path data]
   (spit path (with-out-str (pprint/pprint data))))

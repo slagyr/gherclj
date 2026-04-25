@@ -60,7 +60,43 @@
       (let [result (schema/conform config/pipeline-schema
                      {:features-dir "features"
                       :framework :ruby/rspec})]
-        (should= :ruby/rspec (:framework result)))))
+        (should= :ruby/rspec (:framework result))))
+
+    (it "accepts :typescript/node-test as a test-framework"
+      (let [result (schema/conform config/pipeline-schema
+                      {:features-dir "features"
+                       :framework :typescript/node-test})]
+        (should= :typescript/node-test (:framework result))))
+
+    (it "accepts :python/pytest as a test-framework"
+      (let [result (schema/conform config/pipeline-schema
+                      {:features-dir "features"
+                       :framework :python/pytest})]
+        (should= :python/pytest (:framework result))))
+
+    (it "accepts :javascript/node-test as a test-framework"
+      (let [result (schema/conform config/pipeline-schema
+                       {:features-dir "features"
+                        :framework :javascript/node-test})]
+        (should= :javascript/node-test (:framework result))))
+
+    (it "accepts :bash/testing as a test-framework"
+      (let [result (schema/conform config/pipeline-schema
+                       {:features-dir "features"
+                        :framework :bash/testing})]
+        (should= :bash/testing (:framework result))))
+
+    (it "accepts :csharp/xunit as a test-framework"
+      (let [result (schema/conform config/pipeline-schema
+                       {:features-dir "features"
+                        :framework :csharp/xunit})]
+        (should= :csharp/xunit (:framework result))))
+
+    (it "accepts :rust/rustc-test as a test-framework"
+      (let [result (schema/conform config/pipeline-schema
+                      {:features-dir "features"
+                       :framework :rust/rustc-test})]
+        (should= :rust/rustc-test (:framework result)))))
 
   (context "load-config"
 

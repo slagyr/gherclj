@@ -1,0 +1,9 @@
+{:paths ["."]
+ :deps  {io.github.slagyr/gherclj {:local/root "../../.."}}
+ :tasks
+ {features {:doc      "Run the shared space-airlock features against the Python implementation"
+            :requires ([gherclj.main :as main])
+            :task     (main/-main "-f" "../features"
+                                  "-s" "gherclj.airlock-steps"
+                                  "-F" "python/pytest"
+                                  "--" "-q")}}}

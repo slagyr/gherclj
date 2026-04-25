@@ -17,7 +17,7 @@
                       :coerce (fn [v] (or v []))}
     :framework  {:type     :keyword
                        :coerce   (fn [v] (or v :clojure/speclj))
-                       :validate #(contains? #{:clojure/speclj :clojure/test :ruby/rspec :python/pytest :go/testing} %)}
+                       :validate #(contains? #{:clojure/speclj :clojure/test :bash/testing :javascript/node-test :ruby/rspec :python/pytest :go/testing :typescript/node-test :rust/rustc-test :csharp/xunit :java/junit5} %)}
    :verbose         {:type   :boolean
                      :coerce (fn [v] (boolean v))}
    :framework-opts  {:type   :seq

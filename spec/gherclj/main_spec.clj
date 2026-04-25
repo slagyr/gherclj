@@ -152,7 +152,18 @@
 
     (it "mentions the steps subcommand"
       (let [text (main/usage-message)]
-        (should (str/includes? text "gherclj steps")))))
+        (should (str/includes? text "gherclj steps"))))
+
+    (it "lists the supported frameworks"
+      (let [text (main/usage-message)]
+        (should (str/includes? text "clojure/speclj"))
+        (should (str/includes? text "clojure/test"))
+        (should (str/includes? text "bash/testing"))
+        (should (str/includes? text "ruby/rspec"))
+        (should (str/includes? text "python/pytest"))
+        (should (str/includes? text "javascript/node-test"))
+        (should (str/includes? text "rust/rustc-test"))
+        (should (str/includes? text "csharp/xunit")))))
 
   (context "run"
 

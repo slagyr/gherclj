@@ -95,10 +95,11 @@
     (when (seq classified-scenarios)
       (let [classified-bg (when background (classify-scenario steps background))
             used-nses     (step-namespaces-used steps classified-bg filtered)
-            ;; Make used-nses available to all framework adapter calls so
-            ;; per-scenario setup registries (e.g. go.testing) can look up
-            ;; their declarations.
-            config        (assoc config :_used-nses used-nses)
+            ;; Make used-nses and source available to all framework adapter
+            ;; calls. Per-scenario setup registries (e.g. go.testing) look up
+            ;; their declarations via :_used-nses; Java derives class names
+            ;; from :_source since wrap-feature doesn't otherwise see it.
+            config        (assoc config :_used-nses used-nses :_source source)
             rendered-bg   (render-background config classified-bg)
             preamble      (fw/generate-preamble config source used-nses)
             scenario-blocks (->> classified-scenarios

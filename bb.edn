@@ -5,7 +5,8 @@
          io.github.slagyr/clj-mutate {:git/sha "edf0362dee919f75541ce173ca7144c1230cd4de"}
          org.clojure/tools.reader    {:mvn/version "1.4.2"}}
  :tasks
- {:requires     ([gherclj.pipeline :as p])
+ {:requires     ([babashka.process :refer [process]]
+                  [gherclj.pipeline :as p])
 
   gherclj       {:doc      "Run gherclj with any options"
                  :requires ([gherclj.main :as main])
@@ -32,24 +33,24 @@
                  :task     (speclj/-main "-c" "spec/gherclj" "-s" "src")}
 
   features      {:doc      "Run feature specs (parse, generate, execute)"
-                  :requires ([gherclj.main :as main])
-                  :task     (let [has-tag? (some #{"-t" "--tag"} *command-line-args*)
+                 :requires ([gherclj.main :as main])
+                 :task     (let [has-tag? (some #{"-t" "--tag"} *command-line-args*)
                                   args (if has-tag?
                                          *command-line-args*
                                          (concat ["-t" "~wip"] *command-line-args*))]
                               (apply main/-main args))}
 
   feature-docs  {:doc      "Run feature specs with documentation reporter"
-                  :requires ([gherclj.main :as main])
-                  :task     (main/-main "-t" "~wip" "--" "-f" "documentation" "-c" "-P")}
+                 :requires ([gherclj.main :as main])
+                 :task     (main/-main "-t" "~wip" "--" "-f" "documentation" "-c" "-P")}
 
   features-slow {:doc      "Run @slow feature specs with documentation reporter, color, and profiling"
-                  :requires ([gherclj.main :as main])
-                  :task     (main/-main "-t" "slow" "-t" "~wip" "--" "-f" "documentation" "-P")}
+                 :requires ([gherclj.main :as main])
+                 :task     (main/-main "-t" "slow" "-t" "~wip" "--" "-f" "documentation" "-P")}
 
   features-ct   {:doc      "Run feature specs with clojure.test"
-                  :requires ([gherclj.main :as main])
-                  :task     (let [has-tag? (some #{"-t" "--tag"} *command-line-args*)
+                 :requires ([gherclj.main :as main])
+                 :task     (let [has-tag? (some #{"-t" "--tag"} *command-line-args*)
                                   args (if has-tag?
                                          (concat ["-F" "clojure/test"] *command-line-args*)
                                          (concat ["-F" "clojure/test" "-t" "~wip"] *command-line-args*))]
@@ -62,14 +63,52 @@
                  :requires ([clj-mutate.core])
                  :task     (apply clj-mutate.core/-main *command-line-args*)}
 
+  airlocks      {:doc  "Run all space-airlock examples"
+                 :task (let [examples [["bash" "examples/space-airlock/bash"]
+                                       ["clojure" "examples/space-airlock/clojure"]
+                                       ["csharp" "examples/space-airlock/csharp"]
+                                       ["go" "examples/space-airlock/go"]
+                                       ["java" "examples/space-airlock/java"]
+                                       ["node" "examples/space-airlock/node"]
+                                       ["python" "examples/space-airlock/python"]
+                                       ["ruby" "examples/space-airlock/ruby"]
+                                       ["rust" "examples/space-airlock/rust"]
+                                       ["typescript" "examples/space-airlock/typescript"]]
+                                 results (for [[label dir] examples]
+                                           (let [{:keys [exit out err]} (deref (process ["bb" "features"] {:dir dir
+                                                                                                                :out :string
+                                                                                                                :err :string}))]
+                                             {:label label
+                                              :dir dir
+                                              :exit exit
+                                              :out out
+                                              :err err}))
+                                 name-width (apply max (count "Example")
+                                                   (map (fn [result] (count (:label result))) results))
+                                 status-width (count "Result")
+                                 format-row (fn [example result]
+                                              (format (str "%-" name-width "s  %-" status-width "s") example result))
+                                 failures (filter (fn [result] (not= 0 (:exit result))) results)]
+                             (println (format-row "Example" "Result"))
+                             (println (format-row (apply str (repeat name-width "-"))
+                                                  (apply str (repeat status-width "-"))))
+                             (doseq [{:keys [label exit]} results]
+                               (println (format-row label (if (zero? exit) "PASS" (str "FAIL(" exit ")")))))
+                             (when (seq failures)
+                               (throw (ex-info "airlocks failed"
+                                               {:failed (mapv (fn [result] (:label result)) failures)
+                                                :details (mapv (fn [result]
+                                                                 (select-keys result [:label :dir :exit :out :err]))
+                                                               failures)}))))}
+
   test-all      {:doc  "Run all tests across bb and clj, all frameworks"
                  :task (let [failed (atom [])
-                             run! (fn [label task-fn]
-                                    (println (str "\n=== " label " ==="))
-                                    (try (task-fn)
-                                         (catch Throwable e
-                                           (when-not (= 0 (:babashka/exit (ex-data e)))
-                                             (swap! failed conj label)))))]
+                              run! (fn [label task-fn]
+                                     (println (str "\n=== " label " ==="))
+                                     (try (task-fn)
+                                          (catch Throwable e
+                                            (when-not (= 0 (:babashka/exit (ex-data e)))
+                                              (swap! failed conj label)))))]
                          (run! "bb spec" (fn [] (run 'spec)))
                          (run! "clj -M:spec" (fn [] (clojure "-M:spec")))
                          (run! "bb features" (fn [] (run 'features)))
