@@ -1,0 +1,9 @@
+{:paths ["src"]
+ :deps {io.github.slagyr/gherclj {:local/root "../../.."}
+        speclj/speclj {:mvn/version "3.13.0"}}
+ :tasks
+  {features {:doc "Run the shared space-airlock features"
+             :requires ([gherclj.main :as main])
+             :task (main/-main "-f" "../features"
+                               "-s" "space-airlock.features.steps.airlock"
+                               "-F" "speclj")}}}
