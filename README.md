@@ -15,10 +15,12 @@ gherclj bridges the gap between human-readable feature specifications and execut
 The pipeline:
 
 ```
-.feature files → EDN intermediate representation → generated unit test files
+.feature files → generated unit test files
 ```
 
-Each stage produces a visible, inspectable artifact. If a step isn't matching, check the `.edn` IR. If the IR is right but the spec is wrong, it's a generator issue. The generated specs are readable, debuggable, and committable.
+The generated specs are native to the target language's test runner — speclj, JUnit 5, RSpec, Go's `testing`, pytest, etc. They're readable, debuggable, committable, and have no gherclj runtime dependency. Production code never imports gherclj either; gherclj's footprint is the step-routing namespace plus a `bb.edn` task.
+
+Internally the pipeline goes `feature → IR → spec`. The IR isn't persisted by default; pass `--ir-edn` (or `:ir-edn true` in config) to also write it to `target/gherclj/edn/` for inspection.
 
 ## Quick Start
 
@@ -201,8 +203,9 @@ bb -m gherclj.main --verbose
 ```
 
 All options produce:
-- `target/gherclj/edn/auth.edn` — the parsed IR (inspectable, debuggable)
 - `target/gherclj/generated/auth_spec.clj` — executable spec with qualified function calls
+
+Add `--ir-edn` (or `:ir-edn true` in config) to also persist the parsed IR to `target/gherclj/edn/auth.edn` for inspection.
 
 ### 5. Generated output
 
@@ -234,6 +237,26 @@ The generated specs are clean, readable function calls:
 
 Unrecognized steps generate pending scenarios with comments showing the step text, so you can see what needs to be implemented.
 
+## Supported frameworks
+
+Step definitions are written in Clojure, but the production code they exercise — and the test code gherclj generates — can be in any supported language.
+
+| Framework keyword       | Generated test runner       |
+|-------------------------|-----------------------------|
+| `:clojure/speclj`       | speclj                      |
+| `:clojure/test`         | `clojure.test`              |
+| `:ruby/rspec`           | RSpec                       |
+| `:python/pytest`        | pytest                      |
+| `:go/testing`           | Go's `testing` package      |
+| `:java/junit5`          | JUnit 5 (Jupiter) + Maven   |
+| `:javascript/node-test` | Node's built-in `node:test` |
+| `:typescript/node-test` | Node `node:test` (via tsx)  |
+| `:rust/rustc-test`      | `cargo test`                |
+| `:csharp/xunit`         | xUnit + `dotnet test`       |
+| `:bash/testing`         | shell-based assertions      |
+
+Working examples for every supported framework live under [`examples/space-airlock/`](examples/space-airlock/) — one shared feature suite, eleven native implementations.
+
 ## Configuration
 
 gherclj reads configuration from `gherclj.edn` (project root or classpath), with CLI flags as overrides.
@@ -241,10 +264,11 @@ gherclj reads configuration from `gherclj.edn` (project root or classpath), with
 | Key | Default | Description |
 |-----|---------|-------------|
 | `:features-dir` | `"features"` | Directory containing `.feature` files |
-| `:edn-dir` | `"target/gherclj/edn"` | Directory for parsed EDN IR files |
 | `:output-dir` | `"target/gherclj/generated"` | Directory for generated spec files |
+| `:edn-dir` | `"target/gherclj/edn"` | Directory for parsed EDN IR files (only used when `:ir-edn` is true, or when invoking `parse!`/`generate!` directly) |
+| `:ir-edn` | `false` | When true, `pipeline/run!` also persists the parsed IR to `:edn-dir` |
 | `:step-namespaces` | `[]` | Namespace symbols or glob pattern strings |
-| `:framework` | `:clojure/speclj` | `:clojure/speclj`, `:clojure/test`, or `:ruby/rspec` |
+| `:framework` | `:clojure/speclj` | Target test framework — see [Supported frameworks](#supported-frameworks) |
 | `:verbose` | `false` | Print progress to stdout |
 | `:framework-opts` | `[]` | Options passed to the test runner |
 | `:include-tags` | `[]` | Include scenarios that match any listed tag |
@@ -503,10 +527,10 @@ The following skills are available for AI coding agents working with gherclj:
 ### Dev commands
 
 ```bash
-bb parse      # Parse .feature files → EDN IR
-bb generate   # Generate spec files from EDN
+bb parse      # Parse .feature files → EDN IR (writes to disk; explicit two-stage flow)
+bb generate   # Generate spec files from EDN (reads disk; pair with `bb parse`)
 bb spec       # Run unit specs
-bb features   # Run feature specs (parse + generate + execute, excludes @wip by default)
+bb features   # Run feature specs (in-memory parse + generate + execute, excludes @wip by default)
 bb test       # Run all tests
 bb clean      # Remove generated files
 ```

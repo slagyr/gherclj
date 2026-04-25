@@ -1,5 +1,16 @@
 # Changes
 
+## v1.0.0
+
+- **BREAKING**: framework keywords are now namespaced — `:speclj` → `:clojure/speclj`, `:rspec` → `:ruby/rspec`, etc. Validation rejects the old un-namespaced forms
+- **BREAKING**: `pipeline/run!` no longer persists `target/gherclj/edn/*.edn` by default. Pass `:ir-edn true` (or `--ir-edn` on the CLI) to opt back in. `parse!` and `generate!` are unchanged — they remain the explicit two-stage entry points and continue to read/write EDN
+- **BREAKING**: step bodies are constrained to a single helper-ref. `defgiven`/`defwhen`/`defthen` accept `(template helper-ref [docstring])` only — no body, no arg vector. The macro builds the helper call mechanically from matched template args
+- **Framework adapters**: `bash/testing`, `csharp/xunit`, `java/junit5`, `javascript/node-test`, `python/pytest`, `rust/rustc-test`, `typescript/node-test` (joining the existing `clojure/speclj`, `clojure/test`, `go/testing`, `ruby/rspec`)
+- **Multi-language space-airlock examples**: shared feature suite under `examples/space-airlock/features/` exercises native implementations in 11 languages, each producing idiomatic test code via the language's native runner with no gherclj runtime in production code
+- **`helper!` macro**: declares per-step-namespace module imports. The active framework adapter interprets the value (Clojure symbol → `require`; Ruby path string → `require`; Go `"alias path"` string → import; Java FQN string → `import`)
+- **Per-framework scenario setup hooks**: `gotest/scenario-setup!`, `junit5/scenario-setup!`, `rspec/describe-setup!` inject a setup line at the top of every generated scenario closure
+- **`--ir-edn` CLI flag** and matching `:ir-edn` config key
+
 ## v0.9.0
 
 - **Step docstrings**: `defgiven`, `defwhen`, and `defthen` accept an optional docstring between the template and arg vector; stored in the step registry alongside source file and line
