@@ -4,11 +4,12 @@
    The actual logic lives in lib/space_airlock.rb (the production code)
    and lib/space_airlock_steps.rb (a thin module that delegates each
    method to subject)."
-  (:require [gherclj.core :refer [defgiven defwhen defthen]]
+  (:require [gherclj.core :refer [defgiven defwhen defthen helper!]]
             [gherclj.frameworks.rspec :as rspec]))
 
-;; Ruby file-level setup
-(rspec/file-setup! "require File.expand_path('lib/space_airlock_steps', Dir.pwd)")
+;; Declare the Ruby file we depend on. The rspec adapter emits this as
+;; a require_relative-style statement at the top of the generated spec.
+(helper! "lib/space_airlock_steps")
 
 ;; describe-block setup — define the subject and bring step methods into scope
 (rspec/describe-setup! "subject { SpaceAirlock.new }")

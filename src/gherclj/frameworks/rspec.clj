@@ -44,6 +44,14 @@
 (defmethod fw/render-step :rspec [_config step]
   (generate-step-call step))
 
+(defn- ruby-require-line
+  "Translate a helper-import value into a Ruby require statement.
+   Strings are treated as paths relative to project root."
+  [import-val]
+  (cond
+    (string? import-val) (str "require File.expand_path('" import-val "', Dir.pwd)")
+    :else                (str "require " (pr-str (str import-val)))))
+
 (defmethod fw/generate-preamble :rspec
   [_config source used-nses]
   (let [feature-name (-> source
@@ -52,6 +60,10 @@
                          (str/replace #"\.feature$" "")
                          (str/replace #"_" " ")
                          (str/capitalize))
+        helper-reqs  (->> used-nses
+                          (mapcat #(gherclj.core/helper-imports-in-ns %))
+                          distinct
+                          (map ruby-require-line))
         file-setup   (->> used-nses
                           (mapcat #(get @file-setup-registry % []))
                           distinct)
@@ -60,6 +72,7 @@
                           distinct)]
     (str "# generated from " source "\n"
          "require 'rspec'\n"
+         (str/join (map #(str % "\n") helper-reqs))
          (str/join (map #(str % "\n") file-setup))
          "\n"
          "RSpec.describe " (ruby-string feature-name) " do\n"
