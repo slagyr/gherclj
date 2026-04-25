@@ -60,39 +60,58 @@ The `features/` directory is the default; configure a different location with `:
 
 ### 3. Define steps
 
-Steps read like `defn` with a docstring. The template string doubles as documentation and a matching pattern. State is managed through `gherclj.core`, aliased as `g`:
+A step definition is a **single-line routing entry** that maps a Gherkin phrase to a helper function. The macro signature is intentionally constrained:
 
 ```clojure
-(ns myapp.features.steps.auth
-  (:require [gherclj.core :as g :refer [defgiven defwhen defthen]]))
-
-(defgiven create-user "a user {name:string} with role {role:string}"
-  [name role]
-  (g/assoc! :user {:name name :role role}))
-
-(defwhen user-logs-in "the user logs in"
-  []
-  (let [user (g/get :user)
-        status (if (= "admin" (:role user)) 200 401)]
-    (g/assoc! :response {:status status})))
-
-(defthen response-status "the response status should be {status:int}"
-  [status]
-  (g/should= status (g/get-in [:response :status])))
+(defgiven phrase helper-ref [docstring])
+(defwhen  phrase helper-ref [docstring])
+(defthen  phrase helper-ref [docstring])
 ```
 
-Steps accept an optional docstring between the template and arg vector. The docstring is stored in the step registry and surfaces in `gherclj steps` output, helping agents and teammates understand each step's contract without reading source:
+There is no body and no arg vector. Helpers are plain Clojure functions; the macro builds the call mechanically from the matched template args.
+
+Recommended pattern: helpers in their own namespace, step defs in a routing-only namespace. Each step namespace declares its helper module via `helper!`:
 
 ```clojure
-(defgiven setup-crew "the following crew exist:"
-  "Sets :crew atom (test only — does NOT write disk)."
-  [table]
-  (g/assoc! :crew (parse-crew table)))
+;; myapp/features/helpers/auth.clj — real test logic lives here
+(ns myapp.features.helpers.auth
+  (:require [gherclj.core :as g]
+            [myapp.auth :as app]))
 
-(defwhen check-logs "the log has entries matching:"
-  "Polls for up to 2s. Timeout is not configurable."
-  [pattern]
-  (g/assoc! :log-result (poll-logs pattern 2000)))
+(defn create-user! [name role]
+  (g/assoc! :user {:name name :role role}))
+
+(defn user-logs-in! []
+  (let [{:keys [role]} (g/get :user)]
+    (g/assoc! :response {:status (if (= "admin" role) 200 401)})))
+
+(defn response-status [expected]
+  (g/should= expected (g/get-in [:response :status])))
+```
+
+```clojure
+;; myapp/features/steps/auth.clj — pure routing
+(ns myapp.features.steps.auth
+  (:require [gherclj.core :refer [defgiven defwhen defthen helper!]]
+            [myapp.features.helpers.auth]))
+
+(helper! myapp.features.helpers.auth)
+
+(defgiven "a user {name:string} with role {role:string}" auth/create-user!)
+(defwhen  "the user logs in"                              auth/user-logs-in!)
+(defthen  "the response status should be {status:int}"   auth/response-status)
+```
+
+Why the split: the generated spec inlines `(auth/create-user! "alice" "admin")` directly. It depends only on the helper namespace — never on the step namespace. Helpers are normal code, can be unit tested, and look like idiomatic functions in your project's tongue.
+
+Step defs accept an optional docstring as the third arg. The docstring surfaces in `gherclj steps` output:
+
+```clojure
+(defgiven "the following crew exist:" auth/setup-crew!
+  "Sets :crew atom (test only — does NOT write disk).")
+
+(defwhen "the log has entries matching:" auth/check-logs!
+  "Polls for up to 2s. Timeout is not configurable.")
 ```
 
 Template syntax:
@@ -101,23 +120,22 @@ Template syntax:
 - `{name:float}` — float capture (coerced via `parse-double`)
 - `{name}` — word capture (`\S+`)
 
-For edge cases, pass a raw regex instead of a template string:
+For edge cases, pass a raw regex instead of a template string. Capture groups become positional helper args:
 
 ```clojure
-(defthen check-headers #"^the output should contain headers (.+)$"
-  [headers-str]
-  (let [headers (re-seq #"\"([^\"]+)\"" headers-str)]
-    (doseq [[_ h] headers]
-      (g/should (clojure.string/includes? (g/get :output) h)))))
+(defthen #"^the output should contain headers (.+)$" auth/check-headers)
 ```
 
-Steps that accept a Gherkin table receive it as an additional argument:
+Steps that match a Gherkin table or doc-string receive it as a final argument; the helper just declares the extra param:
 
 ```clojure
-(defgiven setup-users "the following users:"
-  [table]
+;; helpers
+(defn setup-users! [table]
   (let [{:keys [headers rows]} table]
     (g/assoc! :users (mapv #(zipmap headers %) rows))))
+
+;; routing
+(defgiven "the following users:" auth/setup-users!)
 ```
 
 ### 4. Configure and run
@@ -158,7 +176,7 @@ Create a `gherclj.edn` at your project root (or on the classpath):
 ```clojure
 {:step-namespaces [myapp.features.steps.auth
                    myapp.features.steps.cart]
- :test-framework  :speclj}
+ :framework       :speclj}
 ```
 
 ```bash
@@ -178,7 +196,7 @@ bb -m gherclj.main --verbose
     {:features-dir    "features"
      :step-namespaces ['myapp.features.steps.auth
                        'myapp.features.steps.cart]
-     :test-framework  :speclj
+     :framework       :speclj
      :verbose         true}))
 ```
 
@@ -226,7 +244,7 @@ gherclj reads configuration from `gherclj.edn` (project root or classpath), with
 | `:edn-dir` | `"target/gherclj/edn"` | Directory for parsed EDN IR files |
 | `:output-dir` | `"target/gherclj/generated"` | Directory for generated spec files |
 | `:step-namespaces` | `[]` | Namespace symbols or glob pattern strings |
-| `:test-framework` | `:speclj` | `:speclj` or `:clojure.test` |
+| `:framework` | `:speclj` | `:speclj`, `:clojure.test`, or `:rspec` |
 | `:verbose` | `false` | Print progress to stdout |
 | `:framework-opts` | `[]` | Options passed to the test runner |
 | `:include-tags` | `[]` | Include scenarios that match any listed tag |
