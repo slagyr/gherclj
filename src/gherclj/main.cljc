@@ -31,8 +31,9 @@
    [nil "--then" "Show Then steps"]
    [nil "--color" "Force ANSI color output"]
    [nil "--no-color" "Disable ANSI color output"]
-       ["-F" "--framework FRAMEWORK" "Test framework: clojure/speclj, clojure/test, bash/testing, javascript/node-test, ruby/rspec, python/pytest, go/testing, java/junit5, typescript/node-test, rust/rustc-test, csharp/xunit (default: clojure/speclj)"
-        :parse-fn keyword]
+   [nil "--ir-edn" "Persist EDN IR files during full pipeline runs"]
+        ["-F" "--framework FRAMEWORK" "Test framework: clojure/speclj, clojure/test, bash/testing, javascript/node-test, ruby/rspec, python/pytest, go/testing, java/junit5, typescript/node-test, rust/rustc-test, csharp/xunit (default: clojure/speclj)"
+         :parse-fn keyword]
    ["-v" "--verbose" "Print progress to stdout"]
    ["-h" "--help" "Show usage"]])
 

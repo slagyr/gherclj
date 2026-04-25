@@ -106,7 +106,7 @@ Feature: Pipeline
     Then the output should contain "Generating target/gherclj/generated/auth_spec.clj from auth.edn"
     And the output should contain "1 scenarios generated"
 
-  @smoke @wip
+  @smoke
   Scenario: Full pipeline does not persist IR by default
     Given a features directory containing:
       | file          |
@@ -122,7 +122,6 @@ Feature: Pipeline
     Then "target/gherclj/generated/auth_spec.clj" should exist
     And "target/gherclj/edn/auth.edn" should not exist
 
-  @wip
   Scenario: ir-edn opts into IR persistence
     Given a features directory containing:
       | file          |
@@ -163,7 +162,6 @@ Feature: Pipeline
       | contains | deftest      |
       | contains | clojure.test |
 
-  @wip
   Scenario: clojure.test generates _test files
     Given a features directory containing:
       | file          |
@@ -252,7 +250,6 @@ Feature: Pipeline
       | contains     | pipeline-spec/check-the-gate  |
       | not-contains | pending                       |
 
-  @wip
   Scenario: WIP scenarios are parsed and generated when unfiltered
     Given a features directory containing:
       | file          |

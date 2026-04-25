@@ -101,6 +101,21 @@
 (defn- log [verbose & args]
   (when verbose (apply println args)))
 
+(defn- emit-spec-for-ir!
+  [config ir source-label]
+  (let [{:keys [output-dir framework verbose]} config
+        out-name (source->spec-filename (:source ir) framework)
+        out-path (str output-dir "/" out-name)
+        spec-str (gen/generate-spec config ir)
+        out-file (io/file out-path)]
+    (io/make-parents out-file)
+    (if spec-str
+      (do
+        (log verbose (str "Generating " out-path " from " source-label))
+        (spit out-path spec-str)
+        (log verbose (str "  " (count (:scenarios ir)) " scenarios generated")))
+      (.delete out-file))))
+
 (defn- normalize-path [path]
   (-> path
       (str/replace "\\" "/")
@@ -237,22 +252,12 @@
           edn-files (->> (file-seq (io/file edn-dir))
                          (filter #(str/ends-with? (.getName %) ".edn"))
                          (sort-by #(str (.toPath %))))]
-      (doseq [f edn-files]
-        (let [parsed-ir (edn/read-string (slurp f))
-              ir (if selected-scenarios
-                   (filter-ir-by-locations parsed-ir selected-scenarios)
-                   parsed-ir)
-              out-name (source->spec-filename (:source ir) framework)
-              out-path (str output-dir "/" out-name)
-              spec-str (gen/generate-spec config ir)
-              out-file (io/file out-path)]
-          (io/make-parents out-file)
-          (if spec-str
-            (do
-              (log verbose (str "Generating " out-path " from " (.getName f)))
-              (spit out-path spec-str)
-              (log verbose (str "  " (count (:scenarios ir)) " scenarios generated")))
-            (.delete out-file)))))))
+       (doseq [f edn-files]
+         (let [parsed-ir (edn/read-string (slurp f))
+               ir (if selected-scenarios
+                    (filter-ir-by-locations parsed-ir selected-scenarios)
+                    parsed-ir)]
+           (emit-spec-for-ir! config ir (.getName f)))))))
 
 (defn run!
   "Run the full pipeline: parse .feature -> .edn -> generated specs.
@@ -264,5 +269,23 @@
      :step-namespaces - vector of namespace symbols containing step definitions
      :framework  - :clojure/speclj or :clojure/test"
   [config]
-  (parse! config)
-  (generate! config))
+  (let [{:keys [features-dir edn-dir step-namespaces framework verbose locations ir-edn]
+         :or {edn-dir "target/gherclj/edn"}} config
+        features (parser/parse-features-dir features-dir)]
+    (ensure-framework-loaded! framework)
+    (let [resolved-steps (load-step-namespaces! step-namespaces)
+          config (assoc config :step-namespaces resolved-steps)
+          selected-scenarios (when (seq locations)
+                               (selected-scenarios-by-source features-dir locations))]
+      (doseq [parsed-ir features]
+        (let [ir (if selected-scenarios
+                   (filter-ir-by-locations parsed-ir selected-scenarios)
+                   parsed-ir)]
+          (when ir-edn
+            (let [edn-name (source->edn-filename (:source ir))
+                  edn-path (str edn-dir "/" edn-name)]
+              (io/make-parents (io/file edn-path))
+              (log verbose (str "Parsing " (:source ir) " -> " edn-path))
+              (write-edn edn-path ir)
+              (log verbose (str "  " (count (:scenarios ir)) " scenarios parsed"))))
+          (emit-spec-for-ir! config ir (:source ir)))))))

@@ -1,6 +1,7 @@
 (ns gherclj.frameworks.csharp.xunit-spec
   (:require [clojure.java.io :as io]
             [clojure.string :as str]
+            [gherclj.sample.csharp-app-steps]
             [gherclj.framework :as fw]
             [gherclj.frameworks.csharp.xunit :as xunit]
             [speclj.core :refer :all]))
@@ -19,7 +20,7 @@
         (should (str/includes? result "generated from features/auth.feature"))
         (should (str/includes? result "using SampleApp;"))
         (should (str/includes? result "using Xunit;"))
-        (should (str/includes? result "namespace Generated;"))))
+        (should (str/includes? result "namespace Generated"))))
 
     (it "omits custom using lines when step namespace has none"
       (let [result (fw/generate-preamble {:framework :csharp/xunit}

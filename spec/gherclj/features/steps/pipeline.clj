@@ -30,6 +30,13 @@
     exclude-tags (assoc :exclude-tags exclude-tags)
     locations (assoc :locations locations)))
 
+(defn- parse-option-value [value]
+  (cond
+    (= "true" value) true
+    (= "false" value) false
+    (str/starts-with? value ":") (keyword (subs value 1))
+    :else value))
+
 (defn- strip-quotes [s]
   (if (and (str/starts-with? s "\"") (str/ends-with? s "\""))
     (subs s 1 (dec (count s)))
@@ -101,7 +108,19 @@
                         (:rows table))
         output (with-out-str
                  (pipeline/run! (pipeline-config :framework framework
-                                                :locations locations)))]
+                                                 :locations locations)))]
+    (g/assoc! :pipeline-output output)))
+
+(defn run-full-pipeline-with-options! [table]
+  (let [{:keys [headers rows]} table
+        options (reduce (fn [acc row]
+                          (let [m (zipmap headers row)
+                                option (keyword (get m "option"))
+                                value (parse-option-value (get m "value"))]
+                            (assoc acc option value)))
+                        {}
+                        rows)
+        output (with-out-str (pipeline/run! (merge (pipeline-config) options)))]
     (g/assoc! :pipeline-output output)))
 
 (defn file-should-exist [path]
@@ -165,6 +184,9 @@
 (defwhen "the full pipeline runs with framework {fw} and tags:" pipeline/run-full-pipeline-with-tags!)
 
 (defwhen "the full pipeline runs with framework {fw} and locations:" pipeline/run-full-pipeline-with-locations!)
+
+(defwhen "the full pipeline runs with options:" pipeline/run-full-pipeline-with-options!
+  "Parses option values from a table: :keywords stay keywords, true/false become booleans, everything else stays string.")
 
 (defthen "{path} should exist" pipeline/file-should-exist)
 

@@ -24,6 +24,10 @@
       (let [result (main/parse-args ["--verbose"])]
         (should= true (get-in result [:options :verbose]))))
 
+    (it "parses --ir-edn flag"
+      (let [result (main/parse-args ["--ir-edn"])]
+        (should= true (get-in result [:options :ir-edn]))))
+
     (it "parses --framework"
       (let [result (main/parse-args ["--framework" "clojure/test"])]
         (should= :clojure/test (get-in result [:options :framework]))))
@@ -136,6 +140,7 @@
         (should (str/includes? text "Gherkin -> test code transducer"))
         (should (str/includes? text "Copyright"))
         (should (str/includes? text "--features-dir"))
+        (should (str/includes? text "--ir-edn"))
         (should (str/includes? text "--help"))))
 
     (it "includes the current version in the banner"

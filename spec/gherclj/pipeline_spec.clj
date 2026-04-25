@@ -99,7 +99,31 @@
 
   (context "run!"
 
-    (it "runs the full pipeline: feature -> edn -> spec"
+    (it "runs the full pipeline: feature -> spec without persisting edn by default"
+      (let [features-dir (tmp "features")
+            edn-dir (tmp "edn")
+            output-dir (tmp "output")
+            feature-file (io/file features-dir "auth.feature")]
+        (io/make-parents feature-file)
+        (spit feature-file feature-content)
+        (try
+           (pipeline/run!
+             {:features-dir features-dir
+              :edn-dir edn-dir
+              :output-dir output-dir
+              :step-namespaces ['gherclj.pipeline-spec]
+              :framework :clojure/speclj})
+
+          (should-not (.exists (io/file edn-dir "auth.edn")))
+
+          (let [content (slurp (io/file output-dir "auth_spec.clj"))]
+            (should (str/includes? content "(describe \"Authentication\""))
+            (should (str/includes? content "(pipeline-spec/summon-hero \"alice\" \"admin\")"))
+            (should (str/includes? content "(pipeline-spec/enter-the-realm)"))
+            (should (str/includes? content "(pipeline-spec/check-the-gate 200)")))
+          (finally (cleanup features-dir edn-dir output-dir)))))
+
+    (it "persists edn when ir-edn is true"
       (let [features-dir (tmp "features")
             edn-dir (tmp "edn")
             output-dir (tmp "output")
@@ -112,15 +136,11 @@
              :edn-dir edn-dir
              :output-dir output-dir
              :step-namespaces ['gherclj.pipeline-spec]
-             :framework :clojure/speclj})
+             :framework :clojure/speclj
+             :ir-edn true})
 
           (should (.exists (io/file edn-dir "auth.edn")))
-
-          (let [content (slurp (io/file output-dir "auth_spec.clj"))]
-            (should (str/includes? content "(describe \"Authentication\""))
-            (should (str/includes? content "(pipeline-spec/summon-hero \"alice\" \"admin\")"))
-            (should (str/includes? content "(pipeline-spec/enter-the-realm)"))
-            (should (str/includes? content "(pipeline-spec/check-the-gate 200)")))
+          (should (.exists (io/file output-dir "auth_spec.clj")))
           (finally (cleanup features-dir edn-dir output-dir)))))
 
     (it "is silent by default"
@@ -159,7 +179,6 @@
                             :harness-ns 'myapp.harness
                             :framework :clojure/speclj
                             :verbose true}))]
-            (should (str/includes? output "Parsing"))
             (should (str/includes? output "Generating")))
           (finally (cleanup features-dir edn-dir output-dir)))))
 
@@ -261,9 +280,15 @@
       (let [features-dir (tmp "features")
             edn-dir (tmp "edn")
             output-dir (tmp "output")
-            feature-file (io/file features-dir "auth.feature")]
+            feature-file (io/file features-dir "auth.feature")
+            js-feature (str "Feature: Authentication\n"
+                            "\n"
+                            "  Scenario: User can log in\n"
+                            "    Given a JavaScript user \"alice\"\n"
+                            "    When the JavaScript user logs in\n"
+                            "    Then the JavaScript response should be 200\n")]
         (io/make-parents feature-file)
-        (spit feature-file feature-content)
+        (spit feature-file js-feature)
         (try
           (pipeline/run!
             {:features-dir features-dir
@@ -426,7 +451,7 @@
                :output-dir output-dir
                :step-namespaces ['gherclj.pipeline-spec]
                :framework :custom-pipeline-fw}))
-          (should (.exists (io/file edn-dir "auth.edn")))
+          (should-not (.exists (io/file edn-dir "auth.edn")))
           (finally (cleanup features-dir edn-dir output-dir)))))
 
     (it "removes stale generated spec files when tags exclude every scenario"

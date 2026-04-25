@@ -39,9 +39,15 @@
 
     (it "applies defaults for exclude-tags"
       (let [result (schema/conform config/pipeline-schema
+                      {:features-dir "features"
+                       :framework :clojure/speclj})]
+        (should= [] (:exclude-tags result))))
+
+    (it "applies default false for ir-edn"
+      (let [result (schema/conform config/pipeline-schema
                      {:features-dir "features"
                       :framework :clojure/speclj})]
-        (should= [] (:exclude-tags result))))
+        (should= false (:ir-edn result))))
 
     (it "coerces verbose to boolean"
       (let [result (schema/conform config/pipeline-schema
@@ -49,6 +55,13 @@
                       :framework :clojure/speclj
                       :verbose nil})]
         (should= false (:verbose result))))
+
+    (it "coerces ir-edn to boolean"
+      (let [result (schema/conform config/pipeline-schema
+                     {:features-dir "features"
+                      :framework :clojure/speclj
+                      :ir-edn true})]
+        (should= true (:ir-edn result))))
 
     (it "rejects invalid test-framework"
       (let [result (schema/conform config/pipeline-schema
