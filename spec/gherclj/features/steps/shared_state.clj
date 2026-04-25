@@ -1,105 +1,124 @@
 (ns gherclj.features.steps.shared-state
-  (:require [gherclj.core :as g :refer [defgiven defwhen defthen]]
-            [clojure.edn :as edn]
-            [clojure.string :as str]))
+  (:require [gherclj.core :as g :refer [defwhen defthen helper!]]
+            [clojure.edn :as edn]))
 
-;; --- When steps ---
+(helper! gherclj.features.steps.shared-state)
 
-(defwhen state-is-reset "the state is reset"
-  []
+(defn- resolve-val [v]
+  (if (symbol? v) (deref (resolve v)) v))
+
+;; --- Helper fns (When) ---
+
+(defn state-is-reset! []
   (g/reset!))
 
-(defwhen assoc-kv "assoc! {args:string}"
-  [args]
+(defn assoc-kv! [args]
   (let [parsed (edn/read-string (str "[" args "]"))
         pairs (partition 2 parsed)]
     (doseq [[k v] pairs]
       (g/assoc! k v))))
 
-(defwhen assoc-in-kv #"^assoc-in! (.+)$"
-  [args]
+(defn assoc-in-kv! [args]
   (let [parsed (edn/read-string (str "[" args "]"))
         ks (first parsed)
         v (second parsed)]
     (g/assoc-in! ks v)))
 
-(defwhen dissoc-k "dissoc! {args:string}"
-  [args]
+(defn dissoc-k! [args]
   (let [parsed (edn/read-string (str "[" args "]"))]
     (apply g/dissoc! parsed)))
 
-(defn- resolve-val [v]
-  (if (symbol? v) (deref (resolve v)) v))
-
-(defwhen swap-fn "swap! {args:string}"
-  [args]
+(defn swap-fn! [args]
   (let [parsed (edn/read-string (str "[" args "]"))
         f (resolve-val (first parsed))
         remaining (mapv resolve-val (rest parsed))]
     (apply g/swap! f remaining)))
 
-(defwhen update-kf "update! {args:string}"
-  [args]
+(defn update-kf! [args]
   (let [parsed (edn/read-string (str "[" args "]"))
         k (first parsed)
         f (resolve-val (second parsed))
         remaining (mapv resolve-val (rest (rest parsed)))]
     (apply g/update! k f remaining)))
 
-(defwhen update-in-kf #"^update-in! (.+)$"
-  [args]
+(defn update-in-kf! [args]
   (let [parsed (edn/read-string (str "[" args "]"))
         ks (first parsed)
         f (resolve-val (second parsed))
         remaining (mapv resolve-val (rest (rest parsed)))]
     (apply g/update-in! ks f remaining)))
 
-(defwhen store-internal-data "gherclj stores internal data"
-  []
+(defn store-internal-data! []
   ;; The :_gherclj key is set by g/reset! — just verify it exists
   nil)
 
-;; --- Then steps ---
+;; --- Helper fns (Then) ---
 
-(defthen state-should-be "the state should be:"
-  [doc-string]
+(defn state-should-be [doc-string]
   (g/should= (edn/read-string doc-string) (g/get)))
 
-(defthen get-should-return "get should return:"
-  [doc-string]
+(defn get-should-return [doc-string]
   (g/should= (edn/read-string doc-string) (g/get)))
 
-(defthen get-key-should-return "get {key} should return {value}"
-  [key value]
+(defn get-key-should-return [key value]
   (let [k (edn/read-string key)
         expected (edn/read-string value)]
     (g/should= expected (g/get k))))
 
-(defthen get-key-default-should-return "get {key} {default} should return {value}"
-  [key default value]
+(defn get-key-default-should-return [key default value]
   (let [k (edn/read-string key)
         d (edn/read-string default)
         expected (edn/read-string value)]
     (g/should= expected (g/get k d))))
 
-(defthen get-in-should-return "get-in {keys:string} should return {value}"
-  [keys value]
+(defn get-in-should-return [keys value]
   (let [ks (edn/read-string keys)
         expected (edn/read-string value)]
     (g/should= expected (g/get-in ks))))
 
-(defthen get-in-should-return-doc "get-in {keys:string} should return:"
-  [keys doc-string]
+(defn get-in-should-return-doc [keys doc-string]
   (let [ks (edn/read-string keys)
         expected (edn/read-string doc-string)]
     (g/should= expected (g/get-in ks))))
 
-(defthen get-key-should-not-be-nil "get {key} should not be nil"
-  [key]
+(defn get-key-should-not-be-nil [key]
   (let [k (edn/read-string key)]
     (g/should-not-be-nil (g/get k))))
 
-(defthen get-key-should-be-nil "get {key} should be nil"
-  [key]
+(defn get-key-should-be-nil [key]
   (let [k (edn/read-string key)]
     (g/should-be-nil (g/get k))))
+
+;; --- Step defs ---
+
+(defwhen "the state is reset" shared-state/state-is-reset!)
+
+(defwhen "assoc! {args:string}" shared-state/assoc-kv!)
+
+(defwhen #"^assoc-in! (.+)$" shared-state/assoc-in-kv!)
+
+(defwhen "dissoc! {args:string}" shared-state/dissoc-k!)
+
+(defwhen "swap! {args:string}" shared-state/swap-fn!)
+
+(defwhen "update! {args:string}" shared-state/update-kf!)
+
+(defwhen #"^update-in! (.+)$" shared-state/update-in-kf!)
+
+(defwhen "gherclj stores internal data" shared-state/store-internal-data!)
+
+(defthen "the state should be:" shared-state/state-should-be)
+
+(defthen "get should return:" shared-state/get-should-return)
+
+(defthen "get {key} should return {value}" shared-state/get-key-should-return)
+
+(defthen "get {key} {default} should return {value}" shared-state/get-key-default-should-return)
+
+(defthen "get-in {keys:string} should return {value}" shared-state/get-in-should-return)
+
+(defthen "get-in {keys:string} should return:" shared-state/get-in-should-return-doc)
+
+(defthen "get {key} should not be nil" shared-state/get-key-should-not-be-nil)
+
+(defthen "get {key} should be nil" shared-state/get-key-should-be-nil)

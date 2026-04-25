@@ -51,12 +51,10 @@
 
   (context "wrap-scenario"
 
-    (it "wraps steps in a deftest with slugified name"
+    (it "wraps pre-rendered step strings in a deftest with slugified name"
       (let [scenario {:scenario "User Can Log In"
-                      :steps [{:type :given :text "a user exists" :classified? true
-                               :ns 'myapp.steps :name "summon-hero" :args []}
-                              {:type :when :text "they log in" :classified? true
-                               :ns 'myapp.steps :name "log-in" :args []}]}
+                      :rendered-steps ["(steps/summon-hero)"
+                                       "(steps/log-in)"]}
             result (fw/wrap-scenario {:framework :clojure.test} scenario nil)]
         (should (str/includes? result "(deftest user-can-log-in"))
         (should (str/includes? result "(testing \"User Can Log In\""))
@@ -64,19 +62,16 @@
         (should (str/includes? result "steps/log-in"))))
 
     (it "includes background steps before scenario steps"
-      (let [background {:steps [{:type :given :text "db is clean" :classified? true
-                                 :ns 'myapp.steps :name "clean-db" :args []}]}
-            scenario {:scenario "User can log in"
-                      :steps [{:type :when :text "they log in" :classified? true
-                               :ns 'myapp.steps :name "log-in" :args []}]}
+      (let [background {:rendered-steps ["(steps/clean-db)"]}
+            scenario   {:scenario "User can log in"
+                        :rendered-steps ["(steps/log-in)"]}
             result (fw/wrap-scenario {:framework :clojure.test} scenario background)]
         (should (str/includes? result "steps/clean-db"))
         (should (str/includes? result "steps/log-in"))))
 
     (it "slugifies scenario names with special characters"
       (let [scenario {:scenario "User: Login & Logout!"
-                      :steps [{:type :given :text "setup" :classified? true
-                               :ns 'myapp.steps :name "setup" :args []}]}
+                      :rendered-steps ["(steps/setup)"]}
             result (fw/wrap-scenario {:framework :clojure.test} scenario nil)]
         (should (str/includes? result "(deftest user-login-logout")))))
 

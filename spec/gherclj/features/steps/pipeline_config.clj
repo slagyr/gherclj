@@ -1,13 +1,16 @@
 (ns gherclj.features.steps.pipeline-config
-  (:require [gherclj.core :as g :refer [defgiven defwhen defthen]]
-            [gherclj.config :as config]
-            [clojure.edn :as edn]))
+  (:require [gherclj.core :as g :refer [defgiven defwhen helper!]]
+            [gherclj.config :as config]))
 
-(defgiven empty-config "an empty config"
-  []
+(helper! gherclj.features.steps.pipeline-config)
+
+(defn empty-config! []
   (g/assoc! :test-config {}))
 
-(defwhen resolve-config "the config is resolved"
-  []
+(defn resolve-config! []
   (let [result (config/resolve-config (g/get :test-config))]
     (g/assoc! :loaded-config result)))
+
+(defgiven "an empty config" pipeline-config/empty-config!)
+
+(defwhen "the config is resolved" pipeline-config/resolve-config!)

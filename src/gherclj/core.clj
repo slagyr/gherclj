@@ -102,15 +102,56 @@
 
 (defonce ^:private registry (atom {}))
 
+;; --- Helper imports ---
+;; Step namespaces declare which helper modules they depend on via (helper! ...).
+;; Generator collects these for namespaces in scope and emits language-appropriate
+;; imports/requires in the generated spec preamble.
+
+(defonce ^:private helper-imports (atom {}))
+
+(defn register-helper-import!
+  "Register a helper module dependency for a step namespace.
+   `module` is opaque to gherclj.core — its shape is interpreted by the
+   active framework adapter (e.g. a symbol for Clojure, a path string for Ruby)."
+  [ns-sym module]
+  (clojure.core/swap! helper-imports clojure.core/update ns-sym (fnil conj []) module)
+  nil)
+
+(defn helper-imports-in-ns
+  "Return helper imports declared by the given step namespace."
+  [ns-sym]
+  (clojure.core/get @helper-imports ns-sym []))
+
+(defmacro helper!
+  "Declare that this step namespace uses helpers from the given module.
+   The active framework adapter decides how to translate this into the
+   generated spec's import statement."
+  [module]
+  `(register-helper-import! '~(ns-name *ns*) (quote ~module)))
+
+(defn- helper-ref-name
+  "Extract the bare name part from a helper-ref symbol or string."
+  [helper-ref]
+  (cond
+    (symbol? helper-ref) (name helper-ref)
+    (string? helper-ref) (let [parts (str/split helper-ref #"\.|/|::")]
+                           (last parts))
+    :else (str helper-ref)))
+
 (defn register-step!
-  "Register a step definition. Called by the defgiven/defwhen/defthen macros."
-  [ns-sym step-type step-name template-or-regex compiled {:keys [doc file line]}]
-  (let [entry (merge {:name (name step-name)
+  "Register a step definition. Called by the defgiven/defwhen/defthen macros.
+   `renderer` is a function that, given the matched step args (and optional
+   table/doc-string appended), returns the form (or string) to inline into
+   the generated spec."
+  [ns-sym step-type helper-ref template-or-regex compiled {:keys [doc file line]} renderer]
+  (let [entry (merge {:name (helper-ref-name helper-ref)
+                      :helper-ref helper-ref
                       :type step-type
                       :ns ns-sym
                       :doc doc
                       :file file
-                      :line line}
+                      :line line
+                      :renderer renderer}
                      (if (instance? java.util.regex.Pattern template-or-regex)
                        {:regex template-or-regex}
                        {:template template-or-regex
@@ -153,47 +194,36 @@
 
 ;; --- Macros ---
 
-(defmacro defstep* [step-type step-name template-or-regex docstring args source & body]
-  (let [ns-sym (ns-name *ns*)
-        fn-doc (or docstring (when (string? template-or-regex) template-or-regex))]
-    `(do
-       (defn ~step-name ~@(cond-> [] fn-doc (conj fn-doc) true (conj args) true (into body)))
-       (register-step! '~ns-sym ~step-type '~step-name
-                        ~template-or-regex
-                        ~(when (string? template-or-regex)
-                           `(template/compile-template ~template-or-regex))
-                        ~(assoc source :doc docstring)))))
+(defmacro defstep*
+  "Register a step. Body of the generated spec is a single helper invocation
+   built from the step's matched args plus optional table/doc-string."
+  [step-type template helper-ref docstring]
+  `(register-step!
+     '~(ns-name *ns*) ~step-type '~helper-ref
+     ~template
+     ~(when (string? template) `(template/compile-template ~template))
+     {:file ~*file* :line ~(-> &form meta :line) :doc ~docstring}
+     (fn [& args#]
+       (clojure.core/cons '~helper-ref args#))))
 
 (defmacro defgiven
-  "Define a Given step. Reads like defn with a docstring.
+  "Define a Given step. Step bodies are constrained to a single helper reference;
+   the generated spec inlines `(helper-ref param1 param2 ...)` from the matched args.
 
-   (defgiven add-project \"a project \\\"{slug}\\\" with timeout {timeout:int}\"
-     [slug timeout]
-     (h/add-project slug {:timeout timeout}))"
-  [step-name template-or-regex & definition]
-  (let [[docstring args body] (if (vector? (first definition))
-                                [nil (first definition) (rest definition)]
-                                [(first definition) (second definition) (nnext definition)])]
-    `(defstep* :given ~step-name ~template-or-regex ~docstring ~args
-       {:file ~*file* :line ~(-> &form meta :line)}
-       ~@body)))
+   (defgiven \"a user {name:string}\" myapp.helpers/create-user!)
+   (defgiven \"a user {name:string}\" myapp.helpers/create-user! \"docstring\")"
+  ([template helper-ref] `(defgiven ~template ~helper-ref nil))
+  ([template helper-ref docstring]
+   `(defstep* :given ~template ~helper-ref ~docstring)))
 
 (defmacro defwhen
-  "Define a When step."
-  [step-name template-or-regex & definition]
-  (let [[docstring args body] (if (vector? (first definition))
-                                [nil (first definition) (rest definition)]
-                                [(first definition) (second definition) (nnext definition)])]
-    `(defstep* :when ~step-name ~template-or-regex ~docstring ~args
-       {:file ~*file* :line ~(-> &form meta :line)}
-       ~@body)))
+  "Define a When step. See `defgiven` for the constrained signature."
+  ([template helper-ref] `(defwhen ~template ~helper-ref nil))
+  ([template helper-ref docstring]
+   `(defstep* :when ~template ~helper-ref ~docstring)))
 
 (defmacro defthen
-  "Define a Then step."
-  [step-name template-or-regex & definition]
-  (let [[docstring args body] (if (vector? (first definition))
-                                [nil (first definition) (rest definition)]
-                                [(first definition) (second definition) (nnext definition)])]
-    `(defstep* :then ~step-name ~template-or-regex ~docstring ~args
-       {:file ~*file* :line ~(-> &form meta :line)}
-       ~@body)))
+  "Define a Then step. See `defgiven` for the constrained signature."
+  ([template helper-ref] `(defthen ~template ~helper-ref nil))
+  ([template helper-ref docstring]
+   `(defstep* :then ~template ~helper-ref ~docstring)))

@@ -52,23 +52,19 @@
 
   (context "wrap-scenario"
 
-    (it "wraps steps in an it block with the scenario title"
+    (it "wraps pre-rendered step strings in an it block"
       (let [scenario {:scenario "User can log in"
-                      :steps [{:type :given :text "a user exists" :classified? true
-                               :ns 'myapp.steps :name "summon-hero" :args []}
-                              {:type :when :text "they log in" :classified? true
-                               :ns 'myapp.steps :name "log-in" :args []}]}
+                      :rendered-steps ["(steps/summon-hero)"
+                                       "(steps/log-in)"]}
             result (fw/wrap-scenario {:framework :speclj} scenario nil)]
         (should (str/includes? result "(it \"User can log in\""))
         (should (str/includes? result "steps/summon-hero"))
         (should (str/includes? result "steps/log-in"))))
 
     (it "includes background steps before scenario steps"
-      (let [background {:steps [{:type :given :text "db is clean" :classified? true
-                                 :ns 'myapp.steps :name "clean-db" :args []}]}
-            scenario {:scenario "User can log in"
-                      :steps [{:type :when :text "they log in" :classified? true
-                               :ns 'myapp.steps :name "log-in" :args []}]}
+      (let [background {:rendered-steps ["(steps/clean-db)"]}
+            scenario   {:scenario "User can log in"
+                        :rendered-steps ["(steps/log-in)"]}
             result (fw/wrap-scenario {:framework :speclj} scenario background)]
         (should (str/includes? result "steps/clean-db"))
         (should (str/includes? result "steps/log-in")))))

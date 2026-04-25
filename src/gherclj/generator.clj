@@ -28,28 +28,23 @@
   [ns-sym]
   (last (str/split (str ns-sym) #"\.")))
 
-(defn generate-step-call
-  "Generate a string of an aliased function call for a classified step."
-  [{:keys [ns name args]}]
-  (let [fn-sym (str (ns->alias ns) "/" name)
-        args-str (str/join " " (map pr-str args))]
-    (if (seq args)
-      (str "(" fn-sym " " args-str ")")
-      (str "(" fn-sym ")"))))
+(defn call-step-renderer
+  "Invoke a classified step's renderer with its args (plus optional table or
+   doc-string appended) and return whatever the renderer produces — typically
+   a Clojure form for Clojure targets, or a target-language string."
+  [{:keys [renderer args table doc-string]}]
+  (let [all-args (cond-> (vec args)
+                   table (conj table)
+                   doc-string (conj doc-string))]
+    (apply renderer all-args)))
 
-(defn generate-step-call-with-extras
-  "Generate a function call, appending table or doc-string as the last arg if present."
-  [{:keys [ns name args table doc-string] :as step}]
-  (if (or table doc-string)
-    (let [fn-sym (str (ns->alias ns) "/" name)
-          extra (if table (pr-str table) (pr-str doc-string))
-          all-args (concat (map pr-str args) [extra])
-          args-str (str/join " " all-args)]
-      (str "(" fn-sym " " args-str ")"))
-    (generate-step-call step)))
+(defn code->string
+  "Stringify a step renderer's return value. Forms get pr-str'd; strings pass through."
+  [result]
+  (if (string? result) result (pr-str result)))
 
 (defmethod fw/render-step :default [_config step]
-  (generate-step-call-with-extras step))
+  (code->string (call-step-renderer step)))
 
 (defn- render-background [config background]
   (when background
@@ -60,15 +55,19 @@
 (defn- render-scenario [config scenario]
   (assoc scenario :rendered-steps (mapv #(fw/render-step config %) (:steps scenario))))
 
-(defn- step-ns-requires
-  "Compute the set of step namespace symbols used in a feature's background and scenarios."
+(defn- step-ns-imports
+  "Collect helper-import declarations from the step namespaces used in a feature."
   [steps background scenarios]
-  (->> (concat (when background (:steps background))
-               (mapcat :steps scenarios))
-       (keep (fn [node]
-               (when-let [classified (core/classify-step steps (:text node))]
-                 (:ns classified))))
-        (into #{})))
+  (let [used-nses (->> (concat (when background (:steps background))
+                               (mapcat :steps scenarios))
+                       (keep (fn [node]
+                               (when-let [classified (core/classify-step steps (:text node))]
+                                 (:ns classified))))
+                       (into #{}))]
+    (->> used-nses
+         (mapcat core/helper-imports-in-ns)
+         distinct
+         vec)))
 
 (defn source->ns-name
   "Convert a feature source path to a namespace name."
@@ -95,9 +94,9 @@
         classified-scenarios (mapv #(classify-scenario steps %) filtered)]
     (when (seq classified-scenarios)
       (let [classified-bg (when background (classify-scenario steps background))
-            step-ns-syms (step-ns-requires steps classified-bg filtered)
+            helper-imports (step-ns-imports steps classified-bg filtered)
             rendered-bg (render-background config classified-bg)
-            preamble (fw/generate-preamble config source step-ns-syms)
+            preamble (fw/generate-preamble config source helper-imports)
             scenario-blocks (->> classified-scenarios
                                  (map (fn [scenario]
                                         (if (all-classified? scenario)

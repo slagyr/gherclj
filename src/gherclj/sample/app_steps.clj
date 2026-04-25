@@ -1,14 +1,12 @@
 (ns gherclj.sample.app-steps
-  (:require [gherclj.core :refer [defgiven defwhen defthen]]))
+  (:require [gherclj.core :refer [defgiven defwhen defthen helper!]]))
 
-(defgiven create-adventurer "a user {name:string}"
-  [name]
-  :created)
+(helper! gherclj.sample.app-steps)
 
-(defwhen enter-the-realm "the user logs in"
-  []
-  :logged-in)
+(defn create-adventurer [name] :created)
+(defn enter-the-realm [] :logged-in)
+(defn verify-outcome [status] :checked)
 
-(defthen verify-outcome "the response should be {status:int}"
-  [status]
-  :checked)
+(defgiven "a user {name:string}" app-steps/create-adventurer)
+(defwhen "the user logs in" app-steps/enter-the-realm)
+(defthen "the response should be {status:int}" app-steps/verify-outcome)
