@@ -53,6 +53,7 @@ Feature: Config file loading
        :step-namespaces []
        :framework :clojure/speclj
        :verbose false
+       :ir-edn false
        :framework-opts []
        :include-tags []
        :exclude-tags []}

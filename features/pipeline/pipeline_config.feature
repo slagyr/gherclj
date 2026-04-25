@@ -15,6 +15,7 @@ Feature: Pipeline configuration
        :step-namespaces []
        :framework :clojure/speclj
        :verbose false
+       :ir-edn false
        :framework-opts []
        :include-tags []
        :exclude-tags []}
@@ -36,6 +37,7 @@ Feature: Pipeline configuration
        :step-namespaces []
        :framework :clojure/test
        :verbose true
+       :ir-edn false
        :framework-opts []
        :include-tags []
        :exclude-tags []}
