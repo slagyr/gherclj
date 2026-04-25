@@ -102,7 +102,10 @@
 
 (defmethod fw/run-specs :rspec
   [config]
-  (let [{:keys [exit out err]} (shell/sh "bundle" "exec" "rspec" "--tty" (or (:output-dir config) "target/gherclj/generated"))]
+  (let [output-dir (or (:output-dir config) "target/gherclj/generated")
+        opts       (or (:framework-opts config) [])
+        cmd        (concat ["bundle" "exec" "rspec" "--tty"] opts [output-dir])
+        {:keys [exit out err]} (apply shell/sh cmd)]
     (when (seq out)
       (print out))
     (when (seq err)
