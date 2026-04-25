@@ -106,8 +106,8 @@ Feature: Pipeline
     Then the output should contain "Generating target/gherclj/generated/auth_spec.clj from auth.edn"
     And the output should contain "1 scenarios generated"
 
-  @smoke
-  Scenario: Full pipeline runs both stages
+  @smoke @wip
+  Scenario: Full pipeline does not persist IR by default
     Given a features directory containing:
       | file          |
       | auth.feature  |
@@ -119,6 +119,25 @@ Feature: Pipeline
           Given a valid user
       """
     When the full pipeline runs with framework :clojure/speclj
+    Then "target/gherclj/generated/auth_spec.clj" should exist
+    And "target/gherclj/edn/auth.edn" should not exist
+
+  @wip
+  Scenario: ir-edn opts into IR persistence
+    Given a features directory containing:
+      | file          |
+      | auth.feature  |
+    And the feature "auth.feature" contains:
+      """
+      Feature: Auth
+
+        Scenario: Login
+          Given a valid user
+      """
+    When the full pipeline runs with options:
+      | option    | value           |
+      | framework | :clojure/speclj |
+      | ir-edn    | true            |
     Then "target/gherclj/edn/auth.edn" should exist
     And "target/gherclj/generated/auth_spec.clj" should exist
 
@@ -144,6 +163,7 @@ Feature: Pipeline
       | contains | deftest      |
       | contains | clojure.test |
 
+  @wip
   Scenario: clojure.test generates _test files
     Given a features directory containing:
       | file          |
@@ -156,8 +176,8 @@ Feature: Pipeline
           Given a valid user
       """
     When the full pipeline runs with framework :clojure/test
-    Then "target/gherclj/edn/auth.edn" should exist
-    And "target/gherclj/generated/auth_test.clj" should exist
+    Then "target/gherclj/generated/auth_test.clj" should exist
+    And "target/gherclj/edn/auth.edn" should not exist
 
   Scenario: Generated speclj output can be verified with grouped assertions
     Given a features directory containing:
@@ -232,6 +252,7 @@ Feature: Pipeline
       | contains     | pipeline-spec/check-the-gate  |
       | not-contains | pending                       |
 
+  @wip
   Scenario: WIP scenarios are parsed and generated when unfiltered
     Given a features directory containing:
       | file          |
@@ -248,8 +269,7 @@ Feature: Pipeline
           Given a valid user
       """
     When the full pipeline runs with framework :clojure/speclj
-    Then "target/gherclj/edn/auth.edn" should contain IR with 2 scenarios
-    And "target/gherclj/generated/auth_spec.clj" should exist and:
+    Then "target/gherclj/generated/auth_spec.clj" should exist and:
       | check    | value     |
       | contains | Ready     |
       | contains | Not ready |
