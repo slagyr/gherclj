@@ -1,10 +1,10 @@
 (ns gherclj.sample.rspec-app-steps
-  "Sample step namespace targeting :rspec generation. Used as a fixture for
+  "Sample step namespace targeting :ruby/rspec generation. Used as a fixture for
    the rspec_generation feature. Distinct step phrases (Ruby user, etc.)
    so this namespace can be loaded alongside gherclj.sample.app-steps without
    ambiguity."
   (:require [gherclj.core :refer [defgiven defwhen defthen helper!]]
-            [gherclj.frameworks.rspec :as rspec]))
+            [gherclj.frameworks.ruby.rspec :as rspec]))
 
 (helper! "lib/sample_app")
 

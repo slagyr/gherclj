@@ -112,7 +112,7 @@
              :edn-dir edn-dir
              :output-dir output-dir
              :step-namespaces ['gherclj.pipeline-spec]
-             :framework :speclj})
+             :framework :clojure/speclj})
 
           (should (.exists (io/file edn-dir "auth.edn")))
 
@@ -138,7 +138,7 @@
                             :output-dir output-dir
                             :step-namespaces ['gherclj.pipeline-spec]
                             :harness-ns 'myapp.harness
-                            :framework :speclj}))]
+                            :framework :clojure/speclj}))]
             (should= "" output))
           (finally (cleanup features-dir edn-dir output-dir)))))
 
@@ -157,7 +157,7 @@
                             :output-dir output-dir
                             :step-namespaces ['gherclj.pipeline-spec]
                             :harness-ns 'myapp.harness
-                            :framework :speclj
+                            :framework :clojure/speclj
                             :verbose true}))]
             (should (str/includes? output "Parsing"))
             (should (str/includes? output "Generating")))
@@ -181,7 +181,7 @@
              :edn-dir edn-dir
              :output-dir output-dir
              :step-namespaces ["gherclj.sample.*"]
-             :framework :speclj})
+             :framework :clojure/speclj})
 
           (should (.exists (io/file output-dir "auth_spec.clj")))
           (let [content (slurp (io/file output-dir "auth_spec.clj"))]
@@ -201,7 +201,7 @@
              :edn-dir edn-dir
              :output-dir output-dir
              :step-namespaces ['gherclj.pipeline-spec]
-             :framework :clojure.test})
+             :framework :clojure/test})
 
           (should (.exists (io/file output-dir "auth_test.clj")))
           (let [content (slurp (io/file output-dir "auth_test.clj"))]
@@ -229,7 +229,7 @@
             {:edn-dir edn-dir
              :output-dir output-dir
              :step-namespaces ['gherclj.pipeline-spec]
-             :framework :speclj})
+             :framework :clojure/speclj})
           (let [out-file (io/file output-dir "auth_spec.clj")]
             (should (.exists out-file))
             (should (str/includes? (slurp out-file) "Authentication")))
@@ -256,7 +256,7 @@
                            {:edn-dir edn-dir
                             :output-dir output-dir
                             :step-namespaces ['gherclj.pipeline-spec]
-                            :framework :speclj
+                            :framework :clojure/speclj
                             :verbose true}))]
             (should (str/includes? output "Generating")))
           (finally (cleanup edn-dir output-dir)))))
@@ -303,7 +303,7 @@
              :output-dir output-dir
              :step-namespaces ['gherclj.pipeline-spec]
              :exclude-tags ["slow"]
-             :framework :speclj})
+             :framework :clojure/speclj})
 
           (should-not (.exists spec-file))
           (finally (cleanup features-dir edn-dir output-dir)))))
@@ -333,7 +333,7 @@
              :output-dir output-dir
              :step-namespaces ['gherclj.pipeline-spec]
              :locations [{:source "adventure.feature" :line 4}]
-             :framework :speclj})
+             :framework :clojure/speclj})
 
           (let [content (slurp (io/file output-dir "adventure_spec.clj"))]
             (should (str/includes? content "Wake the dragon"))
@@ -363,7 +363,7 @@
              :output-dir output-dir
              :step-namespaces ['gherclj.pipeline-spec]
              :locations [{:source "adventure.feature" :line 8}]
-             :framework :speclj})
+             :framework :clojure/speclj})
 
           (let [content (slurp (io/file output-dir "adventure_spec.clj"))]
             (should-not (str/includes? content "Wake the dragon"))
@@ -389,7 +389,7 @@
                              :output-dir output-dir
                              :step-namespaces ['gherclj.pipeline-spec]
                              :locations [{:source "adventure.feature" :line 99}]
-                             :framework :speclj})
+                             :framework :clojure/speclj})
                           nil
                           (catch RuntimeException e
                             (.getMessage e)))]
@@ -426,7 +426,7 @@
              :output-dir output-dir
              :step-namespaces ['gherclj.pipeline-spec]
              :locations [{:source "adventure.feature" :line 12}]
-             :framework :speclj})
+             :framework :clojure/speclj})
 
           (let [content (slurp (io/file output-dir "adventure_spec.clj"))]
             (should (str/includes? content "Real target"))
@@ -454,7 +454,7 @@
              :output-dir output-dir
              :step-namespaces ['gherclj.pipeline-spec]
              :locations [{:source "adventure.feature"}]
-             :framework :speclj})
+             :framework :clojure/speclj})
 
           (let [content (slurp (io/file output-dir "adventure_spec.clj"))]
             (should (str/includes? content "Wake the dragon"))
@@ -483,7 +483,7 @@
              :step-namespaces ['gherclj.pipeline-spec]
              :locations [{:source "adventure.feature" :line 3}
                          {:source "adventure.feature"}]
-             :framework :speclj})
+             :framework :clojure/speclj})
 
           (let [content (slurp (io/file output-dir "adventure_spec.clj"))]
             (should (str/includes? content "Wake the dragon"))
@@ -521,7 +521,7 @@
              :step-namespaces ['gherclj.pipeline-spec]
              :locations [{:source "bare.feature"}
                          {:source "line.feature" :line 3}]
-             :framework :speclj})
+             :framework :clojure/speclj})
 
           (let [bare-content (slurp (io/file output-dir "bare_spec.clj"))
                 line-content (slurp (io/file output-dir "line_spec.clj"))]
@@ -544,7 +544,7 @@
                              :output-dir output-dir
                              :step-namespaces ['gherclj.pipeline-spec]
                              :locations [{:source "ghost.feature"}]
-                             :framework :speclj})
+                             :framework :clojure/speclj})
                           nil
                           (catch RuntimeException e
                             (.getMessage e)))]

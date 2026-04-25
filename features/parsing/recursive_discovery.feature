@@ -55,7 +55,7 @@ Feature: Recursive feature discovery
         Scenario: Login
           Given a valid user
       """
-    When the full pipeline runs with framework :speclj
+    When the full pipeline runs with framework :clojure/speclj
     Then "target/gherclj/generated/session/keys_spec.clj" should exist and:
       | check    | value                 |
       | contains | (ns session.keys-spec |
@@ -82,7 +82,7 @@ Feature: Recursive feature discovery
         Scenario: Help flag
           Given a valid user
       """
-    When the full pipeline runs with framework :speclj
+    When the full pipeline runs with framework :clojure/speclj
     Then "target/gherclj/generated/session/keys_spec.clj" should exist
     And "target/gherclj/generated/cli/cli_spec.clj" should exist
 
@@ -105,7 +105,7 @@ Feature: Recursive feature discovery
         Scenario: Login
           Given a valid user
       """
-    When the full pipeline runs with framework :clojure.test
+    When the full pipeline runs with framework :clojure/test
     Then "target/gherclj/generated/session/keys_test.clj" should exist and:
       | check    | value                 |
       | contains | (ns session.keys-test |

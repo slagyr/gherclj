@@ -1,4 +1,4 @@
-(ns gherclj.frameworks.rspec
+(ns gherclj.frameworks.ruby.rspec
   (:require [clojure.java.shell :as shell]
             [clojure.string :as str]
             [gherclj.framework :as fw]))
@@ -41,7 +41,7 @@
       (str (ruby-method name) "(" args-str ")")
       (ruby-method name))))
 
-(defmethod fw/render-step :rspec [_config step]
+(defmethod fw/render-step :ruby/rspec [_config step]
   (generate-step-call step))
 
 (defn- ruby-require-line
@@ -52,7 +52,7 @@
     (string? import-val) (str "require File.expand_path('" import-val "', Dir.pwd)")
     :else                (str "require " (pr-str (str import-val)))))
 
-(defmethod fw/generate-preamble :rspec
+(defmethod fw/generate-preamble :ruby/rspec
   [_config source used-nses]
   (let [feature-name (-> source
                          (str/split #"/")
@@ -79,11 +79,11 @@
          (when (seq desc-setup)
            (str (str/join "\n" (map #(str "  " %) desc-setup)) "\n")))))
 
-(defmethod fw/wrap-feature :rspec
+(defmethod fw/wrap-feature :ruby/rspec
   [_config _feature-name scenario-blocks]
   (str "\n" scenario-blocks "\nend\n"))
 
-(defmethod fw/wrap-scenario :rspec
+(defmethod fw/wrap-scenario :ruby/rspec
   [_config scenario background]
   (let [bg-calls   (:rendered-steps background)
         step-calls (:rendered-steps scenario)
@@ -94,13 +94,13 @@
          body "\n"
          "  end")))
 
-(defmethod fw/wrap-pending :rspec
+(defmethod fw/wrap-pending :ruby/rspec
   [_config scenario _background]
   (str "  it " (ruby-string (:scenario scenario)) " do\n"
        "    skip 'not yet implemented'\n"
        "  end"))
 
-(defmethod fw/run-specs :rspec
+(defmethod fw/run-specs :ruby/rspec
   [config]
   (let [output-dir (or (:output-dir config) "target/gherclj/generated")
         opts       (or (:framework-opts config) [])

@@ -1,6 +1,6 @@
 (ns gherclj.features.steps.cli
   (:require [gherclj.core :as g :refer [defgiven defwhen defthen helper!]]
-            [gherclj.frameworks.speclj :as speclj-fw]
+            [gherclj.frameworks.clojure.speclj :as speclj-fw]
             [gherclj.main :as main]
             [gherclj.config :as config]
             [clojure.edn :as edn]

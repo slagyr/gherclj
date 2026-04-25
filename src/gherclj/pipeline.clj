@@ -10,13 +10,15 @@
             [gherclj.discovery :as discovery]))
 
 (defn- ensure-framework-loaded!
-  "Load the framework namespace for the given framework keyword."
+  "Load the framework namespace for the given framework keyword.
+   The keyword is expected to be language-namespaced (e.g. :clojure/speclj,
+   :ruby/rspec); the corresponding namespace is gherclj.frameworks.<lang>.<name>."
   [framework]
-  (let [fw-ns (case framework
-                :speclj 'gherclj.frameworks.speclj
-                :clojure.test 'gherclj.frameworks.clojure-test
-                :rspec 'gherclj.frameworks.rspec
-                (symbol (str "gherclj.frameworks." (name framework))))]
+  (let [lang (namespace framework)
+        nm   (name framework)
+        fw-ns (if lang
+                (symbol (str "gherclj.frameworks." lang "." nm))
+                (symbol (str "gherclj.frameworks." nm)))]
     (require fw-ns)))
 
 (defn- scan-namespaces
@@ -68,8 +70,8 @@
 
 (defn- source->spec-filename [source framework]
   (let [suffix (case framework
-                 :clojure.test "_test.clj"
-                 :rspec "_spec.rb"
+                 :clojure/test "_test.clj"
+                 :ruby/rspec "_spec.rb"
                  "_spec.clj")]
     (-> source
         (str/replace #"\.(feature|edn)$" "")
@@ -203,7 +205,7 @@
      :edn-dir         - directory containing .edn IR files (default: target/gherclj/edn)
      :output-dir      - directory to write generated specs (default: target/gherclj/generated)
      :step-namespaces - vector of namespace symbols containing step definitions
-     :framework  - :speclj or :clojure.test"
+     :framework  - :clojure/speclj or :clojure/test"
   [config]
   (let [{:keys [edn-dir output-dir step-namespaces framework verbose locations features-dir]
           :or {edn-dir "target/gherclj/edn"
@@ -242,7 +244,7 @@
      :edn-dir         - directory to write .edn IR files (default: target/gherclj/edn)
      :output-dir      - directory to write generated specs (default: target/gherclj/generated)
      :step-namespaces - vector of namespace symbols containing step definitions
-     :framework  - :speclj or :clojure.test"
+     :framework  - :clojure/speclj or :clojure/test"
   [config]
   (parse! config)
   (generate! config))

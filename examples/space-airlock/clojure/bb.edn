@@ -6,4 +6,4 @@
              :requires ([gherclj.main :as main])
              :task (main/-main "-f" "../features"
                                "-s" "space-airlock.features.steps.airlock"
-                               "-F" "speclj")}}}
+                               "-F" "clojure/speclj")}}}

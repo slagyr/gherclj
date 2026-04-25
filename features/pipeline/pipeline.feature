@@ -52,7 +52,7 @@ Feature: Pipeline
         Scenario: Login
           Given a user
       """
-    When the full pipeline runs with framework :speclj
+    When the full pipeline runs with framework :clojure/speclj
     Then the output should be empty
 
   Scenario: Parse stage reports progress when verbose
@@ -85,7 +85,7 @@ Feature: Pipeline
           Given a valid user
       """
     And the parse stage has run
-    When the generate stage runs with framework :speclj
+    When the generate stage runs with framework :clojure/speclj
     Then "target/gherclj/generated/auth_spec.clj" should exist and:
       | check    | value     |
       | contains | (describe |
@@ -102,7 +102,7 @@ Feature: Pipeline
           Given a valid user
       """
     And the parse stage has run
-    When the generate stage runs with framework :speclj and :verbose
+    When the generate stage runs with framework :clojure/speclj and :verbose
     Then the output should contain "Generating target/gherclj/generated/auth_spec.clj from auth.edn"
     And the output should contain "1 scenarios generated"
 
@@ -118,7 +118,7 @@ Feature: Pipeline
         Scenario: Login
           Given a valid user
       """
-    When the full pipeline runs with framework :speclj
+    When the full pipeline runs with framework :clojure/speclj
     Then "target/gherclj/edn/auth.edn" should exist
     And "target/gherclj/generated/auth_spec.clj" should exist
 
@@ -133,12 +133,12 @@ Feature: Pipeline
         Scenario: Login
           Given a valid user
       """
-    When the full pipeline runs with framework :speclj
+    When the full pipeline runs with framework :clojure/speclj
     Then "target/gherclj/generated/auth_spec.clj" should exist and:
       | check    | value       |
       | contains | describe    |
       | contains | speclj.core |
-    When the full pipeline runs with framework :clojure.test
+    When the full pipeline runs with framework :clojure/test
     Then "target/gherclj/generated/auth_test.clj" should exist and:
       | check    | value        |
       | contains | deftest      |
@@ -155,7 +155,7 @@ Feature: Pipeline
         Scenario: Login
           Given a valid user
       """
-    When the full pipeline runs with framework :clojure.test
+    When the full pipeline runs with framework :clojure/test
     Then "target/gherclj/edn/auth.edn" should exist
     And "target/gherclj/generated/auth_test.clj" should exist
 
@@ -173,7 +173,7 @@ Feature: Pipeline
           Then the response status should be 200
       """
     And step namespaces include pattern "gherclj.pipeline-*"
-    When the full pipeline runs with framework :speclj
+    When the full pipeline runs with framework :clojure/speclj
     Then "target/gherclj/generated/auth_spec.clj" should exist and:
       | check        | value                          |
       | contains     | describe "Auth"              |
@@ -202,7 +202,7 @@ Feature: Pipeline
           When the user logs in
           Then the response should be 200
       """
-    When the full pipeline runs with framework :speclj and tags:
+    When the full pipeline runs with framework :clojure/speclj and tags:
       | tag   |
       | smoke |
     Then "target/gherclj/generated/logging_spec.clj" should exist and:
@@ -224,7 +224,7 @@ Feature: Pipeline
           Then the response status should be 200
       """
     And step namespaces include pattern "gherclj.pipeline-*"
-    When the full pipeline runs with framework :speclj
+    When the full pipeline runs with framework :clojure/speclj
     Then "target/gherclj/generated/auth_spec.clj" should exist and:
       | check        | value                         |
       | contains     | pipeline-spec/summon-hero     |
@@ -247,7 +247,7 @@ Feature: Pipeline
         Scenario: Ready
           Given a valid user
       """
-    When the full pipeline runs with framework :speclj
+    When the full pipeline runs with framework :clojure/speclj
     Then "target/gherclj/edn/auth.edn" should contain IR with 2 scenarios
     And "target/gherclj/generated/auth_spec.clj" should exist and:
       | check    | value     |
@@ -268,7 +268,7 @@ Feature: Pipeline
           When the user logs in
           Then the response should be 200
       """
-    When the full pipeline runs with framework :speclj and tags:
+    When the full pipeline runs with framework :clojure/speclj and tags:
       | tag   |
       | ~slow |
     Then "target/gherclj/generated/logging_spec.clj" should not exist
@@ -293,7 +293,7 @@ Feature: Pipeline
           When the user logs in
           Then the response should be 200
       """
-    When the full pipeline runs with framework :speclj and tags:
+    When the full pipeline runs with framework :clojure/speclj and tags:
       | tag   |
       | smoke |
     Then "target/gherclj/generated/logging_spec.clj" should exist and:

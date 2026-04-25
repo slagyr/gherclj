@@ -10,7 +10,7 @@ Feature: Code generation
       | given | a user "alice"             |
       | when  | the user logs in           |
       | then  | the response should be 200 |
-    When generating the spec with framework :speclj
+    When generating the spec with framework :clojure/speclj
     Then the output should contain "Authentication"
     And the output should contain "User can log in"
     And the output should contain "create-adventurer"
@@ -22,5 +22,5 @@ Feature: Code generation
       | type  | text                        |
       | given | something not yet defined   |
       | when  | doing the undefined thing   |
-    When generating the spec with framework :speclj
+    When generating the spec with framework :clojure/speclj
     Then the output should contain "pending"

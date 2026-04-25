@@ -42,7 +42,7 @@ Feature: Scenario location selection
           When the bard offers a song
           Then the dragon shares one coin
       """
-    When the full pipeline runs with framework :speclj and locations:
+    When the full pipeline runs with framework :clojure/speclj and locations:
       | location                         |
       | adventure/dragon_cave.feature:4 |
     Then "target/gherclj/generated/adventure/dragon_cave_spec.clj" should exist and:
@@ -68,7 +68,7 @@ Feature: Scenario location selection
           When the trumpet sounds
           Then the court bows politely
       """
-    When the full pipeline runs with framework :speclj and locations:
+    When the full pipeline runs with framework :clojure/speclj and locations:
       | location                        |
       | adventure/moon_castle.feature:5 |
     Then "target/gherclj/generated/adventure/moon_castle_spec.clj" should exist and:
@@ -133,7 +133,7 @@ Feature: Scenario location selection
         Scenario: Negotiate for treasure
           Given an awake dragon
       """
-    When the full pipeline runs with framework :speclj and locations:
+    When the full pipeline runs with framework :clojure/speclj and locations:
       | location                      |
       | adventure/dragon_cave.feature |
     Then "target/gherclj/generated/adventure/dragon_cave_spec.clj" should exist and:

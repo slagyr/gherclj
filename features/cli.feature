@@ -27,20 +27,20 @@ Feature: CLI
     Given a config file:
       """
       {:features-dir "features"
-       :framework :speclj}
+       :framework :clojure/speclj}
       """
-    When running gherclj with "--framework clojure.test --verbose"
+    When running gherclj with "--framework clojure/test --verbose"
     Then the resolved config should contain:
       """
-      {:framework :clojure.test
+      {:framework :clojure/test
        :verbose true}
       """
 
   Scenario: Short flags work
-    When running gherclj with "-F clojure.test -v"
+    When running gherclj with "-F clojure/test -v"
     Then the resolved config should contain:
       """
-      {:framework :clojure.test
+      {:framework :clojure/test
        :verbose true}
       """
 
@@ -86,7 +86,7 @@ Feature: CLI
           Then the response status should be 200
       """
     And step namespaces include pattern "gherclj.pipeline-*"
-    When running gherclj with "-f features -o target/gherclj/generated -e target/gherclj/edn -F speclj -s gherclj.pipeline-*"
+    When running gherclj with "-f features -o target/gherclj/generated -e target/gherclj/edn -F clojure/speclj -s gherclj.pipeline-*"
     Then "target/gherclj/generated/dragon_spec.clj" should exist and:
       | check        | value                         |
       | contains     | Wake the librarian dragon     |

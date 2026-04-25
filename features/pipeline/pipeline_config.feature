@@ -13,7 +13,7 @@ Feature: Pipeline configuration
        :edn-dir "target/gherclj/edn"
        :output-dir "target/gherclj/generated"
        :step-namespaces []
-       :framework :speclj
+       :framework :clojure/speclj
        :verbose false
        :framework-opts []
        :include-tags []
@@ -24,7 +24,7 @@ Feature: Pipeline configuration
     Given a config:
       """
       {:features-dir "specs/features"
-       :framework :clojure.test
+       :framework :clojure/test
        :verbose true}
       """
     When the config is resolved
@@ -34,7 +34,7 @@ Feature: Pipeline configuration
        :edn-dir "target/gherclj/edn"
        :output-dir "target/gherclj/generated"
        :step-namespaces []
-       :framework :clojure.test
+       :framework :clojure/test
        :verbose true
        :framework-opts []
        :include-tags []

@@ -2,7 +2,7 @@
   "Step routing for the Ruby implementation of SpaceAirlock.
    Each entry maps a Gherkin phrase to a method call on subject."
   (:require [gherclj.core :refer [defgiven defwhen defthen helper!]]
-            [gherclj.frameworks.rspec :as rspec]))
+            [gherclj.frameworks.ruby.rspec :as rspec]))
 
 (helper! "lib/space_airlock")
 

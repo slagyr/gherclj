@@ -16,7 +16,7 @@ Feature: RSpec code generation
       | given | a Ruby user "alice"               |
       | when  | the Ruby user logs in             |
       | then  | the Ruby response should be 200   |
-    When generating the spec with framework :rspec
+    When generating the spec with framework :ruby/rspec
     Then the generated code should be:
       """
       # generated from login.feature
@@ -41,7 +41,7 @@ Feature: RSpec code generation
     And a scenario "Not implemented" with steps:
       | type  | text                |
       | given | something undefined |
-    When generating the spec with framework :rspec
+    When generating the spec with framework :ruby/rspec
     Then the output should contain "skip 'not yet implemented'"
 
   Scenario: subject.method-name helper-refs render as subject.method_name(args)
@@ -49,7 +49,7 @@ Feature: RSpec code generation
     And a scenario "Login" with steps:
       | type  | text                |
       | given | a Ruby user "alice" |
-    When generating the spec with framework :rspec
+    When generating the spec with framework :ruby/rspec
     Then the output should contain "subject.create_adventurer('alice')"
 
   Scenario: helper! with a string value emits a path-relative require
@@ -57,7 +57,7 @@ Feature: RSpec code generation
     And a scenario "Login" with steps:
       | type  | text                |
       | given | a Ruby user "alice" |
-    When generating the spec with framework :rspec
+    When generating the spec with framework :ruby/rspec
     Then the output should contain "require File.expand_path('lib/sample_app', Dir.pwd)"
 
   Scenario: describe-setup! contributions appear inside the describe block
@@ -65,5 +65,5 @@ Feature: RSpec code generation
     And a scenario "Login" with steps:
       | type  | text                |
       | given | a Ruby user "alice" |
-    When generating the spec with framework :rspec
+    When generating the spec with framework :ruby/rspec
     Then the output should contain "subject { SampleApp.new }"

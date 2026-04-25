@@ -10,7 +10,7 @@ Feature: Framework passthrough options
   Scenario: Pass options via config
     Given a config:
       """
-      {:framework :speclj
+      {:framework :clojure/speclj
        :framework-opts ["-c" "spec/myapp" "-s" "src"]}
       """
     When the config is resolved
@@ -22,7 +22,7 @@ Feature: Framework passthrough options
   Scenario: CLI options override config options
     Given a config:
       """
-      {:framework :speclj
+      {:framework :clojure/speclj
        :framework-opts ["-c" "spec/myapp"]}
       """
     When running gherclj with "-- -c spec/other -s src"
@@ -31,7 +31,7 @@ Feature: Framework passthrough options
   Scenario: No passthrough options by default
     Given a config:
       """
-      {:framework :speclj}
+      {:framework :clojure/speclj}
       """
     When the config is resolved
     Then the resolved config should contain:

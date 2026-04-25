@@ -25,12 +25,12 @@
         (should= true (get-in result [:options :verbose]))))
 
     (it "parses --framework"
-      (let [result (main/parse-args ["--framework" "clojure.test"])]
-        (should= :clojure.test (get-in result [:options :framework]))))
+      (let [result (main/parse-args ["--framework" "clojure/test"])]
+        (should= :clojure/test (get-in result [:options :framework]))))
 
     (it "parses short flags"
-      (let [result (main/parse-args ["-F" "speclj" "-v"])]
-        (should= :speclj (get-in result [:options :framework]))
+      (let [result (main/parse-args ["-F" "clojure/speclj" "-v"])]
+        (should= :clojure/speclj (get-in result [:options :framework]))
         (should= true (get-in result [:options :verbose]))))
 
     (it "parses -t as tag include"

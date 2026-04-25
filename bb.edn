@@ -24,7 +24,7 @@
                  :task     (p/generate! {:edn-dir         "target/gherclj/edn"
                                          :output-dir      "target/gherclj/generated"
                                          :step-namespaces []
-                                         :framework       :speclj
+                                         :framework       :clojure/speclj
                                          :verbose         true})}
 
   spec          {:doc      "Run unit specs"
@@ -51,8 +51,8 @@
                   :requires ([gherclj.main :as main])
                   :task     (let [has-tag? (some #{"-t" "--tag"} *command-line-args*)
                                   args (if has-tag?
-                                         (concat ["-F" "clojure.test"] *command-line-args*)
-                                         (concat ["-F" "clojure.test" "-t" "~wip"] *command-line-args*))]
+                                         (concat ["-F" "clojure/test"] *command-line-args*)
+                                         (concat ["-F" "clojure/test" "-t" "~wip"] *command-line-args*))]
                               (apply main/-main args))}
 
   test          {:doc  "Run all tests (unit specs + feature specs)"

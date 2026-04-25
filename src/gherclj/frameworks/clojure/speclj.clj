@@ -1,4 +1,4 @@
-(ns gherclj.frameworks.speclj
+(ns gherclj.frameworks.clojure.speclj
   (:require [clojure.string :as str]
             [gherclj.core :as g]
             [gherclj.framework :as fw]
@@ -7,7 +7,7 @@
             [speclj.cli :as speclj]
             [speclj.core :as sc]))
 
-(defmethod fw/generate-preamble :speclj
+(defmethod fw/generate-preamble :clojure/speclj
   [_config source used-nses]
   (let [ns-name (str (gen/source->ns-name source "-spec"))
         helper-imports (->> used-nses
@@ -24,7 +24,7 @@
            (str "\n" (str/join "\n" helper-reqs)))
          "))")))
 
-(defmethod fw/wrap-feature :speclj
+(defmethod fw/wrap-feature :clojure/speclj
   [_config feature-name scenario-blocks]
   (str "(describe \"" feature-name "\"\n\n"
        "  (before-all (lifecycle/run-before-feature-hooks!))\n"
@@ -33,7 +33,7 @@
        "  (after-all (lifecycle/run-after-feature-hooks!))\n\n"
        scenario-blocks ")\n"))
 
-(defmethod fw/wrap-scenario :speclj
+(defmethod fw/wrap-scenario :clojure/speclj
   [_config scenario background]
   (let [title      (:scenario scenario)
         bg-calls   (:rendered-steps background)
@@ -44,7 +44,7 @@
     (str "  (it \"" title "\"\n"
          body ")")))
 
-(defmethod fw/wrap-pending :speclj
+(defmethod fw/wrap-pending :clojure/speclj
   [_config scenario background]
   (let [title (:scenario scenario)
         step-comments (->> (concat (when background
@@ -63,9 +63,9 @@
     :or {output-dir "target/gherclj/generated"}}]
   (into ["-c" output-dir "-s" "src"] (or framework-opts [])))
 
-(defmethod fw/run-specs :speclj
+(defmethod fw/run-specs :clojure/speclj
   [config]
-  (g/set-framework! :speclj)
+  (g/set-framework! :clojure/speclj)
   (let [args (run-args config)]
     (lifecycle/run-before-all-hooks!)
     (try
@@ -73,8 +73,8 @@
       (finally
         (lifecycle/run-after-all-hooks!)))))
 
-(defmethod g/should= :speclj [expected actual] (sc/should= expected actual))
-(defmethod g/should :speclj [value] (sc/should value))
-(defmethod g/should-not :speclj [value] (sc/should-not value))
-(defmethod g/should-be-nil :speclj [value] (sc/should-be-nil value))
-(defmethod g/should-not-be-nil :speclj [value] (sc/should-not-be-nil value))
+(defmethod g/should= :clojure/speclj [expected actual] (sc/should= expected actual))
+(defmethod g/should :clojure/speclj [value] (sc/should value))
+(defmethod g/should-not :clojure/speclj [value] (sc/should-not value))
+(defmethod g/should-be-nil :clojure/speclj [value] (sc/should-be-nil value))
+(defmethod g/should-not-be-nil :clojure/speclj [value] (sc/should-not-be-nil value))

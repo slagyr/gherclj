@@ -5,8 +5,8 @@
             [gherclj.framework :as fw]
             [gherclj.lifecycle :as lifecycle]
             [gherclj.sample.app-steps]
-            [gherclj.frameworks.clojure-test]
-            [gherclj.frameworks.speclj]
+            [gherclj.frameworks.clojure.test]
+            [gherclj.frameworks.clojure.speclj]
             [gherclj.generator :as gen]
             [gherclj.pipeline :as pipeline]))
 
@@ -126,8 +126,8 @@
     (write-feature-ir!)
     (pipeline/run! (pipeline-config fw))
     (g/assoc! :run-result (case fw
-                            :clojure.test (direct-clojure-test-run!)
-                            :speclj (throw (ex-info "direct speclj run not implemented for lifecycle feature" {}))))))
+                            :clojure/test (direct-clojure-test-run!)
+                            :clojure/speclj (throw (ex-info "direct speclj run not implemented for lifecycle feature" {}))))))
 
 (defn run-through-gherclj! [framework]
   (let [fw (keyword (str/replace framework #"^:" ""))]

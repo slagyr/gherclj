@@ -4,7 +4,7 @@
    [gherclj.core :as core]
    [gherclj.core :refer [defgiven defwhen defthen helper!]]
    [clojure.string :as str]
-   [gherclj.frameworks.speclj]
+   [gherclj.frameworks.clojure.speclj]
    [gherclj.sample.app-steps]))
 
 (helper! gherclj.generator-spec)
@@ -64,7 +64,7 @@
 
     (it "generates a complete spec string for a feature IR"
       (let [config {:step-namespaces ['gherclj.generator-spec]
-                    :framework :speclj}
+                    :framework :clojure/speclj}
             ir {:feature "Sample feature"
                 :source "sample.feature"
                 :scenarios [{:scenario "Does the thing"
@@ -84,7 +84,7 @@
     (it "returns nil when tag filtering removes every scenario"
       (let [config {:step-namespaces ['gherclj.generator-spec]
                     :exclude-tags ["slow"]
-                    :framework :speclj}
+                    :framework :clojure/speclj}
             ir {:feature "Sample feature"
                 :source "sample.feature"
                 :scenarios [{:scenario "Slow only"
@@ -94,7 +94,7 @@
 
     (it "includes wip-tagged scenarios when no tag filters are configured"
       (let [config {:step-namespaces ['gherclj.generator-spec]
-                    :framework :speclj}
+                    :framework :clojure/speclj}
             ir {:feature "Sample feature"
                 :source "sample.feature"
                 :scenarios [{:scenario "Ready"
@@ -109,7 +109,7 @@
     (it "treats wip like any other tag when included"
       (let [config {:step-namespaces ['gherclj.generator-spec]
                     :include-tags ["wip"]
-                    :framework :speclj}
+                    :framework :clojure/speclj}
             ir {:feature "Sample feature"
                 :source "sample.feature"
                 :scenarios [{:scenario "Ready"
@@ -123,7 +123,7 @@
 
     (it "includes helper imports referenced only by background steps"
       (let [config {:step-namespaces ['gherclj.generator-spec 'gherclj.sample.app-steps]
-                    :framework :speclj}
+                    :framework :clojure/speclj}
             ir {:feature "Sample feature"
                 :source "sample.feature"
                 :background {:steps [{:type :given :text "a user \"alice\""}]}
@@ -138,7 +138,7 @@
 
     (it "generates spec with table step"
       (let [config {:step-namespaces ['gherclj.generator-spec]
-                    :framework :speclj}
+                    :framework :clojure/speclj}
             ir {:feature "Tables"
                 :source "tables.feature"
                 :scenarios [{:scenario "With table"
@@ -150,7 +150,7 @@
 
     (it "generates spec with doc-string step"
       (let [config {:step-namespaces ['gherclj.generator-spec]
-                    :framework :speclj}
+                    :framework :clojure/speclj}
             ir {:feature "Docs"
                 :source "docs.feature"
                 :scenarios [{:scenario "With doc"

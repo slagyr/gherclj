@@ -1,7 +1,7 @@
-(ns gherclj.frameworks.rspec-spec
+(ns gherclj.frameworks.ruby.rspec-spec
   (:require [clojure.string :as str]
             [gherclj.framework :as fw]
-            [gherclj.frameworks.rspec :as rspec]
+            [gherclj.frameworks.ruby.rspec :as rspec]
             [speclj.core :refer :all]))
 
 (rspec/file-setup! "require File.expand_path('lib/space_airlock', Dir.pwd)")
@@ -12,16 +12,16 @@
   (context "generate-preamble"
 
     (it "generates Ruby preamble from step namespace registrations"
-      (let [result (fw/generate-preamble {:framework :rspec}
+      (let [result (fw/generate-preamble {:framework :ruby/rspec}
                                          "features/auth.feature"
-                                         ['gherclj.frameworks.rspec-spec])]
+                                         ['gherclj.frameworks.ruby.rspec-spec])]
         (should (str/includes? result "generated from features/auth.feature"))
         (should (str/includes? result "require File.expand_path('lib/space_airlock', Dir.pwd)"))
         (should (str/includes? result "RSpec.describe 'Auth' do"))
         (should (str/includes? result "subject { SpaceAirlock.new }"))))
 
     (it "omits setup block when step namespace has none"
-      (let [result (fw/generate-preamble {:framework :rspec}
+      (let [result (fw/generate-preamble {:framework :ruby/rspec}
                                          "features/auth.feature"
                                          [])]
         (should (str/includes? result "require 'rspec'"))
@@ -32,15 +32,15 @@
 
     (it "renders a step as a bare snake_case method call"
       (let [step {:name "create-adventurer" :args ["alice"] :ns 'myapp.steps}]
-        (should= "create_adventurer('alice')" (fw/render-step {:framework :rspec} step))))
+        (should= "create_adventurer('alice')" (fw/render-step {:framework :ruby/rspec} step))))
 
     (it "renders a no-arg step without parentheses"
       (let [step {:name "enter-the-realm" :args [] :ns 'myapp.steps}]
-        (should= "enter_the_realm" (fw/render-step {:framework :rspec} step))))
+        (should= "enter_the_realm" (fw/render-step {:framework :ruby/rspec} step))))
 
     (it "renders integer args as Ruby literals"
       (let [step {:name "verify-outcome" :args [200] :ns 'myapp.steps}]
-        (should= "verify_outcome(200)" (fw/render-step {:framework :rspec} step)))))
+        (should= "verify_outcome(200)" (fw/render-step {:framework :ruby/rspec} step)))))
 
   (context "wrap-scenario"
 
@@ -48,7 +48,7 @@
       (let [scenario {:scenario "User can log in"
                       :rendered-steps ["seed_user('alice')"
                                        "log_in"]}
-            result (fw/wrap-scenario {:framework :rspec} scenario nil)]
+            result (fw/wrap-scenario {:framework :ruby/rspec} scenario nil)]
         (should (str/includes? result "it 'User can log in' do"))
         (should (str/includes? result "seed_user('alice')"))
         (should (str/includes? result "log_in"))))
@@ -57,7 +57,7 @@
       (let [background {:rendered-steps ["clean_db"]}
             scenario   {:scenario "User can log in"
                         :rendered-steps ["log_in"]}
-            result (fw/wrap-scenario {:framework :rspec} scenario background)]
+            result (fw/wrap-scenario {:framework :ruby/rspec} scenario background)]
         (should (str/includes? result "clean_db"))
         (should (str/includes? result "log_in")))))
 
@@ -68,7 +68,7 @@
         (with-redefs [clojure.java.shell/sh (fn [& args]
                                               (reset! captured args)
                                               {:exit 0 :out "" :err ""})]
-          (fw/run-specs {:framework :rspec :output-dir "tmp/generated"}))
+          (fw/run-specs {:framework :ruby/rspec :output-dir "tmp/generated"}))
         (should= ["bundle" "exec" "rspec" "--tty" "tmp/generated"] @captured)))
 
     (it "prints rspec stdout and stderr"
@@ -76,6 +76,6 @@
                      (with-redefs [clojure.java.shell/sh (fn [& _]
                                                            {:exit 0 :out "..\nFinished\n" :err "warnings\n"})]
                        (binding [*err* *out*]
-                         (fw/run-specs {:framework :rspec :output-dir "tmp/generated"}))))]
+                         (fw/run-specs {:framework :ruby/rspec :output-dir "tmp/generated"}))))]
         (should (str/includes? stdout "..\nFinished\n"))
         (should (str/includes? stdout "warnings\n"))))))

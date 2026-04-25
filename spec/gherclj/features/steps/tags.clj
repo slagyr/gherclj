@@ -24,19 +24,19 @@
         config {:step-namespaces []
                 :include-tags tag-list
                 :exclude-tags []
-                :framework :speclj}]
+                :framework :clojure/speclj}]
     (g/assoc! :generated-output (gen/generate-spec config (g/get :feature-ir)))))
 
 (defn generate-with-exclude-tags! [tags]
   (let [tag-list (str/split tags #",\s*")
         config {:step-namespaces []
                 :exclude-tags tag-list
-                :framework :speclj}]
+                :framework :clojure/speclj}]
     (g/assoc! :generated-output (gen/generate-spec config (g/get :feature-ir)))))
 
 (defn generate-with-no-filters! []
   (let [config {:step-namespaces []
-                :framework :speclj}]
+                :framework :clojure/speclj}]
     (g/assoc! :generated-output (gen/generate-spec config (g/get :feature-ir)))))
 
 (defn generated-scenarios-should-be [list]

@@ -42,10 +42,11 @@
                   {:scenario title :steps steps :tags ["wip"]})))
 
 (defn- ensure-framework-loaded! [fw]
-  (let [fw-ns (case fw
-                :speclj 'gherclj.frameworks.speclj
-                :clojure.test 'gherclj.frameworks.clojure-test
-                (symbol (str "gherclj.frameworks." (name fw))))]
+  (let [lang (namespace fw)
+        nm   (name fw)
+        fw-ns (if lang
+                (symbol (str "gherclj.frameworks." lang "." nm))
+                (symbol (str "gherclj.frameworks." nm)))]
     (require fw-ns)))
 
 (defn use-step-namespace! [ns-name]

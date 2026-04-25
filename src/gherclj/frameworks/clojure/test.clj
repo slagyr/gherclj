@@ -1,4 +1,4 @@
-(ns gherclj.frameworks.clojure-test
+(ns gherclj.frameworks.clojure.test
   (:require [clojure.string :as str]
             [clojure.test :as ct]
             [gherclj.core :as g]
@@ -12,7 +12,7 @@
       (str/replace #"[^a-z0-9]+" "-")
       (str/replace #"^-|-$" "")))
 
-(defmethod fw/generate-preamble :clojure.test
+(defmethod fw/generate-preamble :clojure/test
   [_config source used-nses]
   (let [ns-name (str (gen/source->ns-name source "-test"))
         helper-imports (->> used-nses
@@ -29,7 +29,7 @@
            (str "\n" (str/join "\n" helper-reqs)))
          "))")))
 
-(defmethod fw/wrap-feature :clojure.test
+(defmethod fw/wrap-feature :clojure/test
   [_config _feature-name scenario-blocks]
   (str "(defn ^:private feature-fixture [f]\n"
        "  (lifecycle/run-before-feature-hooks!)\n"
@@ -48,7 +48,7 @@
        "(use-fixtures :each scenario-fixture)\n\n"
        scenario-blocks "\n"))
 
-(defmethod fw/wrap-scenario :clojure.test
+(defmethod fw/wrap-scenario :clojure/test
   [_config scenario background]
   (let [title      (:scenario scenario)
         test-name  (slugify title)
@@ -61,7 +61,7 @@
          "  (testing \"" title "\"\n"
          body "))")))
 
-(defmethod fw/wrap-pending :clojure.test
+(defmethod fw/wrap-pending :clojure/test
   [_config scenario _background]
   (let [title (:scenario scenario)
         test-name (slugify title)]
@@ -77,9 +77,9 @@
         ns-form (first (filter #(and (seq? %) (= 'ns (first %))) forms))]
     (when ns-form (second ns-form))))
 
-(defmethod fw/run-specs :clojure.test
+(defmethod fw/run-specs :clojure/test
   [config]
-  (g/set-framework! :clojure.test)
+  (g/set-framework! :clojure/test)
   (let [output-dir (or (:output-dir config) "target/gherclj/generated")
         dir (clojure.java.io/file output-dir)
         test-files (->> (file-seq dir)
@@ -104,19 +104,19 @@
                   {:type :pass :message msg}
                   {:type :fail :message msg})))
 
-(defmethod g/should= :clojure.test [expected actual]
+(defmethod g/should= :clojure/test [expected actual]
   (ct-assert (= expected actual)
              (when (not= expected actual)
                (str "Expected: " (pr-str expected) "\n  Actual: " (pr-str actual)))))
 
-(defmethod g/should :clojure.test [value]
+(defmethod g/should :clojure/test [value]
   (ct-assert value (str "Expected truthy but was: " (pr-str value))))
 
-(defmethod g/should-not :clojure.test [value]
+(defmethod g/should-not :clojure/test [value]
   (ct-assert (not value) (str "Expected falsy but was: " (pr-str value))))
 
-(defmethod g/should-be-nil :clojure.test [value]
+(defmethod g/should-be-nil :clojure/test [value]
   (ct-assert (nil? value) (str "Expected nil but was: " (pr-str value))))
 
-(defmethod g/should-not-be-nil :clojure.test [value]
+(defmethod g/should-not-be-nil :clojure/test [value]
   (ct-assert (some? value) "Expected not nil but was: nil"))

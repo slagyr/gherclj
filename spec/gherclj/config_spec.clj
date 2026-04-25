@@ -13,40 +13,40 @@
                       :edn-dir "target/gherclj/edn"
                       :output-dir "target/gherclj/generated"
                       :step-namespaces ['my.steps]
-                      :framework :speclj
+                      :framework :clojure/speclj
                       :verbose true})]
         (should= "features" (:features-dir result))
-        (should= :speclj (:framework result))
+        (should= :clojure/speclj (:framework result))
         (should= true (:verbose result))))
 
     (it "applies defaults for edn-dir"
       (let [result (schema/conform config/pipeline-schema
                      {:features-dir "features"
-                      :framework :speclj})]
+                      :framework :clojure/speclj})]
         (should= "target/gherclj/edn" (:edn-dir result))))
 
     (it "applies defaults for output-dir"
       (let [result (schema/conform config/pipeline-schema
                      {:features-dir "features"
-                      :framework :speclj})]
+                      :framework :clojure/speclj})]
         (should= "target/gherclj/generated" (:output-dir result))))
 
     (it "applies defaults for step-namespaces"
       (let [result (schema/conform config/pipeline-schema
                      {:features-dir "features"
-                      :framework :speclj})]
+                      :framework :clojure/speclj})]
         (should= [] (:step-namespaces result))))
 
     (it "applies defaults for exclude-tags"
       (let [result (schema/conform config/pipeline-schema
                      {:features-dir "features"
-                      :framework :speclj})]
+                      :framework :clojure/speclj})]
         (should= [] (:exclude-tags result))))
 
     (it "coerces verbose to boolean"
       (let [result (schema/conform config/pipeline-schema
                      {:features-dir "features"
-                      :framework :speclj
+                      :framework :clojure/speclj
                       :verbose nil})]
         (should= false (:verbose result))))
 
@@ -56,11 +56,11 @@
                       :framework :invalid})]
         (should (schema/error? (:framework result)))))
 
-    (it "accepts :rspec as a test-framework"
+    (it "accepts :ruby/rspec as a test-framework"
       (let [result (schema/conform config/pipeline-schema
                      {:features-dir "features"
-                      :framework :rspec})]
-        (should= :rspec (:framework result)))))
+                      :framework :ruby/rspec})]
+        (should= :ruby/rspec (:framework result)))))
 
   (context "load-config"
 
@@ -71,17 +71,17 @@
         (should= "target/gherclj/generated" (:output-dir result))
         (should= [] (:step-namespaces result))
         (should= [] (:exclude-tags result))
-        (should= :speclj (:framework result))
+        (should= :clojure/speclj (:framework result))
         (should= false (:verbose result))))
 
     (it "loads config from project root"
       (let [tmp (str (System/getProperty "java.io.tmpdir") "/gherclj-config-test")]
         (clojure.java.io/make-parents (clojure.java.io/file tmp "dummy"))
-        (spit (str tmp "/gherclj.edn") "{:features-dir \"my-features\" :framework :clojure.test}")
+        (spit (str tmp "/gherclj.edn") "{:features-dir \"my-features\" :framework :clojure/test}")
         (try
           (let [result (config/load-config {:root-path tmp})]
             (should= "my-features" (:features-dir result))
-            (should= :clojure.test (:framework result)))
+            (should= :clojure/test (:framework result)))
           (finally
             (.delete (clojure.java.io/file tmp "gherclj.edn"))
             (.delete (clojure.java.io/file tmp))))))

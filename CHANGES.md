@@ -79,7 +79,7 @@ Initial release.
 - **Step macros**: `defgiven`, `defwhen`, `defthen` with template pattern matching
 - **Template types**: `{name}` (word), `{name:string}` (greedy), `{name:int}`, `{name:float}`
 - **Raw regex**: escape hatch for complex step patterns
-- **Frameworks**: `:speclj` and `:clojure.test` output formats with `run-specs` multimethod
+- **Frameworks**: `:clojure/speclj` and `:clojure/test` output formats with `run-specs` multimethod
 - **State management**: `g/assoc!`, `g/get`, `g/swap!`, `g/update!`, `g/reset!` and friends in `gherclj.core`
 - **Assertions**: framework-agnostic `g/should=`, `g/should`, etc. dispatched to active framework
 - **Config**: `gherclj.edn` file with schema validation and defaults via c3kit/apron

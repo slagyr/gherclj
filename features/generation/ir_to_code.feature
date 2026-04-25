@@ -12,7 +12,7 @@ Feature: IR to code generation
       | given | a user "alice"              |
       | when  | the user logs in            |
       | then  | the response should be 200  |
-    When generating the spec with framework :speclj
+    When generating the spec with framework :clojure/speclj
     Then the generated code should be:
       """
       (ns login-spec
@@ -41,7 +41,7 @@ Feature: IR to code generation
       | given | a user "alice"              |
       | when  | the user logs in            |
       | then  | the response should be 200  |
-    When generating the spec with framework :clojure.test
+    When generating the spec with framework :clojure/test
     Then the generated code should be:
       """
       (ns login-test
@@ -87,7 +87,7 @@ Feature: IR to code generation
       | given | a user "nobody"            |
       | when  | the user logs in           |
       | then  | the response should be 401 |
-    When generating the spec with framework :clojure.test
+    When generating the spec with framework :clojure/test
     Then the generated code should be:
       """
       (ns login-test
@@ -136,7 +136,7 @@ Feature: IR to code generation
       | type  | text                       |
       | when  | the user logs in           |
       | then  | the response should be 200 |
-    When generating the spec with framework :clojure.test
+    When generating the spec with framework :clojure/test
     Then the generated code should be:
       """
       (ns login-test
@@ -176,7 +176,7 @@ Feature: IR to code generation
       | type  | text                  |
       | given | something undefined   |
       | when  | doing unknown things  |
-    When generating the spec with framework :clojure.test
+    When generating the spec with framework :clojure/test
     Then the generated code should be:
       """
       (ns login-test
@@ -219,7 +219,7 @@ Feature: IR to code generation
     And a scenario "Second" with steps:
       | type  | text                       |
       | then  | the response should be 200 |
-    When generating the spec with framework :speclj
+    When generating the spec with framework :clojure/speclj
     Then the output should contain "(app-steps/create-adventurer"
     And the output should contain "(app-steps/enter-the-realm)"
     And the output should contain "(app-steps/verify-outcome 200)"
@@ -232,7 +232,7 @@ Feature: IR to code generation
     And a scenario "Second" with steps:
       | type  | text             |
       | when  | the user logs in |
-    When generating the spec with framework :speclj
+    When generating the spec with framework :clojure/speclj
     Then the output should contain "(g/reset!)"
 
   Scenario: Unrecognized steps generate pending speclj scenarios
@@ -241,7 +241,7 @@ Feature: IR to code generation
       | type  | text                  |
       | given | something undefined   |
       | when  | doing unknown things  |
-    When generating the spec with framework :speclj
+    When generating the spec with framework :clojure/speclj
     Then the output should contain "pending"
     And the output should contain ";; given something undefined"
 
@@ -253,6 +253,6 @@ Feature: IR to code generation
     And a wip scenario "Skipped" with steps:
       | type  | text                |
       | given | something undefined |
-    When generating the spec with framework :speclj
+    When generating the spec with framework :clojure/speclj
     Then the output should contain "Normal"
     And the output should contain "Skipped"

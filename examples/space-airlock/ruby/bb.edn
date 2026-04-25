@@ -11,5 +11,5 @@
             :requires ([gherclj.main :as main])
             :task     (main/-main "-f" "../features"
                         "-s" "gherclj.airlock-steps"
-                        "-F" "rspec"
+                        "-F" "ruby/rspec"
                         "--" "--format" "documentation" "--color")}}}

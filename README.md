@@ -176,7 +176,7 @@ Create a `gherclj.edn` at your project root (or on the classpath):
 ```clojure
 {:step-namespaces [myapp.features.steps.auth
                    myapp.features.steps.cart]
- :framework       :speclj}
+ :framework       :clojure/speclj}
 ```
 
 ```bash
@@ -196,7 +196,7 @@ bb -m gherclj.main --verbose
     {:features-dir    "features"
      :step-namespaces ['myapp.features.steps.auth
                        'myapp.features.steps.cart]
-     :framework       :speclj
+     :framework       :clojure/speclj
      :verbose         true}))
 ```
 
@@ -244,7 +244,7 @@ gherclj reads configuration from `gherclj.edn` (project root or classpath), with
 | `:edn-dir` | `"target/gherclj/edn"` | Directory for parsed EDN IR files |
 | `:output-dir` | `"target/gherclj/generated"` | Directory for generated spec files |
 | `:step-namespaces` | `[]` | Namespace symbols or glob pattern strings |
-| `:framework` | `:speclj` | `:speclj`, `:clojure.test`, or `:rspec` |
+| `:framework` | `:clojure/speclj` | `:clojure/speclj`, `:clojure/test`, or `:ruby/rspec` |
 | `:verbose` | `false` | Print progress to stdout |
 | `:framework-opts` | `[]` | Options passed to the test runner |
 | `:include-tags` | `[]` | Include scenarios that match any listed tag |
@@ -472,11 +472,11 @@ gherclj provides framework-agnostic assertion functions that delegate to the act
 (g/should-not-be-nil value)
 ```
 
-These work under both `:speclj` and `:clojure.test`. If your project uses a single framework, you can use its native assertions directly (e.g., speclj's `should=`). Use `g/should=` when your steps need to be framework-agnostic.
+These work under both `:clojure/speclj` and `:clojure/test`. If your project uses a single framework, you can use its native assertions directly (e.g., speclj's `should=`). Use `g/should=` when your steps need to be framework-agnostic.
 
 ## Test Framework Support
 
-gherclj ships with `:speclj` and `:clojure.test` output formats. Add your own by implementing the generator multimethods:
+gherclj ships with `:clojure/speclj` and `:clojure/test` output formats. Add your own by implementing the generator multimethods:
 
 ```clojure
 (defmethod gherclj.generator/generate-ns-form :my-framework [config source step-ns-syms] ...)

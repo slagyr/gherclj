@@ -10,7 +10,7 @@ Feature: Lifecycle hooks
       | given | a user "alice"             |
       | when  | the user logs in           |
       | then  | the response should be 200 |
-    When generating the spec with framework :speclj and lifecycle hooks enabled
+    When generating the spec with framework :clojure/speclj and lifecycle hooks enabled
     Then the output should contain "(before-all (lifecycle/run-before-feature-hooks!))"
     And the output should contain "(lifecycle/run-before-scenario-hooks!)"
     And the output should contain "(after (lifecycle/run-after-scenario-hooks!))"
@@ -23,7 +23,7 @@ Feature: Lifecycle hooks
       | given | a user "alice"             |
       | when  | the user logs in           |
       | then  | the response should be 200 |
-    When generating the spec with framework :clojure.test and lifecycle hooks enabled
+    When generating the spec with framework :clojure/test and lifecycle hooks enabled
     Then the output should contain "(use-fixtures :once"
     And the output should contain "(lifecycle/run-before-feature-hooks!)"
     And the output should contain "(lifecycle/run-after-feature-hooks!)"
@@ -48,7 +48,7 @@ Feature: Lifecycle hooks
       | given | a user "bob"               |
       | when  | the user logs in           |
       | then  | the response should be 200 |
-    When the generated scenarios run directly with framework :clojure.test
+    When the generated scenarios run directly with framework :clojure/test
     Then the recorded lifecycle events should be:
       | event           |
       | before-feature  |
@@ -65,7 +65,7 @@ Feature: Lifecycle hooks
     And a scenario "Crashes" with steps:
       | type | text                          |
       | then | the dragon vanishes unexpectedly |
-    When the generated scenarios run directly with framework :clojure.test
+    When the generated scenarios run directly with framework :clojure/test
     Then the run should fail
     And the recorded lifecycle events should be:
       | event          |
@@ -85,7 +85,7 @@ Feature: Lifecycle hooks
       | given | a user "alice"             |
       | when  | the user logs in           |
       | then  | the response should be 200 |
-    When the generated scenarios run through gherclj with framework :clojure.test
+    When the generated scenarios run through gherclj with framework :clojure/test
     Then the recorded lifecycle events should be:
       | event           |
       | before-all      |
