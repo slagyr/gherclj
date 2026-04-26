@@ -6,17 +6,30 @@
 
 ;; --- Step classification ---
 
+(defn- resolve-step-type [previous-type node-type]
+  (if (#{:and :but} node-type) previous-type node-type))
+
+(defn- classify-step-nodes [steps step-nodes]
+  (->> step-nodes
+       (reduce (fn [{:keys [previous-type classified]} node]
+                 (let [effective-type (resolve-step-type previous-type (:type node))
+                       matched (when effective-type
+                                 (core/classify-step steps effective-type (:text node)))
+                       classified-node (if matched
+                                         (merge node matched {:classified? true})
+                                         (assoc node :classified? false))]
+                   {:previous-type effective-type
+                    :classified (conj classified classified-node)}))
+               {:previous-type nil :classified []})
+       :classified
+       vec))
+
 (defn classify-scenario
   "Classify all steps in a scenario against registered steps.
    Returns the scenario with each step augmented with classification data."
   [steps scenario]
   (update scenario :steps
-          (fn [step-nodes]
-            (mapv (fn [node]
-                    (if-let [classified (core/classify-step steps (:text node))]
-                      (merge node classified {:classified? true})
-                      (assoc node :classified? false)))
-                  step-nodes))))
+          #(classify-step-nodes steps %)))
 
 (defn- all-classified? [scenario]
   (every? :classified? (:steps scenario)))
@@ -61,12 +74,10 @@
    adapters get this set in `generate-preamble` and decide what to look up
    from each — Clojure adapters query helper-imports; the rspec adapter
    queries its own file-setup and describe-setup registries."
-  [steps background scenarios]
+  [background scenarios]
   (->> (concat (when background (:steps background))
                (mapcat :steps scenarios))
-       (keep (fn [node]
-               (when-let [classified (core/classify-step steps (:text node))]
-                 (:ns classified))))
+       (keep :ns)
        (into #{})))
 
 (defn source->ns-name
@@ -94,7 +105,7 @@
         classified-scenarios (mapv #(classify-scenario steps %) filtered)]
     (when (seq classified-scenarios)
       (let [classified-bg (when background (classify-scenario steps background))
-            used-nses     (step-namespaces-used steps classified-bg filtered)
+            used-nses     (step-namespaces-used classified-bg classified-scenarios)
             ;; Make used-nses and source available to all framework adapter
             ;; calls. Per-scenario setup registries (e.g. go.testing) look up
             ;; their declarations via :_used-nses; Java derives class names

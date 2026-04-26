@@ -1,4 +1,3 @@
-@wip
 Feature: Step type-aware classification
 
   Classification of a step phrase against the registered step set honors

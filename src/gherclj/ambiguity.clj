@@ -11,6 +11,16 @@
 
 (def ^:private step-keywords ["Given" "When" "Then" "And" "But"])
 
+(defn- keyword->type [keyword]
+  ({"Given" :given
+    "When" :when
+    "Then" :then
+    "And" :and
+    "But" :but} keyword))
+
+(defn- resolve-step-type [previous-type node-type]
+  (if (#{:and :but} node-type) previous-type node-type))
+
 (defn usage-message []
   (str "\nUsage:  gherclj ambiguity [option]...\n\n"
        "List ambiguous step phrases found across scanned feature scenarios.\n\n"
@@ -97,16 +107,28 @@
             (recur (rest indexed) (assoc state :section :examples))
 
             (and (= :background (:section state)) (step-keyword? trimmed))
-            (recur (rest indexed)
-                   (update state :background-occurrences conj {:phrase (strip-keyword trimmed)
-                                                              :feature-file rel-path
-                                                              :line line-number}))
+            (let [keyword (some #(when (str/starts-with? trimmed (str % " ")) %) step-keywords)
+                  node-type (keyword->type keyword)
+                  effective-type (resolve-step-type (:background-last-type state) node-type)]
+              (recur (rest indexed)
+                     (cond-> (assoc state :background-last-type effective-type)
+                       effective-type
+                       (update :background-occurrences conj {:type effective-type
+                                                            :phrase (strip-keyword trimmed)
+                                                            :feature-file rel-path
+                                                            :line line-number}))))
 
             (and (= :scenario (:section state)) (:current-included? state) (step-keyword? trimmed))
-            (recur (rest indexed)
-                   (update state :occurrences conj {:phrase (strip-keyword trimmed)
-                                                   :feature-file rel-path
-                                                   :line line-number}))
+            (let [keyword (some #(when (str/starts-with? trimmed (str % " ")) %) step-keywords)
+                  node-type (keyword->type keyword)
+                  effective-type (resolve-step-type (:scenario-last-type state) node-type)]
+              (recur (rest indexed)
+                     (cond-> (assoc state :scenario-last-type effective-type)
+                       effective-type
+                       (update :occurrences conj {:type effective-type
+                                                 :phrase (strip-keyword trimmed)
+                                                 :feature-file rel-path
+                                                 :line line-number}))))
 
             :else
             (recur (rest indexed) state)))
@@ -142,8 +164,8 @@
                    (sort-by #(str (.toPath %))))
         scans (map #(scan-feature-file features-dir % filter-config) files)
         ambiguities (->> (mapcat :occurrences scans)
-                         (keep (fn [{:keys [phrase] :as occurrence}]
-                                 (let [matches (vec (core/classify-all steps phrase))]
+                         (keep (fn [{:keys [type phrase] :as occurrence}]
+                                 (let [matches (vec (core/classify-all steps type phrase))]
                                    (when (> (count matches) 1)
                                      (assoc occurrence :matches (vec (sort-steps matches)))))))
                          (sort-by (juxt :feature-file :line))
