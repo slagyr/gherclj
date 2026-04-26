@@ -144,6 +144,16 @@
     (it "captures the remaining positional args for the unused subcommand"
       (let [result (main/parse-args ["unused" "keyword"])]
         (should= :unused (get-in result [:options :subcommand]))
+        (should= ["keyword"] (get-in result [:options :subcommand-args]))))
+
+    (it "detects the ambiguity subcommand as the first positional arg"
+      (let [result (main/parse-args ["-s" "gherclj.sample.app-steps" "ambiguity"])]
+        (should= :ambiguity (get-in result [:options :subcommand]))
+        (should-be-nil (get-in result [:options :locations]))))
+
+    (it "captures the remaining positional args for the ambiguity subcommand"
+      (let [result (main/parse-args ["ambiguity" "keyword"])]
+        (should= :ambiguity (get-in result [:options :subcommand]))
         (should= ["keyword"] (get-in result [:options :subcommand-args])))))
 
   (context "usage"
@@ -172,6 +182,10 @@
     (it "mentions the steps subcommand"
       (let [text (main/usage-message)]
         (should (str/includes? text "gherclj steps"))))
+
+    (it "mentions the ambiguity subcommand"
+      (let [text (main/usage-message)]
+        (should (str/includes? text "gherclj ambiguity"))))
 
     (it "lists the supported frameworks"
       (let [text (main/usage-message)]

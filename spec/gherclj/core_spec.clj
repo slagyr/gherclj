@@ -97,6 +97,15 @@
 
   (context "classify-step"
 
+    (it "returns all matches for an ambiguous phrase without throwing"
+      (let [steps [{:name "greet-any" :regex #"^hello (\S+)$"
+                    :bindings [{:name "name" :type "word" :coerce identity}]
+                    :ns 'test :type :given}
+                   {:name "greet-world" :regex #"^hello world$"
+                    :ns 'test :type :given}]
+            matches (core/classify-all steps "hello world")]
+        (should= ["greet-any" "greet-world"] (mapv :name matches))))
+
     (it "matches step text to a registered step and extracts args"
       (let [steps (core/collect-steps ['gherclj.core-spec])
             result (core/classify-step steps "a project \"alpha\" with timeout 300")]

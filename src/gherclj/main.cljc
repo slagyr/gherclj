@@ -2,6 +2,7 @@
   (:require [clojure.java.io :as io]
              [clojure.string :as str]
              [clojure.tools.cli :as cli]
+             [gherclj.ambiguity :as ambiguity]
              [gherclj.catalog :as catalog]
              [gherclj.config :as config]
              [gherclj.framework :as fw]
@@ -61,7 +62,7 @@
       {:source arg})))
 
 (defn- parse-positional-args [arguments]
-  (if (#{"steps" "unused"} (first arguments))
+  (if (#{"steps" "unused" "ambiguity"} (first arguments))
     {:locations       []
      :framework-opts  []
      :subcommand      (keyword (first arguments))
@@ -108,6 +109,7 @@
          "                   file      all scenarios in the file\n"
          "                   file:line the scenario containing that line in the file\n\n"
          "  subcommands\n"
+         "                   gherclj ambiguity    list ambiguous step phrases across scanned features\n"
          "                   gherclj steps        list registered step definitions\n"
          "                   gherclj unused       list registered steps unused by features\n\n"
          summary "\n")))
@@ -131,6 +133,7 @@
 
       help
       (do (println (case (:subcommand options)
+                     :ambiguity (ambiguity/usage-message)
                      :steps (catalog/usage-message)
                      :unused (unused/usage-message)
                      (usage-message)))
@@ -141,6 +144,7 @@
             cli-overrides (into {} (filter (fn [[_ v]] (some? v))) options)
             merged        (merge file-config cli-overrides)]
         (case (:subcommand options)
+          :ambiguity (ambiguity/run! merged (or (:subcommand-args options) []))
           :steps (do
                    (catalog/run! merged (or (:subcommand-args options) []))
                    0)

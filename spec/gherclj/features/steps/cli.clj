@@ -66,7 +66,7 @@
         run-args (with-sandbox-defaults arg-vec)]
     (when-not (seq errors)
       (g/assoc! :loaded-config merged))
-    (when (or help (pipeline-base-dir) (= :steps (:subcommand options)) (= :unused (:subcommand options)) (seq errors))
+    (when (or help (pipeline-base-dir) (= :steps (:subcommand options)) (= :unused (:subcommand options)) (= :ambiguity (:subcommand options)) (seq errors))
       (let [previous-framework (g/get :_framework)
             stdout (java.io.StringWriter.)
             stderr (java.io.StringWriter.)
@@ -149,6 +149,20 @@
         steps (:unused-steps report)]
     (g/should (some #(= phrase (:phrase %)) steps))))
 
+(defn- unescape-quoted-text [text]
+  (str/replace text #"\\\"" "\""))
+
+(defn ambiguities-list-should-contain-entry-with-phrase [phrase]
+  (let [report (or (g/get :cli-edn-output)
+                   (g/get :cli-json-output)
+                   (edn/read-string (g/get :cli-output "")))
+        entries (:ambiguities report)
+        expected (unescape-quoted-text phrase)]
+    (g/should (some #(= expected (:phrase %)) entries))))
+
+(defn exit-code-should-be-zero []
+  (g/should= 0 (or (g/get :cli-exit-code) 0)))
+
 (defn exit-code-should-be-non-zero []
   (g/should (pos? (or (g/get :cli-exit-code) 0))))
 
@@ -186,6 +200,10 @@
 (defthen "the JSON report should include:" cli/json-report-should-include)
 
 (defthen "the :unused-steps list should contain a step with phrase {phrase:string}" cli/unused-steps-list-should-contain-step-with-phrase)
+
+(defthen "the :ambiguities list should contain an entry with phrase {phrase:string}" cli/ambiguities-list-should-contain-entry-with-phrase)
+
+(defthen "the exit code should be zero" cli/exit-code-should-be-zero)
 
 (defthen "the exit code should be non-zero" cli/exit-code-should-be-non-zero)
 

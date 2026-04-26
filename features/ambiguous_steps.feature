@@ -1,4 +1,3 @@
-@wip
 Feature: Step ambiguity detection
 
   `gherclj ambiguity` walks the project's feature files and reports any
@@ -52,7 +51,7 @@ Feature: Step ambiguity detection
       | a user "alice"  (ambiguous.feature:3)         |
       | Matches:                                      |
       | a user {name:string}    (ambiguous_steps.clj: |
-      | a user {handle:string}  (ambiguous_steps.clj: |
+      | a user {handle:string}    (ambiguous_steps.clj: |
     And the exit code should be non-zero
 
   Scenario: A regex that overlaps with a template is reported

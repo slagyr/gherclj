@@ -199,7 +199,7 @@
             {:features-dir features-dir
              :edn-dir edn-dir
              :output-dir output-dir
-             :step-namespaces ["gherclj.sample.*"]
+             :step-namespaces ["gherclj.sample.app-*"]
              :framework :clojure/speclj})
 
           (should (.exists (io/file output-dir "auth_spec.clj")))
