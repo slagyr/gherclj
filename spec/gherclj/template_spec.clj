@@ -29,17 +29,17 @@
     (it "compiles an int capture"
       (let [{:keys [regex bindings]} (compile-template "timeout is {seconds:int}")]
         (should= "^timeout is (\\d+)$" (str regex))
-        (should= [{:name "seconds" :coerce parse-long}] bindings)))
+        (should= [{:name "seconds" :type "int" :coerce parse-long}] bindings)))
 
     (it "compiles a float capture"
       (let [{:keys [regex bindings]} (compile-template "ratio is {value:float}")]
         (should= "^ratio is ([\\d.]+)$" (str regex))
-        (should= [{:name "value" :coerce parse-double}] bindings)))
+        (should= [{:name "value" :type "float" :coerce parse-double}] bindings)))
 
     (it "compiles an untyped capture as word match"
       (let [{:keys [regex bindings]} (compile-template "status is {status}")]
         (should= "^status is (\\S+)$" (str regex))
-        (should= [{:name "status" :coerce identity}] bindings)))
+        (should= [{:name "status" :type "word" :coerce identity}] bindings)))
 
     (it "compiles multiple captures"
       (let [{:keys [regex bindings]} (compile-template "a project {slug:string} with worker-timeout {timeout:int}")]

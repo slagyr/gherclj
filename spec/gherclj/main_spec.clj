@@ -28,6 +28,20 @@
       (let [result (main/parse-args ["--ir-edn"])]
         (should= true (get-in result [:options :ir-edn]))))
 
+    (it "parses --json for steps"
+      (let [result (main/parse-args ["steps" "--json"])]
+        (should= :steps (get-in result [:options :subcommand]))
+        (should= true (get-in result [:options :json]))))
+
+    (it "parses --edn for unused"
+      (let [result (main/parse-args ["unused" "--edn"])]
+        (should= :unused (get-in result [:options :subcommand]))
+        (should= true (get-in result [:options :edn]))))
+
+    (it "reports an error when --json and --edn are both passed"
+      (let [result (main/parse-args ["steps" "--json" "--edn"])]
+        (should (some #(str/includes? % "--json and --edn are mutually exclusive") (:errors result)))))
+
     (it "parses --framework"
       (let [result (main/parse-args ["--framework" "clojure/test"])]
         (should= :clojure/test (get-in result [:options :framework]))))
@@ -185,7 +199,9 @@
       (let [output (with-out-str
                      (should= 0 (main/run ["steps" "--help"])))]
         (should (str/includes? output "gherclj steps"))
-        (should (str/includes? output "--given"))))
+        (should (str/includes? output "--given"))
+        (should (str/includes? output "--json"))
+        (should (str/includes? output "--edn"))))
 
     (it "prints unused usage for unused --help"
       (let [output (with-out-str
@@ -193,13 +209,22 @@
         (should (str/includes? output "gherclj unused"))
         (should (str/includes? output "--features-dir"))
         (should (str/includes? output "--step-namespaces"))
-        (should (str/includes? output "--tag"))))
+        (should (str/includes? output "--tag"))
+        (should (str/includes? output "--json"))
+        (should (str/includes? output "--edn"))))
 
     (it "returns 1 and prints message for unknown flags"
       (let [output (with-out-str
-                     (should= 1 (main/run ["--turbo-mode"])))]
+                     (binding [*err* *out*]
+                       (should= 1 (main/run ["--turbo-mode"]))))]
         (should (str/includes? output "Unknown option"))
         (should (str/includes? output "turbo-mode"))))
+
+    (it "returns 1 and prints message for mutually exclusive machine output flags"
+      (let [output (with-out-str
+                     (binding [*err* *out*]
+                       (should= 1 (main/run ["steps" "--json" "--edn"]))))]
+        (should (str/includes? output "--json and --edn are mutually exclusive"))))
 
     (it "dispatches the steps subcommand without running the pipeline"
       (let [catalog-config (atom nil)]

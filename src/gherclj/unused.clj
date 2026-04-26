@@ -1,11 +1,15 @@
 ;; mutation-tested: 2026-04-24
 (ns gherclj.unused
   (:refer-clojure :exclude [run!])
-  (:require [clojure.java.io :as io]
+  (:require [cheshire.core :as json]
+            [clojure.java.io :as io]
+            [clojure.pprint :as pprint]
             [clojure.string :as str]
             [gherclj.core :as core]
             [gherclj.parser :as parser]
             [gherclj.pipeline :as pipeline]))
+
+(def version (str/trim (slurp (io/resource "gherclj/VERSION"))))
 
 (def ^:private ordered-types [[:given "Given:"]
                               [:when "When:"]
@@ -14,10 +18,12 @@
 (defn usage-message []
   (str "\nUsage:  gherclj unused [option]...\n\n"
        "List registered steps that are never referenced by scanned feature scenarios.\n\n"
-       "  -f, --features-dir DIR            Features directory (default: features)\n"
-       "  -s, --step-namespaces NS          Step namespace (repeatable, supports globs)\n"
-       "  -t, --tag TAG                     Limit scanned scenarios using the normal tag filter semantics\n"
-       "  -h, --help                        Show usage\n"))
+        "  -f, --features-dir DIR            Features directory (default: features)\n"
+        "  -s, --step-namespaces NS          Step namespace (repeatable, supports globs)\n"
+        "  -t, --tag TAG                     Limit scanned scenarios using the normal tag filter semantics\n"
+        "      --json                        Emit machine-readable JSON\n"
+        "      --edn                         Emit machine-readable EDN\n"
+        "  -h, --help                        Show usage\n"))
 
 (defn- pluralize [n singular plural]
   (str n " " (if (= 1 n) singular plural)))
@@ -58,8 +64,53 @@
      :used-step-count (- total-step-count (count unused-steps))
      :total-step-count total-step-count
      :unused-steps unused-steps
-      :filters (into [] (concat (map #(str "~" %) (or exclude-tags []))
-                                (or include-tags [])))}))
+       :filters (into [] (concat (map #(str "~" %) (or exclude-tags []))
+                                 (or include-tags [])))}))
+
+(defn- sort-steps [steps]
+  (sort-by (juxt #(str (:ns %)) :line) steps))
+
+(defn- step-phrase [{:keys [template regex]}]
+  (or template (some-> regex .pattern)))
+
+(defn- step-entry [{:keys [type helper-ref ns file line doc bindings] :as step}]
+  {:type type
+   :phrase (step-phrase step)
+   :regex (not (contains? step :template))
+   :helper-ref (str helper-ref)
+   :ns ns
+   :file file
+   :line line
+   :doc doc
+   :bindings (mapv #(select-keys % [:name :type]) (or bindings []))})
+
+(defn build-data [{:keys [scanned-scenarios unused-steps filters]}]
+  {:gherclj-version version
+   :command "unused"
+   :scenarios-scanned scanned-scenarios
+   :tags-applied {:include (vec (remove #(str/starts-with? % "~") filters))
+                  :exclude (mapv #(subs % 1) (filter #(str/starts-with? % "~") filters))}
+   :unused-steps (->> unused-steps sort-steps (mapv step-entry))})
+
+(defn- json-step-entry [step]
+  (-> step
+      (assoc :type (name (:type step))
+             :ns (str (:ns step)))))
+
+(defn- json-ready [value]
+  (cond
+    (map? value) (into (array-map)
+                       (for [k (sort-by name (keys value))]
+                         [k (json-ready (get value k))]))
+    (vector? value) (mapv json-ready value)
+    :else value))
+
+(defn render-json [data]
+  (json/generate-string (json-ready (update data :unused-steps #(mapv json-step-entry %))) {:pretty true}))
+
+(defn render-edn [data]
+  (with-out-str
+    (pprint/pprint data)))
 
 (defn render [{:keys [scanned-scenarios unscanned-scenarios used-step-count total-step-count unused-steps filters]}]
   (let [total-scenarios (+ scanned-scenarios unscanned-scenarios)
@@ -95,5 +146,10 @@
 (defn run! [config _args]
   (let [step-namespaces (pipeline/load-step-namespaces! (:step-namespaces config))
         steps (core/collect-steps step-namespaces)
-        irs (parser/parse-features-dir (:features-dir config))]
-    (println (render (analyze steps irs config)))))
+        irs (parser/parse-features-dir (:features-dir config))
+        analysis (analyze steps irs config)
+        data (build-data analysis)]
+    (println (cond
+               (:json config) (render-json data)
+               (:edn config) (render-edn data)
+               :else (render analysis)))))

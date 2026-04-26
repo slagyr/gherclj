@@ -30,8 +30,8 @@
   (let [[name type-str] (str/split expr #":" 2)
         type-info (get type-patterns type-str)]
     (if type-info
-      {:name name :regex (:regex type-info) :coerce (:coerce type-info)}
-      {:name name :regex "\\S+" :coerce identity})))
+      {:name name :type type-str :regex (:regex type-info) :coerce (:coerce type-info)}
+      {:name name :type "word" :regex "\\S+" :coerce identity})))
 
 (defn compile-template
   "Compile a step template string into {:regex Pattern :bindings [{:name str :coerce fn}]}.
@@ -50,12 +50,14 @@
         (reduce (fn [{:keys [regex-parts bindings]} [literal capture-expr]]
                   (let [escaped-literal (apply str (map escape-regex-char literal))]
                     (if capture-expr
-                      (let [capture (parse-capture capture-expr)
-                            capture-regex (str "(" (:regex capture) ")")]
-                        {:regex-parts (conj regex-parts escaped-literal capture-regex)
-                         :bindings (conj bindings {:name (:name capture) :coerce (:coerce capture)})})
-                      {:regex-parts (conj regex-parts escaped-literal)
-                       :bindings bindings})))
+                       (let [capture (parse-capture capture-expr)
+                             capture-regex (str "(" (:regex capture) ")")]
+                         {:regex-parts (conj regex-parts escaped-literal capture-regex)
+                          :bindings (conj bindings {:name (:name capture)
+                                                    :type (:type capture)
+                                                    :coerce (:coerce capture)})})
+                       {:regex-parts (conj regex-parts escaped-literal)
+                        :bindings bindings})))
                 {:regex-parts [] :bindings []}
                 pairs)]
     {:regex (re-pattern (str "^" (apply str regex-parts) "$"))

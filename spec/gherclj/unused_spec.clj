@@ -1,5 +1,6 @@
 (ns gherclj.unused-spec
-  (:require [gherclj.unused :as unused]
+  (:require [cheshire.core :as json]
+            [gherclj.unused :as unused]
             [speclj.core :refer :all]))
 
 (def sample-steps
@@ -33,9 +34,21 @@
             result (unused/analyze sample-steps irs {:exclude-tags ["slow"]})]
         (should= 1 (:scanned-scenarios result))
         (should= 1 (:unscanned-scenarios result))
-        (should= 2 (:used-step-count result))
-        (should= 3 (:total-step-count result))
-        (should= ["the response should be {status:int}"] (mapv :template (:unused-steps result))))))
+         (should= 2 (:used-step-count result))
+         (should= 3 (:total-step-count result))
+         (should= ["the response should be {status:int}"] (mapv :template (:unused-steps result))))))
+
+    (it "builds a structured report with machine-readable unused steps"
+      (let [data (unused/build-data {:scanned-scenarios 1
+                                     :unscanned-scenarios 1
+                                     :used-step-count 2
+                                     :total-step-count 3
+                                     :unused-steps [(second sample-steps)]
+                                     :filters ["~slow"]})]
+        (should= "unused" (:command data))
+        (should= 1 (:scenarios-scanned data))
+        (should= {:include [] :exclude ["slow"]} (:tags-applied data))
+        (should= "the user logs in" (get-in data [:unused-steps 0 :phrase]))))
 
   (context "render"
 
@@ -82,4 +95,26 @@
                                  :unused-steps [(second sample-steps) (nth sample-steps 2)]
                                  :filters ["~slow"]})]
         (should-not (.contains text "Unused steps:\n\nWhen:"))
-        (should-not (.contains text "When:\n\nthe user logs in  (app_steps.clj:8)"))))))
+        (should-not (.contains text "When:\n\nthe user logs in  (app_steps.clj:8)"))))
+
+    (it "renders pretty json machine output"
+      (let [output (unused/render-json {:gherclj-version "1.0.0"
+                                        :command "unused"
+                                        :scenarios-scanned 1
+                                        :tags-applied {:include [] :exclude ["slow"]}
+                                        :unused-steps [{:type :when :phrase "the user logs in"}]})
+            parsed (json/parse-string output keyword)]
+        (should (re-find #"\n" output))
+        (should= "unused" (:command parsed))
+        (should= "when" (get-in parsed [:unused-steps 0 :type]))))
+
+    (it "renders pretty edn machine output"
+      (let [output (unused/render-edn {:gherclj-version "1.0.0"
+                                       :command "unused"
+                                       :scenarios-scanned 1
+                                       :tags-applied {:include [] :exclude []}
+                                       :unused-steps [{:type :when :phrase "the user logs in"}]})
+            parsed (read-string output)]
+        (should (re-find #"\n" output))
+        (should= "unused" (:command parsed))
+        (should= :when (get-in parsed [:unused-steps 0 :type]))))))

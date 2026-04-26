@@ -98,7 +98,6 @@ Feature: Unused step detection
     And the output should not contain "a user {name:string}"
     And the output should not contain "the user logs in"
 
-  @wip
   Scenario: gherclj unused --edn emits a structured report
     Given a features directory containing:
       | file         |
@@ -118,7 +117,6 @@ Feature: Unused step detection
     And the :unused-steps list should contain a step with phrase "the user logs in"
     And the :unused-steps list should contain a step with phrase "the response should be {status:int}"
 
-  @wip
   Scenario: gherclj unused --json emits a structured report
     Given a features directory containing:
       | file         |

@@ -38,6 +38,8 @@
   [[nil "--given" "Show Given steps"]
    [nil "--when" "Show When steps"]
    [nil "--then" "Show Then steps"]
+   [nil "--json" "Emit machine-readable JSON"]
+   [nil "--edn" "Emit machine-readable EDN"]
    [nil "--color" "Force ANSI color output"]
    [nil "--no-color" "Disable ANSI color output"]])
 
@@ -87,7 +89,10 @@
                              (seq locations) (assoc :locations locations)
                              (seq framework-opts) (assoc :framework-opts framework-opts)
                              subcommand (assoc :subcommand subcommand)
-                             (seq subcommand-args) (assoc :subcommand-args subcommand-args)))]
+                             (seq subcommand-args) (assoc :subcommand-args subcommand-args)))
+        errors   (cond-> (vec errors)
+                   (and (:json options) (:edn options))
+                   (conj "--json and --edn are mutually exclusive"))]
     (cond-> {:options opts
              :help    (:help options)
              :errors  errors
@@ -120,7 +125,8 @@
   (let [{:keys [options help errors]} (parse-args args)]
     (cond
       (seq errors)
-      (do (doseq [e errors] (println e))
+      (do (binding [*out* *err*]
+            (doseq [e errors] (println e)))
           1)
 
       help

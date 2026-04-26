@@ -1,4 +1,3 @@
-@wip
 Feature: Step catalog
 
   `gherclj steps` lists all registered step definitions grouped by type.
@@ -102,7 +101,6 @@ Feature: Step catalog
 
   # --- Machine-readable output ---
 
-  @wip
   Scenario: gherclj steps --edn emits a structured catalog
     When running gherclj with "-s gherclj.sample.app-steps steps --edn"
     Then the output should be valid EDN
@@ -114,7 +112,6 @@ Feature: Step catalog
       | regex      | false                   |
       | helper-ref | app-steps/create-adventurer |
 
-  @wip
   Scenario: gherclj steps --json emits a structured catalog
     When running gherclj with "-s gherclj.sample.app-steps steps --json"
     Then the output should be valid JSON
@@ -126,7 +123,6 @@ Feature: Step catalog
       | regex      | false                       |
       | helper-ref | app-steps/create-adventurer |
 
-  @wip
   Scenario: regex-based steps are flagged with :regex true
     When running gherclj with "-s gherclj.sample.dragon-steps steps --edn"
     Then the EDN output should include a step with:
@@ -134,12 +130,10 @@ Feature: Step catalog
       | phrase | ^the cave contains (.+)$ |
       | regex  | true                   |
 
-  @wip
   Scenario: --given filter composes with --json
     When running gherclj with "-s gherclj.sample.app-steps steps --json --given"
     Then every step entry in the JSON output has type "given"
 
-  @wip
   Scenario: --json and --edn together is an error
     When running gherclj with "-s gherclj.sample.app-steps steps --json --edn"
     Then the exit code should be non-zero

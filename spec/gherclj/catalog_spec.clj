@@ -1,7 +1,8 @@
 (ns gherclj.catalog-spec
-  (:require [clojure.string :as str]
-            [gherclj.catalog :as catalog]
-            [speclj.core :refer :all]))
+  (:require [cheshire.core :as json]
+            [clojure.string :as str]
+             [gherclj.catalog :as catalog]
+             [speclj.core :refer :all]))
 
 (describe "Catalog"
 
@@ -13,6 +14,8 @@
         (should (str/includes? text "--given"))
         (should (str/includes? text "--when"))
         (should (str/includes? text "--then"))
+        (should (str/includes? text "--json"))
+        (should (str/includes? text "--edn"))
         (should (str/includes? text "--color"))
         (should (str/includes? text "--no-color"))
         (should (str/includes? text "--step-namespaces")))))
@@ -90,5 +93,51 @@
                                      :doc "Sets :crew atom - does NOT write disk."
                                      :file "/tmp/app_steps.clj"
                                      :line 4}]
-                                   {:color? false})]
-        (should-not (re-find #"\u001b\[[0-9;]*m" output))))))
+                                    {:color? false})]
+        (should-not (re-find #"\u001b\[[0-9;]*m" output))))
+
+    (it "builds structured catalog data with sorted step entries"
+      (let [data (catalog/build-data [{:type :when
+                                       :template "the user logs in"
+                                       :helper-ref 'app-steps/enter-the-realm
+                                       :ns 'gherclj.sample.app-steps
+                                       :file "src/gherclj/sample/app_steps.clj"
+                                       :line 11
+                                       :bindings []}
+                                      {:type :given
+                                       :template "a user {name:string}"
+                                       :helper-ref 'app-steps/create-adventurer
+                                       :ns 'gherclj.sample.app-steps
+                                       :file "src/gherclj/sample/app_steps.clj"
+                                       :line 10
+                                       :bindings [{:name "name" :type "string"}]}]
+                                     {})]
+        (should= "steps" (:command data))
+        (should= [:given :when] (mapv :type (:steps data)))
+        (should= [{:name "name" :type "string"}] (:bindings (first (:steps data))))))
+
+    (it "renders pretty json machine output"
+      (let [output (catalog/render-json {:gherclj-version "1.0.0"
+                                         :command "steps"
+                                         :steps [{:type :given
+                                                  :phrase "a user {name:string}"
+                                                  :regex false
+                                                  :helper-ref "app-steps/create-adventurer"
+                                                  :ns "gherclj.sample.app-steps"
+                                                  :file "src/gherclj/sample/app_steps.clj"
+                                                  :line 10
+                                                  :doc nil
+                                                  :bindings [{:name "name" :type "string"}]}]})
+            parsed (json/parse-string output keyword)]
+        (should (str/includes? output "\n"))
+        (should= "steps" (:command parsed))
+        (should= "given" (get-in parsed [:steps 0 :type]))))
+
+    (it "renders pretty edn machine output"
+      (let [output (catalog/render-edn {:gherclj-version "1.0.0"
+                                        :command "steps"
+                                        :steps [{:type :given :phrase "a user {name:string}"}]})
+            parsed (read-string output)]
+        (should (str/includes? output "\n"))
+        (should= "steps" (:command parsed))
+        (should= :given (get-in parsed [:steps 0 :type]))))))

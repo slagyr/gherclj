@@ -1,10 +1,14 @@
 ;; mutation-tested: 2026-04-24
 (ns gherclj.catalog
   (:refer-clojure :exclude [run!])
-  (:require [clojure.java.io :as io]
+  (:require [cheshire.core :as json]
+            [clojure.java.io :as io]
+            [clojure.pprint :as pprint]
             [clojure.string :as str]
             [gherclj.core :as core]
             [gherclj.pipeline :as pipeline]))
+
+(def version (str/trim (slurp (io/resource "gherclj/VERSION"))))
 
 (def ^:private ordered-types [[:given "Given:"]
                               [:when "When:"]
@@ -23,13 +27,15 @@
 (defn usage-message []
   (str "\nUsage:  gherclj steps [option]...\n\n"
        "List registered step definitions grouped by type.\n\n"
-       "  -s, --step-namespaces NS          Step namespace (repeatable, supports globs)\n"
-       "      --given                       Show Given steps\n"
-       "      --when                        Show When steps\n"
-       "      --then                        Show Then steps\n"
-       "      --color                       Force ANSI color output\n"
-       "      --no-color                    Disable ANSI color output\n"
-       "  -h, --help                        Show usage\n"))
+        "  -s, --step-namespaces NS          Step namespace (repeatable, supports globs)\n"
+        "      --given                       Show Given steps\n"
+        "      --when                        Show When steps\n"
+        "      --then                        Show Then steps\n"
+        "      --json                        Emit machine-readable JSON\n"
+        "      --edn                         Emit machine-readable EDN\n"
+        "      --color                       Force ANSI color output\n"
+        "      --no-color                    Disable ANSI color output\n"
+        "  -h, --help                        Show usage\n"))
 
 (defn- step-text [{:keys [template regex]}]
   (or template (some-> regex str)))
@@ -70,6 +76,50 @@
        (filter #(or (nil? keyword) (matches-keyword? % keyword)))
        vec))
 
+(defn- sort-steps [steps]
+  (sort-by (juxt #(str (:ns %)) :line) steps))
+
+(defn- step-phrase [{:keys [template regex]}]
+  (or template (some-> regex .pattern)))
+
+(defn- step-entry [{:keys [type helper-ref ns file line doc bindings] :as step}]
+  {:type type
+   :phrase (step-phrase step)
+   :regex (not (contains? step :template))
+   :helper-ref (str helper-ref)
+   :ns ns
+   :file file
+   :line line
+   :doc doc
+   :bindings (mapv #(select-keys % [:name :type]) (or bindings []))})
+
+(defn build-data [steps {:keys [keyword] :as config}]
+  {:gherclj-version version
+   :command "steps"
+   :steps (->> (filter-steps steps {:keyword keyword :types (type-filter config)})
+               sort-steps
+               (mapv step-entry))})
+
+(defn- json-step-entry [step]
+  (-> step
+      (assoc :type (name (:type step))
+             :ns (str (:ns step)))))
+
+(defn- json-ready [value]
+  (cond
+    (map? value) (into (array-map)
+                       (for [k (sort-by name (keys value))]
+                         [k (json-ready (get value k))]))
+    (vector? value) (mapv json-ready value)
+    :else value))
+
+(defn render-json [data]
+  (json/generate-string (json-ready (update data :steps #(mapv json-step-entry %))) {:pretty true}))
+
+(defn render-edn [data]
+  (with-out-str
+    (pprint/pprint data)))
+
 (defn render
   ([steps]
    (render steps {:color? true}))
@@ -87,6 +137,11 @@
 (defn run! [config args]
   (let [step-namespaces (pipeline/load-step-namespaces! (:step-namespaces config))
         steps (core/collect-steps step-namespaces)
-        filtered (filter-steps steps {:keyword (first args)
-                                      :types (type-filter config)})]
-    (println (render filtered {:color? (color-enabled? config)}))))
+        config (assoc config :keyword (first args))
+        filtered (filter-steps steps {:keyword (:keyword config)
+                                      :types (type-filter config)})
+        data (build-data steps config)]
+    (println (cond
+               (:json config) (render-json data)
+               (:edn config) (render-edn data)
+               :else (render filtered {:color? (color-enabled? config)})))))

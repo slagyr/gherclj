@@ -4,7 +4,10 @@
 
 (helper! gherclj.features.steps.step-catalog)
 
-(def ansi-code-pattern #"\[[0-9;]*m")
+(def ansi-code-pattern #"\u001b\[[0-9;]*m")
+
+(defn- strip-ansi [text]
+  (str/replace text ansi-code-pattern ""))
 
 (defn- trim-blank-lines [lines]
   (->> lines
@@ -25,7 +28,7 @@
            (partition window-size 1 actual-lines)))))
 
 (defn catalog-output-should-include [doc-string]
-  (g/should (adjacent-lines-present? (g/get :cli-output "") doc-string)))
+  (g/should (adjacent-lines-present? (strip-ansi (g/get :cli-output "")) doc-string)))
 
 (defn output-should-have-no-color-codes []
   (g/should-not (re-find ansi-code-pattern (g/get :cli-output ""))))
@@ -34,7 +37,7 @@
   (g/should (re-find ansi-code-pattern (g/get :cli-output ""))))
 
 (defn output-should-contain-lines [table]
-  (let [output (g/get :cli-output "")
+  (let [output (strip-ansi (g/get :cli-output ""))
         lines (concat (:headers table) (mapcat identity (:rows table)))]
     (doseq [line lines]
       (g/should (str/includes? output line)))))

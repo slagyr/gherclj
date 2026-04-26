@@ -65,13 +65,17 @@
 
 (defn output-should-contain [expected]
   (let [expected (str/replace expected #"^\"|\"$" "")
-        raw-output (or (g/get :cli-output) (g/get :generated-output) (g/get :pipeline-output) "")
-        output (str/replace raw-output (str pipeline-base-dir "/") "")]
+         raw-output (or (g/get :cli-output) (g/get :generated-output) (g/get :pipeline-output) "")
+        output (-> raw-output
+                   (str/replace #"\u001b\[[0-9;]*m" "")
+                   (str/replace (str pipeline-base-dir "/") ""))]
     (g/should (str/includes? output expected))))
 
 (defn output-should-not-contain [text]
   (let [raw-output (or (g/get :cli-output) (g/get :generated-output) (g/get :pipeline-output) "")
-        output (str/replace raw-output (str pipeline-base-dir "/") "")]
+        output (-> raw-output
+                   (str/replace #"\u001b\[[0-9;]*m" "")
+                   (str/replace (str pipeline-base-dir "/") ""))]
     (g/should-not (str/includes? output text))))
 
 (defn generated-code-should-be [doc-string]
