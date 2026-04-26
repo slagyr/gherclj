@@ -2,6 +2,8 @@
 
 Potential enhancements for making `gherclj` more effective for agentic development.
 
+The unifying theme: gherclj should be sharper at answering **what matched?**, **what didn't?**, **why?**, and **what will this change break?** Most items below ladder up to one of those four.
+
 ## Top Five
 
 1. Add machine-readable output for discovery commands.
@@ -34,6 +36,8 @@ Potential enhancements for making `gherclj` more effective for agentic developme
 - Report unused steps and orphan helpers.
 - Report broken helper imports.
 - Report framework/runtime/toolchain issues.
+- Report scenarios with zero assertions — Thens that route to helpers which don't actually assert.
+- Report weak Then coverage — scenarios whose Thens only inspect raw output rather than domain-level state.
 
 ## Debugging And Traceability
 
@@ -41,6 +45,10 @@ Potential enhancements for making `gherclj` more effective for agentic developme
 - Add `gherclj trace <feature-or-scenario>`.
 - Add optional generated-code annotations showing feature file, scenario, and source step provenance.
 - Add a dry-run debug bundle that writes parsed IR, classified IR, generation summaries, and generated code into a single target directory.
+- Add `gherclj why-not <feature-or-scenario>` to explain why something didn't run — filtered by tag, `@wip`, pending due to unmatched step, ambiguous match, generation failure.
+- Add `gherclj why-pending <feature:line>` for the focused case: explain why a generated scenario came out pending (no match, ambiguous, excluded by tag) — the targeted variant of `why-not`.
+- Add `gherclj run --explain <file:line>` to run one scenario and print the matched steps, extracted args, and the location of any pending or failure.
+- Add a direct debug mode that surfaces gherkin → matched-steps → runner output in one go without exposing intermediate artifacts unless explicitly requested.
 
 ## Discovery And Navigation
 
@@ -51,6 +59,10 @@ Potential enhancements for making `gherclj` more effective for agentic developme
 - Add `gherclj tags` to inventory all tags across features with usage counts.
 - Add parameter-value coverage for parameterized steps — show the distinct captured values that have actually been exercised across scenarios.
 - Show example invocations alongside step phrases in `gherclj steps`, drawn from observed parameter values, so agents writing features see how a step is typically used.
+- Add `gherclj steps --grep <keyword>` as a structured substring filter over phrase + docstring (the same content as today's positional keyword filter, but discoverable via `--help` and composable with other flags). Preserves the type grouping that `bb steps | grep` loses.
+- Add `gherclj steps --orphan-helpers` to list `defn`s in a step namespace with no matching `defgiven`/`defwhen`/`defthen` registration — the symmetric bug to "unused steps", a function that should have been registered but wasn't.
+- Add `gherclj namespace-graph <feature>` to show which step namespaces a feature touches — useful for understanding feature/namespace coupling and for splitting features.
+- Support metadata-based filtering on the catalog once steps declare it: `gherclj steps --domain bridge --transport acp`.
 
 ## Authoring Support
 
@@ -64,6 +76,8 @@ Potential enhancements for making `gherclj` more effective for agentic developme
 - Surface ambiguous step regex collisions statically as part of `gherclj lint`/`doctor`, instead of only at run time when classification fails.
 - Warn when a step routes to a helper module that isn't declared via `helper!` in the step namespace.
 - Add custom parameter types (e.g., `{user-id:uuid}`, `{date:iso}`) with project-defined types registered in step namespaces, so validation moves up to gherclj and the catalog can show parameter shapes.
+- Allow steps to declare metadata (domain, transport, framework, helper module, ownership) so the catalog and `who-uses-step` can filter and group by it. Pairs with namespace-level metadata for coarser cuts.
+- Warn on hidden setup — step definitions that pull substantial implicit state when the feature text doesn't declare the seam, so the seam shows up in the Gherkin rather than disappearing into helpers.
 
 ## Generation And Refactoring
 
@@ -71,6 +85,7 @@ Potential enhancements for making `gherclj` more effective for agentic developme
 - Add clean per-scenario generation for tighter edit/verify loops.
 - Add rename/refactor support for step routes and helper references.
 - Add a change impact report showing which scenarios, languages, and frameworks are affected by a step or helper change.
+- Add `gherclj diff <commit>` to compare the catalog (phrase + helper-ref per step) between two git refs, so a migration can prove every phrase that worked before still works.
 
 ## Maintenance
 
