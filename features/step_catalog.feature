@@ -99,3 +99,48 @@ Feature: Step catalog
     And the output should contain "--then"
     And the output should contain "--no-color"
     And the output should contain "-s, --step-namespaces"
+
+  # --- Machine-readable output ---
+
+  @wip
+  Scenario: gherclj steps --edn emits a structured catalog
+    When running gherclj with "-s gherclj.sample.app-steps steps --edn"
+    Then the output should be valid EDN
+    And the output should span multiple lines
+    And the EDN output should include a step with:
+      | field      | value                   |
+      | type       | :given                  |
+      | phrase     | a user {name:string}    |
+      | regex      | false                   |
+      | helper-ref | app-steps/create-adventurer |
+
+  @wip
+  Scenario: gherclj steps --json emits a structured catalog
+    When running gherclj with "-s gherclj.sample.app-steps steps --json"
+    Then the output should be valid JSON
+    And the output should span multiple lines
+    And the JSON output should include a step with:
+      | field      | value                       |
+      | type       | given                       |
+      | phrase     | a user {name:string}        |
+      | regex      | false                       |
+      | helper-ref | app-steps/create-adventurer |
+
+  @wip
+  Scenario: regex-based steps are flagged with :regex true
+    When running gherclj with "-s gherclj.sample.dragon-steps steps --edn"
+    Then the EDN output should include a step with:
+      | field  | value                  |
+      | phrase | ^the cave contains (.+)$ |
+      | regex  | true                   |
+
+  @wip
+  Scenario: --given filter composes with --json
+    When running gherclj with "-s gherclj.sample.app-steps steps --json --given"
+    Then every step entry in the JSON output has type "given"
+
+  @wip
+  Scenario: --json and --edn together is an error
+    When running gherclj with "-s gherclj.sample.app-steps steps --json --edn"
+    Then the exit code should be non-zero
+    And the error output should mention "--json and --edn are mutually exclusive"

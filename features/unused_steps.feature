@@ -97,3 +97,41 @@ Feature: Unused step detection
       | the response should be {status:int}  (app_steps.clj:                |
     And the output should not contain "a user {name:string}"
     And the output should not contain "the user logs in"
+
+  @wip
+  Scenario: gherclj unused --edn emits a structured report
+    Given a features directory containing:
+      | file         |
+      | auth.feature |
+    And the feature "auth.feature" contains:
+      """
+      Feature: Auth
+        Scenario: Login
+          Given a user "alice"
+      """
+    When running gherclj with "-f features -s gherclj.sample.app-steps unused --edn"
+    Then the output should be valid EDN
+    And the output should span multiple lines
+    And the EDN report should include:
+      | field             | value |
+      | scenarios-scanned | 1     |
+    And the :unused-steps list should contain a step with phrase "the user logs in"
+    And the :unused-steps list should contain a step with phrase "the response should be {status:int}"
+
+  @wip
+  Scenario: gherclj unused --json emits a structured report
+    Given a features directory containing:
+      | file         |
+      | auth.feature |
+    And the feature "auth.feature" contains:
+      """
+      Feature: Auth
+        Scenario: Login
+          Given a user "alice"
+      """
+    When running gherclj with "-f features -s gherclj.sample.app-steps unused --json"
+    Then the output should be valid JSON
+    And the output should span multiple lines
+    And the JSON report should include:
+      | field             | value |
+      | scenarios-scanned | 1     |
