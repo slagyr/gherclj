@@ -6,22 +6,16 @@ The unifying theme: gherclj should be sharper at answering **what matched?**, **
 
 ## Tier 1 — Highest Leverage
 
-Cross-agent consensus on the top three; #4 and #5 are items both reviewers rated in or near their top 5 and that match the daily friction we hit during agent-driven work.
+Each item was rated in the top 5 by both reviewers and matches daily friction during agent-driven work.
 
-1. **Machine-readable output for discovery commands.**
-   `--json` and `--edn` on `gherclj steps`, `gherclj unused`, and (once they exist) `doctor`/`summarize-failures`/`list-pending`. Foundation for filtering, scripting, and inter-tool composition. *In flight — bead `gherclj-nif`.*
-
-2. **`gherclj doctor --json`.**
+1. **`gherclj doctor --json`.**
    One command for "what is broken and why" — missing steps, ambiguous matches, unused steps, broken helper imports, framework/runtime issues. Replaces the current "run the suite, read 14 seconds of wall-of-text" pre-flight loop.
 
-3. **`gherclj explain-step "<text>"`.**
+2. **`gherclj explain-step "<text>"`.**
    Given a step phrase, show the matched definition, extracted args, helper route, and rendered target call. Single biggest win for understanding existing code without grepping step files.
 
-4. **Nearest-match suggestions for missing steps.**
+3. **Nearest-match suggestions for missing steps.**
    When a phrase doesn't match, surface the closest existing one. Directly attacks the step-duplication trap that comes up repeatedly when agents author features against an unfamiliar catalog.
-
-5. **Static ambiguity detection in `doctor`/`lint`.**
-   Surface ambiguous step regex collisions at lint/doctor time rather than as a run-time classification error. Cheap to detect statically; expensive to debug at runtime.
 
 ## Tier 2 — Strong Candidates
 
@@ -44,8 +38,6 @@ The next set both agents rated meaningfully — different ordering between them,
 
 ## Machine-Readable Output
 
-- Add `--json` output to `gherclj steps`.
-- Add `--json` output to `gherclj unused`.
 - Add `--json-summary` output to parse and generate workflows.
 - Add `gherclj snapshot` to emit a single structured project-state file.
 
@@ -94,7 +86,6 @@ The next set both agents rated meaningfully — different ordering between them,
 - Encourage or require docstrings for non-obvious steps.
 - Add a formatter for `.feature` files.
 - Warn on duplicate scenario titles within a feature — they collide on generated test method names in frameworks that derive method names from titles (JUnit, Go).
-- Surface ambiguous step regex collisions statically as part of `gherclj lint`/`doctor`, instead of only at run time when classification fails.
 - Warn when a step routes to a helper module that isn't declared via `helper!` in the step namespace.
 - Add custom parameter types (e.g., `{user-id:uuid}`, `{date:iso}`) with project-defined types registered in step namespaces, so validation moves up to gherclj and the catalog can show parameter shapes.
 - Allow steps to declare metadata (domain, transport, framework, helper module, ownership) so the catalog and `who-uses-step` can filter and group by it. Pairs with namespace-level metadata for coarser cuts.
