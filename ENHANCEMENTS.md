@@ -4,22 +4,43 @@ Potential enhancements for making `gherclj` more effective for agentic developme
 
 The unifying theme: gherclj should be sharper at answering **what matched?**, **what didn't?**, **why?**, and **what will this change break?** Most items below ladder up to one of those four.
 
-## Top Five
+## Tier 1 — Highest Leverage
 
-1. Add machine-readable output for discovery commands.
-   `gherclj steps --json`, `gherclj unused --json`, and similar flags would reduce parsing ambiguity for agents.
+Cross-agent consensus on the top three; #4 and #5 are items both reviewers rated in or near their top 5 and that match the daily friction we hit during agent-driven work.
 
-2. Add `gherclj doctor --json`.
-   A single command should report missing steps, ambiguous matches, unused steps, broken generated files, and framework/runtime issues.
+1. **Machine-readable output for discovery commands.**
+   `--json` and `--edn` on `gherclj steps`, `gherclj unused`, and (once they exist) `doctor`/`summarize-failures`/`list-pending`. Foundation for filtering, scripting, and inter-tool composition. *In flight — bead `gherclj-nif`.*
 
-3. Add `gherclj explain-step`.
-   Given a step string, show the matched definition, extracted args, helper route, and rendered target call.
+2. **`gherclj doctor --json`.**
+   One command for "what is broken and why" — missing steps, ambiguous matches, unused steps, broken helper imports, framework/runtime issues. Replaces the current "run the suite, read 14 seconds of wall-of-text" pre-flight loop.
 
-4. Add `gherclj scaffold-missing`.
-   Generate routing stubs for unmatched steps, and optionally helper stubs as well.
+3. **`gherclj explain-step "<text>"`.**
+   Given a step phrase, show the matched definition, extracted args, helper route, and rendered target call. Single biggest win for understanding existing code without grepping step files.
 
-5. Add `gherclj trace`.
-   Show the full path from feature text to parsed IR to matched steps to generated code.
+4. **Nearest-match suggestions for missing steps.**
+   When a phrase doesn't match, surface the closest existing one. Directly attacks the step-duplication trap that comes up repeatedly when agents author features against an unfamiliar catalog.
+
+5. **Static ambiguity detection in `doctor`/`lint`.**
+   Surface ambiguous step regex collisions at lint/doctor time rather than as a run-time classification error. Cheap to detect statically; expensive to debug at runtime.
+
+## Tier 2 — Strong Candidates
+
+The next set both agents rated meaningfully — different ordering between them, but each item earned a top-10 slot somewhere.
+
+6. **`gherclj who-uses-step <phrase>`.**
+   Reverse lookup: which scenarios depend on this step. Critical before mass renames or deletions, especially for parameterized/regex steps that aren't grep-discoverable.
+
+7. **`gherclj trace <feature:line>`.**
+   Full path from feature text → IR → matched steps → generated code. Earns its keep when a generated spec fails to compile and the resolution chain is opaque.
+
+8. **`gherclj scaffold-missing`.**
+   Generate routing stubs (and optionally helper stubs) for unmatched steps. Speeds the feature → routing pass on `@wip` features.
+
+9. **Helper-discipline lint.**
+   Warn when a step routes to a helper module not declared via `helper!`. Catches an entire class of subtle import bugs at parse time rather than at first invocation.
+
+10. **`gherclj summarize-failures --json` and `list-pending --json`.**
+    Fast triage after a run — what failed, what's still pending. Pairs with #1 to make CI-driven and agent-driven loops snappy.
 
 ## Machine-Readable Output
 
