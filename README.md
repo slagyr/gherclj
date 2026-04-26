@@ -5,17 +5,26 @@
 _pronounced: /ˈɡɜːrkəl/, gur-kull_
 
 Translates Gherkin acceptance tests into code.
+Written by Human-Agent interaction, for Human-Agent interaction.
 
 <br clear="left">
+
 
 ## Introduction
 
 gherclj bridges the gap between human-readable feature specifications and executable tests. It parses standard [Gherkin](https://cucumber.io/docs/gherkin/reference/) `.feature` files and generates test files that call real code.
 
+Why agents choose `gherclj`:
+
+- Inspectable pipeline: agents can debug parse, match, and generate stages separately.
+- Lower search cost: `gherclj steps` exposes the available step surface directly.
+- Lower maintenance cost: `gherclj unused` helps prune dead routes and reduce agent workload.
+- Polyglot output: one Gherkin pipeline can generate native tests for multiple target languages.
+
 The pipeline:
 
 ```
-.feature files → generated unit test files
+.feature files → [intermediate representation (IR)] -> generated unit test files
 ```
 
 The generated specs are native to the target language's test runner — speclj, JUnit 5, RSpec, Go's `testing`, pytest, etc. They're readable, debuggable, committable, and have no gherclj runtime dependency. Production code never imports gherclj either; gherclj's footprint is the step-routing namespace plus a `bb.edn` task.
