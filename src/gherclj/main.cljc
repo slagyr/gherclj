@@ -98,7 +98,7 @@
     (str "\nGherclj " version " - pronounced /\u0261\u025c\u02d0rk\u0259l/, gur-kull: a Gherkin -> test code transducer.\n"
          "Copyright (c) 2026 Micah Martin under The MIT License.\n\n"
          "Usage:  gherclj [option]... [feature target]... [-- framework option...]\n"
-         "        gherclj [option]... <subcommand> [subcommand option]...\n\n"
+         "        gherclj <subcommand> [option]...\n\n"
          "  feature targets  [file|file:line]... The union of all targeted scenarios get run. (default: all scenarios in --features-dir).\n"
          "                   file      all scenarios in the file\n"
          "                   file:line the scenario containing that line in the file\n\n"
