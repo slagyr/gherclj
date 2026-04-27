@@ -29,7 +29,6 @@
        "  -t, --tag TAG                     Limit scanned scenarios using the normal tag filter semantics\n"
        "      --json                        Emit machine-readable JSON\n"
        "      --edn                         Emit machine-readable EDN\n"
-       "      --color                       Force ANSI color output\n"
        "      --no-color                    Disable ANSI color output\n"
        "  -h, --help                        Show usage\n"))
 

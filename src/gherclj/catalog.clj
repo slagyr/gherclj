@@ -19,10 +19,8 @@
 (defn- ansi [code text]
   (str "\u001b[" code "m" text ansi-reset))
 
-(defn- color-enabled? [{:keys [color no-color]}]
-  (if (some? no-color)
-    (not no-color)
-    (not= false color)))
+(defn- color-enabled? [{:keys [no-color]}]
+  (not no-color))
 
 (defn usage-message []
   (str "\nUsage:  gherclj steps [option]...\n\n"
@@ -33,7 +31,6 @@
         "      --then                        Show Then steps\n"
         "      --json                        Emit machine-readable JSON\n"
         "      --edn                         Emit machine-readable EDN\n"
-        "      --color                       Force ANSI color output\n"
         "      --no-color                    Disable ANSI color output\n"
         "  -h, --help                        Show usage\n"))
 

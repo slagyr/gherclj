@@ -43,7 +43,6 @@
         (should (str/includes? text "--step-namespaces"))
         (should (str/includes? text "--json"))
         (should (str/includes? text "--edn"))
-        (should (str/includes? text "--color"))
         (should (str/includes? text "--no-color")))))
 
   (context "parse-phrase"

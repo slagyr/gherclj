@@ -42,7 +42,6 @@
    [nil "--then" "Show Then steps"]
    [nil "--json" "Emit machine-readable JSON"]
    [nil "--edn" "Emit machine-readable EDN"]
-   [nil "--color" "Force ANSI color output"]
    [nil "--no-color" "Disable ANSI color output"]])
 
 (def ^:private cli-options (vec (concat base-cli-options steps-cli-options)))

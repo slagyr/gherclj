@@ -16,7 +16,6 @@
         (should (str/includes? text "--tag"))
         (should (str/includes? text "--json"))
         (should (str/includes? text "--edn"))
-        (should (str/includes? text "--color"))
         (should (str/includes? text "--no-color")))))
 
   (context "build-data"

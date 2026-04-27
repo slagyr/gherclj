@@ -16,7 +16,6 @@
         (should (str/includes? text "--then"))
         (should (str/includes? text "--json"))
         (should (str/includes? text "--edn"))
-        (should (str/includes? text "--color"))
         (should (str/includes? text "--no-color"))
         (should (str/includes? text "--step-namespaces")))))
 
