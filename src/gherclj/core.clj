@@ -174,36 +174,32 @@
   (into [] (mapcat #(steps-in-ns %)) ns-syms))
 
 (defn classify-all
-  "Match step text against collected steps. With two args, matches across all
-   step types. With three args, only steps of the given type are considered.
-   Returns every matching step entry with :args populated. Never throws."
-  ([steps text]
-   (classify-all steps nil text))
-  ([steps type text]
-   (let [typed-steps (if type
-                       (filter #(= type (:type %)) steps)
-                       steps)]
-     (keep (fn [{:keys [regex bindings] :as step}]
-             (when-let [match (re-matches regex text)]
-               (let [groups (if (string? match) [] (vec (rest match)))
-                     args (if bindings
-                            (mapv (fn [group {:keys [coerce]}] (coerce group))
-                                  groups bindings)
-                            groups)]
-                 (assoc step :args args))))
-           typed-steps))))
+  "Match step text against collected steps. Returns every matching step
+   entry with :args populated. Never throws. Matching is type-blind:
+   the Gherkin keyword (Given/When/Then) is narrative, not part of
+   step-definition identity, in line with Cucumber semantics."
+  [steps text]
+  (keep (fn [{:keys [regex bindings] :as step}]
+          (when-let [match (re-matches regex text)]
+            (let [groups (if (string? match) [] (vec (rest match)))
+                  args (if bindings
+                         (mapv (fn [group {:keys [coerce]}] (coerce group))
+                               groups bindings)
+                         groups)]
+              (assoc step :args args))))
+        steps))
 
 (defn classify-step
   "Match step text against collected steps. Returns the matching step
    entry with :args populated, or nil if no match.
    Throws if multiple steps match (ambiguous)."
-  [steps type text]
-  (let [matches (vec (classify-all steps type text))]
+  [steps text]
+  (let [matches (vec (classify-all steps text))]
     (when (> (count matches) 1)
       (let [names (mapv :name matches)]
         (throw (RuntimeException.
                  (str "ambiguous step match: \"" text "\" matches: "
-                       (str/join ", " names))))))
+                      (str/join ", " names))))))
     (first matches)))
 
 ;; --- Macros ---

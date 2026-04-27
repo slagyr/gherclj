@@ -1,14 +1,17 @@
+@wip
 Feature: Step matching
 
-  `gherclj match "<phrase>"` reports how a step phrase classifies
-  against the registered step set: matched / no match / ambiguous,
-  with the matched step's source location, helper-ref, docstring, and
-  args paired with binding names and types.
+  `gherclj match "<phrase>"` classifies a step phrase against the
+  registered step set: matched / no match / ambiguous, with the matched
+  step's source location, helper-ref, docstring, and args paired with
+  binding name and type.
 
-  When the phrase begins with Given / When / Then, matches are filtered
-  to that type. With And, But, or no leading keyword, matches are
-  reported across all three types — same-phrase pairs across types are
-  not ambiguous.
+  Matching is type-blind, in line with Cucumber semantics. The leading
+  Gherkin keyword (Given / When / Then / And / But) is stripped from the
+  input but does not constrain the search — a stepdef registered as
+  `defwhen` will match a phrase pasted with a leading `Given`, and so
+  on. The `:type` shown in output is the registration intent, not a
+  filter.
 
   Scenario: match --help describes the subcommand and its options
     When running gherclj with "match --help"
@@ -20,51 +23,38 @@ Feature: Step matching
       | --no-color            |
       | --help                |
 
-  # --- Typed match ---
-
-  Scenario: A Given phrase with a single matching step shows full detail
+  Scenario: A phrase with a single matching step shows full detail
     When running gherclj with "-s gherclj.sample.app-steps match Given a user \"alice\""
     Then the output should contain lines:
-      | Phrase: a user "alice"  (Given)      |
+      | Phrase: a user "alice"               |
       | Matched step:                        |
+      | Type:    Given                       |
       | Pattern: a user {name:string}        |
       | Source:  app_steps.clj:              |
       | Helper:  app-steps/create-adventurer |
       | Args:                                |
       | name (string) = "alice"              |
 
-  Scenario: A typed phrase with no matching step reports no match
+  Scenario: A phrase with no matching step reports no match
     When running gherclj with "-s gherclj.sample.app-steps match Given some imaginary thing"
     Then the output should contain lines:
-      | Phrase: some imaginary thing  (Given) |
-      | No matching step.                     |
+      | Phrase: some imaginary thing |
+      | No matching step.            |
 
-  Scenario: A typed phrase matching two same-type steps is ambiguous
-    When running gherclj with "-s gherclj.sample.ambiguous-steps match Given a user \"alice\""
-    Then the output should contain lines:
-      | Phrase: a user "alice"  (Given)               |
-      | Ambiguous — 2 matching Given steps:           |
-      | a user {name:string}    (ambiguous_steps.clj: |
-      | a user {handle:string}  (ambiguous_steps.clj: |
-
-  Scenario: Type filter excludes matches of other types
-    # "the user logs in" is registered as When in app-steps;
-    # querying as Given must find nothing.
+  Scenario: A leading keyword that doesn't match the registration is fine
+    # "the user logs in" is registered as defwhen in app-steps;
+    # querying with "Given" still matches because matching is type-blind.
     When running gherclj with "-s gherclj.sample.app-steps match Given the user logs in"
-    Then the output should contain "No matching step."
-
-  # --- Untyped match (no keyword, And, But) ---
-
-  Scenario: A phrase with no leading keyword matches across all types
-    When running gherclj with "-s gherclj.sample.same-phrase-steps match the user logs in"
     Then the output should contain lines:
-      | Phrase: the user logs in  (any type) |
-      | Matched in Given:                    |
-      | Matched in When:                     |
+      | Phrase: the user logs in |
+      | Matched step:            |
+      | Type:    When            |
 
-  Scenario: And or But prefixes are treated the same as no keyword
-    When running gherclj with "-s gherclj.sample.same-phrase-steps match And the user logs in"
-    Then the output should contain "(any type)"
+  Scenario: A phrase matching two registrations is reported as ambiguous
+    When running gherclj with "-s gherclj.sample.ambiguous-steps match a user \"alice\""
+    Then the output should contain lines:
+      | Phrase: a user "alice"          |
+      | Ambiguous — 2 matching steps:   |
 
   # --- Machine-readable output ---
 
@@ -73,10 +63,9 @@ Feature: Step matching
     Then the output should be valid EDN
     And the output should span multiple lines
     And the EDN report should include:
-      | field          | value          |
-      | match-status   | :matched       |
-      | requested-type | :given         |
-      | phrase         | a user "alice" |
+      | field        | value          |
+      | match-status | :matched       |
+      | phrase       | a user "alice" |
     And the :matches list should contain an entry with phrase "a user {name:string}"
 
   Scenario: gherclj match --json emits a structured report
@@ -84,10 +73,9 @@ Feature: Step matching
     Then the output should be valid JSON
     And the output should span multiple lines
     And the JSON report should include:
-      | field          | value          |
-      | match-status   | matched        |
-      | requested-type | given          |
-      | phrase         | a user "alice" |
+      | field        | value          |
+      | match-status | matched        |
+      | phrase       | a user "alice" |
 
   Scenario: --json and --edn together is an error
     When running gherclj with "-s gherclj.sample.app-steps --json --edn match Given a user \"alice\""

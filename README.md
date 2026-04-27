@@ -432,7 +432,7 @@ Args:
   name (string) = "alice"
 ```
 
-When the phrase begins with `Given`, `When`, or `Then`, matches are filtered to that type. With `And`, `But`, or no leading keyword, matches are reported across all three types — same-phrase pairs across types coexist without being flagged as ambiguous.
+Matching is type-blind, in line with Cucumber semantics. A leading Gherkin keyword (`Given`/`When`/`Then`/`And`/`But`) is stripped from the input but does not constrain the search — a stepdef registered as `defwhen` will match a phrase pasted with a leading `Given`. The keyword is narrative; the regex/template is identity.
 
 **Machine-readable output** — `--json` and `--edn` emit a structured report:
 

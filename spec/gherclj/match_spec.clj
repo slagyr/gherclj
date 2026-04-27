@@ -14,22 +14,13 @@
     :line 10
     :doc nil
     :bindings [{:name "name" :type "string" :coerce identity}]}
-   {:type :given
-    :template "the user logs in"
-    :regex #"^the user logs in$"
-    :helper-ref 'same-phrase-steps/login-state
-    :ns 'gherclj.sample.same-phrase-steps
-    :file "src/gherclj/sample/same_phrase_steps.clj"
-    :line 10
-    :doc nil
-    :bindings []}
    {:type :when
     :template "the user logs in"
     :regex #"^the user logs in$"
-    :helper-ref 'same-phrase-steps/perform-login
-    :ns 'gherclj.sample.same-phrase-steps
-    :file "src/gherclj/sample/same_phrase_steps.clj"
-    :line 11
+    :helper-ref 'app-steps/perform-login
+    :ns 'gherclj.sample.app-steps
+    :file "src/gherclj/sample/app_steps.clj"
+    :line 14
     :doc nil
     :bindings []}])
 
@@ -47,23 +38,42 @@
 
   (context "parse-phrase"
 
-    (it "parses a leading Given as typed request"
-      (should= {:phrase "a user \"alice\"" :requested-type :given}
+    (it "strips a leading Given keyword"
+      (should= "a user \"alice\""
                (match/parse-phrase "Given a user \"alice\"")))
 
-    (it "treats And like any-type matching"
-      (should= {:phrase "the user logs in" :requested-type :any}
+    (it "strips a leading And keyword"
+      (should= "the user logs in"
                (match/parse-phrase "And the user logs in")))
 
-    (it "treats a bare phrase as any-type matching"
-      (should= {:phrase "the user logs in" :requested-type :any}
+    (it "leaves a bare phrase unchanged"
+      (should= "the user logs in"
                (match/parse-phrase "the user logs in"))))
+
+  (context "analyze"
+
+    (it "matches a single registered step regardless of feature-side keyword"
+      (let [report (match/analyze sample-steps "Given the user logs in")]
+        (should= :matched (:match-status report))
+        (should= "the user logs in" (:phrase report))
+        (should= 1 (count (:matches report)))
+        (should= :when (:type (first (:matches report))))))
+
+    (it "reports no-match when no registered step matches"
+      (let [report (match/analyze sample-steps "When the dragon arrives")]
+        (should= :no-match (:match-status report))))
+
+    (it "reports ambiguous when more than one stepdef matches the phrase"
+      (let [steps [{:name "login-a" :type :given :template "the user logs in" :regex #"^the user logs in$" :ns 'test :file "x" :line 1 :doc nil :bindings []}
+                   {:name "login-b" :type :when :template "the user logs in" :regex #"^the user logs in$" :ns 'test :file "x" :line 2 :doc nil :bindings []}]
+            report (match/analyze steps "the user logs in")]
+        (should= :ambiguous (:match-status report))
+        (should= 2 (count (:matches report))))))
 
   (context "build-data"
 
-    (it "builds a matched typed report with bound values"
+    (it "builds a matched report with bound values"
       (let [report (match/build-data {:phrase "a user \"alice\""
-                                      :requested-type :given
                                       :match-status :matched
                                       :matches [{:type :given
                                                  :phrase "a user {name:string}"
@@ -76,14 +86,7 @@
                                                  :bindings [{:name "name" :type "string" :value "alice"}]}]})]
         (should= "match" (:command report))
         (should= :matched (:match-status report))
-        (should= :given (:requested-type report))
-        (should= "alice" (get-in report [:matches 0 :bindings 0 :value]))))
-
-    (it "builds a matched any-type report with one entry per type"
-      (let [report (match/analyze sample-steps "the user logs in")]
-        (should= :matched (:match-status report))
-        (should= :any (:requested-type report))
-        (should= [:given :when] (mapv :type (:matches report))))))
+        (should= "alice" (get-in report [:matches 0 :bindings 0 :value])))))
 
   (context "renderers"
 
@@ -91,7 +94,6 @@
       (let [output (match/render-json {:gherclj-version "1.0.0"
                                        :command "match"
                                        :phrase "a user \"alice\""
-                                       :requested-type :given
                                        :match-status :matched
                                        :matches [{:type :given :phrase "a user {name:string}" :regex false :helper-ref "foo" :ns 'foo :file "app_steps.clj" :line 10 :doc nil :bindings [{:name "name" :type "string" :value "alice"}]}]})
             parsed (json/parse-string output keyword)]
@@ -104,10 +106,8 @@
       (let [output (match/render-edn {:gherclj-version "1.0.0"
                                       :command "match"
                                       :phrase "a user \"alice\""
-                                      :requested-type :given
                                       :match-status :matched
                                       :matches []})
             parsed (read-string output)]
         (should (str/includes? output "\n"))
-        (should= :given (:requested-type parsed))
         (should= :matched (:match-status parsed))))))

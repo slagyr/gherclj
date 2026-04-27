@@ -6,30 +6,17 @@
 
 ;; --- Step classification ---
 
-(defn- resolve-step-type [previous-type node-type]
-  (if (#{:and :but} node-type) previous-type node-type))
-
-(defn- classify-step-nodes [steps step-nodes]
-  (->> step-nodes
-       (reduce (fn [{:keys [previous-type classified]} node]
-                 (let [effective-type (resolve-step-type previous-type (:type node))
-                       matched (when effective-type
-                                 (core/classify-step steps effective-type (:text node)))
-                       classified-node (if matched
-                                         (merge node matched {:classified? true})
-                                         (assoc node :classified? false))]
-                   {:previous-type effective-type
-                    :classified (conj classified classified-node)}))
-               {:previous-type nil :classified []})
-       :classified
-       vec))
-
 (defn classify-scenario
   "Classify all steps in a scenario against registered steps.
    Returns the scenario with each step augmented with classification data."
   [steps scenario]
   (update scenario :steps
-          #(classify-step-nodes steps %)))
+          (fn [step-nodes]
+            (mapv (fn [node]
+                    (if-let [classified (core/classify-step steps (:text node))]
+                      (merge node classified {:classified? true})
+                      (assoc node :classified? false)))
+                  step-nodes))))
 
 (defn- all-classified? [scenario]
   (every? :classified? (:steps scenario)))

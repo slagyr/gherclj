@@ -27,37 +27,17 @@
     (g/should= (keyword (str/replace type #"^:" "")) (:type step))))
 
 (defn step-should-match [name text]
-  (let [step (first (filter #(= name (:name %)) (g/get :steps)))
-        result (g/classify-step (g/get :steps) (:type step) text)]
+  (let [result (g/classify-step (g/get :steps) text)]
     (g/assoc! :classify-result result)
     (g/should-not-be-nil result)
     (g/should= name (:name result))))
-
-(defn- parse-step-type [type]
-  (keyword (str/lower-case type)))
-
-(defn matching-as-finds [text type step-name]
-  (let [result (g/classify-step (g/get :steps) (parse-step-type type) text)]
-    (g/should-not-be-nil result)
-    (g/should= step-name (:name result))))
-
-(defn matching-as-ambiguous [text type]
-  (let [thrown? (try
-                  (g/classify-step (g/get :steps) (parse-step-type type) text)
-                  false
-                  (catch RuntimeException _
-                    true))]
-    (g/should thrown?)))
-
-(defn matching-as-finds-nothing [text type]
-  (g/should-be-nil (g/classify-step (g/get :steps) (parse-step-type type) text)))
 
 (defn match-args-should-be [args]
   (g/should= (edn/read-string args) (:args (g/get :classify-result))))
 
 (defn classify-text! [text]
   (try
-    (g/assoc! :classify-result (g/classify-step (g/get :steps) :given text))
+    (g/assoc! :classify-result (g/classify-step (g/get :steps) text))
     (catch Exception e
       (g/assoc! :error (.getMessage e)))))
 
@@ -76,13 +56,6 @@
 (defthen "the step {name:string} should be registered as a {type} step" step-definitions/step-registered-as)
 
 (defthen "the step {name:string} should match {text:string}" step-definitions/step-should-match)
-
-
-(defthen #"^matching \"(.+)\" as (Given|When|Then) finds \"(.+)\"$" step-definitions/matching-as-finds)
-
-(defthen #"^matching \"(.+)\" as (Given|When|Then) is ambiguous$" step-definitions/matching-as-ambiguous)
-
-(defthen #"^matching \"(.+)\" as (Given|When|Then) finds nothing$" step-definitions/matching-as-finds-nothing)
 
 (defthen "the match args should be {args:string}" step-definitions/match-args-should-be)
 

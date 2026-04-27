@@ -163,8 +163,8 @@
                    (sort-by #(str (.toPath %))))
         scans (map #(scan-feature-file features-dir % filter-config) files)
         ambiguities (->> (mapcat :occurrences scans)
-                         (keep (fn [{:keys [type phrase] :as occurrence}]
-                                 (let [matches (vec (core/classify-all steps type phrase))]
+                         (keep (fn [{:keys [phrase] :as occurrence}]
+                                 (let [matches (vec (core/classify-all steps phrase))]
                                    (when (> (count matches) 1)
                                      (assoc occurrence :matches (vec (sort-steps matches)))))))
                          (sort-by (juxt :feature-file :line))

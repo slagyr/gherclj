@@ -85,7 +85,7 @@
 
     (it "produces a form invoking the helper-ref with matched args"
       (let [steps (core/collect-steps ['gherclj.core-spec])
-            classified (core/classify-step steps :given "a project \"alpha\" with timeout 300")
+            classified (core/classify-step steps "a project \"alpha\" with timeout 300")
             renderer (:renderer classified)]
         (should= '(core-spec/setup-project "alpha" 300)
                  (apply renderer (:args classified))))))
@@ -103,18 +103,22 @@
                     :ns 'test :type :given}
                    {:name "greet-world" :regex #"^hello world$"
                     :ns 'test :type :given}]
-            matches (core/classify-all steps :given "hello world")]
+            matches (core/classify-all steps "hello world")]
         (should= ["greet-any" "greet-world"] (mapv :name matches))))
 
-    (it "matches same phrase across different step types without ambiguity"
+    (it "matches type-blind — Cucumber-style — so the keyword on the registration is narrative only"
+      (let [steps [{:name "login" :regex #"^the user logs in$" :ns 'test :type :given}]]
+        (should= "login" (:name (core/classify-step steps "the user logs in")))))
+
+    (it "treats two registrations of the same phrase as ambiguous regardless of type"
       (let [steps [{:name "login-state" :regex #"^the user logs in$" :ns 'test :type :given}
                    {:name "perform-login" :regex #"^the user logs in$" :ns 'test :type :when}]]
-        (should= "login-state" (:name (core/classify-step steps :given "the user logs in")))
-        (should= "perform-login" (:name (core/classify-step steps :when "the user logs in")))))
+        (should-throw RuntimeException
+          (core/classify-step steps "the user logs in"))))
 
     (it "matches step text to a registered step and extracts args"
       (let [steps (core/collect-steps ['gherclj.core-spec])
-            result (core/classify-step steps :given "a project \"alpha\" with timeout 300")]
+            result (core/classify-step steps "a project \"alpha\" with timeout 300")]
         (should-not-be-nil result)
         (should= 'gherclj.core-spec (:ns result))
         (should= 'core-spec/setup-project (:helper-ref result))
@@ -122,7 +126,7 @@
 
     (it "returns nil for unrecognized step text"
       (let [steps (core/collect-steps ['gherclj.core-spec])
-            result (core/classify-step steps :given "something completely unrecognized")]
+            result (core/classify-step steps "something completely unrecognized")]
         (should-be-nil result)))
 
     (it "throws on ambiguous matches"
@@ -132,7 +136,7 @@
                    {:name "greet-world" :regex #"^hello world$"
                     :ns 'test :type :given}]]
         (should-throw RuntimeException
-          (core/classify-step steps :given "hello world")))))
+          (core/classify-step steps "hello world")))))
 
   (context "state management"
 

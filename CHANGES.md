@@ -1,5 +1,13 @@
 # Changes
 
+## v1.1.1
+
+- **Revert type-aware classification** (introduced in v1.1.0). Step matching is type-blind, matching Cucumber/SpecFlow/Cucumber.js semantics. The Gherkin keyword on a step (`Given`/`When`/`Then`/`And`/`But`) is narrative — only the regex/template participates in matching. Two stepdefs registered with the same phrase but different types are ambiguous, as they should be.
+- **Fixes silent-pending regressions in v1.1.0** for scenarios that mix keywords (e.g. a `defwhen "X"` used under `Given X` in a feature), scenarios starting with `When`/`Then` when only a `defgiven` was registered, and scenarios beginning with `And`/`But`. All now classify normally.
+- **`gherclj.core/classify-step` signature** reverts to `(classify-step steps text)` from `(classify-step steps type text)`. Internal API; direct callers (uncommon) need to drop the type arg.
+- **`gherclj match` simplified**: no `:requested-type` field in input or output. Schema is `{phrase, match-status, matches}`. The `:type` field on each match entry remains as registration-intent metadata.
+- The `defgiven`/`defwhen`/`defthen` macros stay distinct (Cucumber convention) and the `:type` field stays in the registry and in `--json`/`--edn` output as intent metadata. They no longer drive matching.
+
 ## v1.1.0
 
 - **`gherclj match "<phrase>"` subcommand**: classify a step phrase against the registered step set; reports matched/no-match/ambiguous with source location, helper-ref, docstring, and args paired with binding name + type + value. Leading `Given`/`When`/`Then` narrows by type; `And`/`But`/no-keyword spans all three with per-type grouping. `--json`/`--edn` supported

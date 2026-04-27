@@ -38,36 +38,26 @@
          (should= [] (:args (second (:steps result))))
          (should= ["ok"] (:args (nth (:steps result) 2))))))
 
-    (it "resolves And and But to the prior concrete step type"
-      (let [steps [{:name "shared-given" :regex #"^the user logs in$" :ns 'test :type :given}
-                   {:name "shared-when" :regex #"^the user logs in$" :ns 'test :type :when}]
-            scenario {:scenario "Typed conjunctions"
-                      :steps [{:type :given :text "the user logs in"}
-                              {:type :and :text "the user logs in"}
-                              {:type :when :text "the user logs in"}
-                              {:type :but :text "the user logs in"}]}
-            result (gen/classify-scenario steps scenario)]
-        (should= ["shared-given" "shared-given" "shared-when" "shared-when"]
-                 (mapv :name (:steps result))))))
+    )
 
   (context "call-step-renderer"
 
     (it "produces a form invoking the helper-ref with matched args"
       (let [steps (core/collect-steps ['gherclj.generator-spec])
-            classified (core/classify-step steps :given "a project \"alpha\" with timeout 300")]
+            classified (core/classify-step steps "a project \"alpha\" with timeout 300")]
         (should= '(generator-spec/setup-project "alpha" 300)
                  (gen/call-step-renderer classified))))
 
     (it "appends table when present"
       (let [steps (core/collect-steps ['gherclj.generator-spec])
-            classified (assoc (core/classify-step steps :given "a table of projects:")
+            classified (assoc (core/classify-step steps "a table of projects:")
                               :table {:headers ["name"] :rows [["alpha"]]})]
         (should= '(generator-spec/setup-table {:headers ["name"] :rows [["alpha"]]})
                  (gen/call-step-renderer classified))))
 
     (it "appends doc-string when present"
       (let [steps (core/collect-steps ['gherclj.generator-spec])
-            classified (assoc (core/classify-step steps :then "the result should be \"ok\"")
+            classified (assoc (core/classify-step steps "the result should be \"ok\"")
                               :doc-string "some content")]
         (should= '(generator-spec/check-result "ok" "some content")
                  (gen/call-step-renderer classified))))
