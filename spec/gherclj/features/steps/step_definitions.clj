@@ -27,7 +27,8 @@
     (g/should= (keyword (str/replace type #"^:" "")) (:type step))))
 
 (defn step-should-match [name text]
-  (let [result (g/classify-step (g/get :steps) :given text)]
+  (let [step (first (filter #(= name (:name %)) (g/get :steps)))
+        result (g/classify-step (g/get :steps) (:type step) text)]
     (g/assoc! :classify-result result)
     (g/should-not-be-nil result)
     (g/should= name (:name result))))

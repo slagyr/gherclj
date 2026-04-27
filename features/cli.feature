@@ -97,8 +97,8 @@ Feature: CLI
 
   Scenario: Unknown flag is rejected
     When running gherclj with "--turbo-mode"
-    Then the output should contain "Unknown option"
-    And the output should contain "turbo-mode"
+    Then the error output should mention "Unknown option"
+    And the error output should mention "turbo-mode"
 
   Scenario: Help mentions the steps subcommand
     When running gherclj with "--help"
