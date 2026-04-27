@@ -399,10 +399,51 @@ gherclj -s myapp.features.steps.* steps crew   # only steps mentioning "crew"
 gherclj -s myapp.features.steps.* steps --no-color
 ```
 
+**Machine-readable output** — `--json` and `--edn` emit the catalog in pretty-printed structured form (kebab-case in both, mutually exclusive). Existing filters compose:
+
+```bash
+gherclj -s myapp.features.steps.* steps --json --given
+```
+
 **Help:**
 
 ```bash
 gherclj steps --help
+```
+
+## Step Matching
+
+`gherclj match "<phrase>"` classifies a step phrase against the registered step set and reports how it resolves: matched, no match, or ambiguous. Useful for understanding what an existing phrase routes to before writing similar steps.
+
+```bash
+gherclj -s myapp.features.steps.* match "Given a user \"alice\""
+```
+
+```
+Phrase: a user "alice"  (Given)
+
+Matched step:
+  Pattern: a user {name:string}
+  Source:  auth_steps.clj:4
+  Helper:  auth/create-user
+  Doc:     (none)
+
+Args:
+  name (string) = "alice"
+```
+
+When the phrase begins with `Given`, `When`, or `Then`, matches are filtered to that type. With `And`, `But`, or no leading keyword, matches are reported across all three types — same-phrase pairs across types coexist without being flagged as ambiguous.
+
+**Machine-readable output** — `--json` and `--edn` emit a structured report:
+
+```bash
+gherclj -s myapp.features.steps.* match --json "Given the user logs in"
+```
+
+**Help:**
+
+```bash
+gherclj match --help
 ```
 
 ## Unused Step Detection
@@ -436,7 +477,50 @@ Scanned 35 of 42 scenarios. 7 scenarios filtered out by tags: ~slow.
 38 of 40 registered steps are in use (2 unused).
 ```
 
+**Machine-readable output** — `--json` and `--edn` emit the unused report in structured form. Tag filters compose with it:
+
+```bash
+gherclj -f features -s myapp.features.steps.* unused --json -t ~slow
+```
+
 **Note:** Steps used as test data (looked up by name via the registry rather than matched by step text) will appear as unused. This is a known limitation.
+
+## Ambiguity Detection
+
+`gherclj ambiguity` walks your feature files and reports any step phrase that matches more than one registered step — the same detection as the runtime ambiguous-match error, but as a structured pre-flight report. Useful before running the full pipeline.
+
+```bash
+gherclj -f features -s myapp.features.steps.* ambiguity
+```
+
+```
+Scanned 42 scenarios. No tag filtering applied.
+Ambiguous step phrases:
+  a user "alice"  (auth.feature:3)
+    Matches:
+      a user {name:string}    (auth_steps.clj:4)
+      a user {handle:string}  (auth_steps.clj:8)
+```
+
+A phrase is reported once per occurrence (per `feature-file:line`).
+
+**Tag filtering** — same `-t` semantics as the pipeline. The output states explicitly what was scanned:
+
+```bash
+gherclj -f features -s myapp.features.steps.* ambiguity -t ~slow
+```
+
+**Machine-readable output** — `--json` and `--edn` emit a structured report:
+
+```bash
+gherclj -f features -s myapp.features.steps.* ambiguity --json
+```
+
+**Help:**
+
+```bash
+gherclj ambiguity --help
+```
 
 ## State Management
 
