@@ -6,6 +6,7 @@
              [gherclj.catalog :as catalog]
              [gherclj.config :as config]
              [gherclj.framework :as fw]
+             [gherclj.match :as match]
              [gherclj.unused :as unused]
              [gherclj.pipeline :as pipeline]))
 
@@ -62,7 +63,7 @@
       {:source arg})))
 
 (defn- parse-positional-args [arguments]
-  (if (#{"steps" "unused" "ambiguity"} (first arguments))
+  (if (#{"steps" "unused" "ambiguity" "match"} (first arguments))
     {:locations       []
      :framework-opts  []
      :subcommand      (keyword (first arguments))
@@ -110,6 +111,7 @@
          "                   file:line the scenario containing that line in the file\n\n"
          "  subcommands\n"
          "                   gherclj ambiguity    list ambiguous step phrases across scanned features\n"
+         "                   gherclj match        classify a step phrase against the registry\n"
          "                   gherclj steps        list registered step definitions\n"
          "                   gherclj unused       list registered steps unused by features\n\n"
          summary "\n")))
@@ -134,6 +136,7 @@
       help
       (do (println (case (:subcommand options)
                      :ambiguity (ambiguity/usage-message)
+                     :match (match/usage-message)
                      :steps (catalog/usage-message)
                      :unused (unused/usage-message)
                      (usage-message)))
@@ -145,6 +148,7 @@
             merged        (merge file-config cli-overrides)]
         (case (:subcommand options)
           :ambiguity (ambiguity/run! merged (or (:subcommand-args options) []))
+          :match (match/run! merged (or (:subcommand-args options) []))
           :steps (do
                    (catalog/run! merged (or (:subcommand-args options) []))
                    0)

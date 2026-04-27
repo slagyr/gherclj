@@ -154,7 +154,17 @@
     (it "captures the remaining positional args for the ambiguity subcommand"
       (let [result (main/parse-args ["ambiguity" "keyword"])]
         (should= :ambiguity (get-in result [:options :subcommand]))
-        (should= ["keyword"] (get-in result [:options :subcommand-args])))))
+        (should= ["keyword"] (get-in result [:options :subcommand-args]))))
+
+    (it "detects the match subcommand as the first positional arg"
+      (let [result (main/parse-args ["-s" "gherclj.sample.app-steps" "match" "Given" "a" "user" "\"alice\""])]
+        (should= :match (get-in result [:options :subcommand]))
+        (should-be-nil (get-in result [:options :locations]))))
+
+    (it "captures the remaining positional args for the match subcommand"
+      (let [result (main/parse-args ["match" "Given" "a" "user" "\"alice\""])]
+        (should= :match (get-in result [:options :subcommand]))
+        (should= ["Given" "a" "user" "\"alice\""] (get-in result [:options :subcommand-args])))))
 
   (context "usage"
 
@@ -186,6 +196,10 @@
     (it "mentions the ambiguity subcommand"
       (let [text (main/usage-message)]
         (should (str/includes? text "gherclj ambiguity"))))
+
+    (it "mentions the match subcommand"
+      (let [text (main/usage-message)]
+        (should (str/includes? text "gherclj match"))))
 
     (it "lists the supported frameworks"
       (let [text (main/usage-message)]
@@ -226,6 +240,15 @@
         (should (str/includes? output "--tag"))
         (should (str/includes? output "--json"))
         (should (str/includes? output "--edn"))))
+
+    (it "prints match usage for match --help"
+      (let [output (with-out-str
+                     (should= 0 (main/run ["match" "--help"])))]
+        (should (str/includes? output "gherclj match"))
+        (should (str/includes? output "--step-namespaces"))
+        (should (str/includes? output "--json"))
+        (should (str/includes? output "--edn"))
+        (should (str/includes? output "--no-color"))))
 
     (it "returns 1 and prints message for unknown flags"
       (let [output (with-out-str

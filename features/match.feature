@@ -1,4 +1,3 @@
-@wip
 Feature: Step matching
 
   `gherclj match "<phrase>"` reports how a step phrase classifies

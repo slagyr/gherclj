@@ -58,7 +58,7 @@
   (rewrite-sandbox-path-options args))
 
 (defn run-gherclj! [args]
-  (let [arg-vec (str/split args #"\s+")
+  (let [arg-vec (mapv #(str/replace % #"\\\"" "\"") (str/split args #"\s+"))
         {:keys [options help errors]} (main/parse-args arg-vec)
         file-config (or (g/get :cli-config) {})
         cli-overrides (into {} (filter (fn [[_ v]] (some? v))) options)
@@ -66,7 +66,7 @@
         run-args (with-sandbox-defaults arg-vec)]
     (when-not (seq errors)
       (g/assoc! :loaded-config merged))
-    (when (or help (pipeline-base-dir) (= :steps (:subcommand options)) (= :unused (:subcommand options)) (= :ambiguity (:subcommand options)) (seq errors))
+    (when (or help (pipeline-base-dir) (= :steps (:subcommand options)) (= :unused (:subcommand options)) (= :ambiguity (:subcommand options)) (= :match (:subcommand options)) (seq errors))
       (let [previous-framework (g/get :_framework)
             stdout (java.io.StringWriter.)
             stderr (java.io.StringWriter.)
@@ -160,6 +160,14 @@
         expected (unescape-quoted-text phrase)]
     (g/should (some #(= expected (:phrase %)) entries))))
 
+(defn matches-list-should-contain-entry-with-phrase [phrase]
+  (let [report (or (g/get :cli-edn-output)
+                   (g/get :cli-json-output)
+                   (edn/read-string (g/get :cli-output "")))
+        entries (:matches report)
+        expected (unescape-quoted-text phrase)]
+    (g/should (some #(= expected (:phrase %)) entries))))
+
 (defn exit-code-should-be-zero []
   (g/should= 0 (or (g/get :cli-exit-code) 0)))
 
@@ -202,6 +210,8 @@
 (defthen "the :unused-steps list should contain a step with phrase {phrase:string}" cli/unused-steps-list-should-contain-step-with-phrase)
 
 (defthen "the :ambiguities list should contain an entry with phrase {phrase:string}" cli/ambiguities-list-should-contain-entry-with-phrase)
+
+(defthen "the :matches list should contain an entry with phrase {phrase:string}" cli/matches-list-should-contain-entry-with-phrase)
 
 (defthen "the exit code should be zero" cli/exit-code-should-be-zero)
 
