@@ -1,5 +1,13 @@
 # Changes
 
+## v1.1.0
+
+- **`gherclj match "<phrase>"` subcommand**: classify a step phrase against the registered step set; reports matched/no-match/ambiguous with source location, helper-ref, docstring, and args paired with binding name + type + value. Leading `Given`/`When`/`Then` narrows by type; `And`/`But`/no-keyword spans all three with per-type grouping. `--json`/`--edn` supported
+- **`gherclj ambiguity` subcommand**: walks feature files and reports any step phrase that matches more than one registered step — the same detection as the runtime ambiguous-match error, but as a structured pre-flight report. Per-occurrence; respects `-t` tag filters; `--json`/`--edn` supported
+- **`--json` and `--edn` output for `gherclj steps` and `gherclj unused`**: pretty-printed, kebab-case in both formats, mutually exclusive. Existing filters (`--given`/`--when`/`--then`, positional keyword, `-t`) compose with the structured output
+- **BREAKING**: `gherclj.core/classify-step` signature changed from `(classify-step steps text)` to `(classify-step steps type text)`. Two stepdefs registered with the same phrase but different types (`defgiven "logged in"` and `defwhen "logged in"`) now coexist without falsely throwing ambiguous; same-type duplicates still throw. Practical impact is small — `classify-step` is an internal API the generator calls; direct callers need to thread the type through
+- **`--color` CLI flag removed**: redundant — color is on by default; `--no-color` disables it. Scripts passing the explicit `--color` flag will need to drop it
+
 ## v1.0.0
 
 - **BREAKING**: framework keywords are now namespaced — `:speclj` → `:clojure/speclj`, `:rspec` → `:ruby/rspec`, etc. Validation rejects the old un-namespaced forms
