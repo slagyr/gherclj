@@ -13,13 +13,28 @@ Use this skill whenever you are implementing step definitions for `.feature` fil
 
 If gherclj is not yet wired into the project, do this once:
 
-1. **Add the dependency** to `deps.edn` or `bb.edn`. See the project README for the current `:git/tag` and `:git/sha`:
+1. **Add the dependency.** See the project README for the current `:git/tag` and `:git/sha`:
 
    ```clojure
    {:deps {io.github.slagyr/gherclj {:git/tag "vX.Y.Z" :git/sha "..."}}}
    ```
 
-2. **Lay out features and steps.** Feature files live under `features/` at the project root (override with `-f` or `:features-dirs` in `gherclj.edn`). Step routing and helpers live under your spec tree:
+2. **Wire a babashka task** (or the equivalent runner alias for `deps.edn`/`project.clj`):
+
+   ```clojure
+   ;; bb.edn
+   {:deps  {io.github.slagyr/gherclj {:git/tag "vX.Y.Z" :git/sha "..."}}
+    :tasks
+    {features {:doc      "Run feature specs"
+               :requires ([gherclj.main :as main])
+               :task     (apply main/-main "-s" "myapp.features.steps.*"
+                                           "-F" "clojure/speclj"
+                                           *command-line-args*)}}}
+   ```
+
+   Forward `*command-line-args*` so callers can pass tag filters, `file:line` selectors, and other flags through.
+
+3. **Lay out features and steps.** Feature files live under `features/` at the project root (override with `-f` or `:features-dirs` in `gherclj.edn`). Step routing and helpers live under your spec tree:
 
    ```
    myapp/
@@ -31,7 +46,7 @@ If gherclj is not yet wired into the project, do this once:
      src/...
    ```
 
-3. **Run the suite** through your build tool's runner alias — `bb features`, `clj -M:features`, `lein test`, etc. The runner invokes `gherclj.main`, which parses every `.feature` file under `:features-dirs`, generates spec files under `target/gherclj/generated/`, and executes them via the configured test framework.
+4. **Run the suite** with `bb features`. The runner invokes `gherclj.main`, which parses every `.feature` file under `:features-dirs`, generates spec files under `target/gherclj/generated/`, and executes them via the configured test framework.
 
 The README has the full reference: configuration keys, supported frameworks, CLI flags, tag filtering, and `file:line` scenario selectors.
 
