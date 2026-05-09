@@ -186,3 +186,11 @@
 {"id":"int-c5724460","kind":"field_change","created_at":"2026-04-26T16:02:16.14612Z","actor":"Micah","issue_id":"gherclj-nif","extra":{"field":"status","new_value":"unverified","old_value":"in_progress"}}
 {"id":"int-491646a3","kind":"field_change","created_at":"2026-04-26T16:23:49.944207Z","actor":"Micah","issue_id":"gherclj-nif","extra":{"field":"status","new_value":"closed","old_value":"unverified","reason":"Closed"}}
 {"id":"int-503ed8fa","kind":"field_change","created_at":"2026-04-26T17:52:09.840001Z","actor":"Micah","issue_id":"gherclj-vz7","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}
+{"id":"int-d11ce183","kind":"field_change","created_at":"2026-04-26T18:20:21.78987Z","actor":"Micah","issue_id":"gherclj-vz7","extra":{"field":"status","new_value":"unverified","old_value":"in_progress"}}
+{"id":"int-e888fcb8","kind":"field_change","created_at":"2026-04-26T18:51:15.930864Z","actor":"Micah","issue_id":"gherclj-vz7","extra":{"field":"status","new_value":"closed","old_value":"unverified","reason":"Closed"}}
+{"id":"int-22aff5b0","kind":"field_change","created_at":"2026-04-26T18:53:32.253257Z","actor":"Micah","issue_id":"gherclj-sqp","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}
+{"id":"int-02d219bb","kind":"field_change","created_at":"2026-04-26T19:01:24.830029Z","actor":"Micah","issue_id":"gherclj-sqp","extra":{"field":"status","new_value":"unverified","old_value":"in_progress"}}
+{"id":"int-3c00faee","kind":"field_change","created_at":"2026-04-27T13:54:35.559402Z","actor":"Micah","issue_id":"gherclj-sqp","extra":{"field":"status","new_value":"closed","old_value":"unverified","reason":"Closed"}}
+{"id":"int-e53414ac","kind":"field_change","created_at":"2026-04-27T13:56:18.882146Z","actor":"Micah","issue_id":"gherclj-dvl","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}
+{"id":"int-97da726f","kind":"field_change","created_at":"2026-04-27T14:05:55.754796Z","actor":"Micah","issue_id":"gherclj-dvl","extra":{"field":"status","new_value":"unverified","old_value":"in_progress"}}
+{"id":"int-4028d66d","kind":"field_change","created_at":"2026-04-27T14:11:08.189424Z","actor":"Micah","issue_id":"gherclj-dvl","extra":{"field":"status","new_value":"closed","old_value":"unverified","reason":"Closed"}}
