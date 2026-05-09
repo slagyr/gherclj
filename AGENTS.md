@@ -59,3 +59,14 @@ When the user asks to bump/tag/release a version:
 8. **Get sha** — `git rev-parse vX.Y.Z | head -c 7`
 9. **Update README.md** — replace `"PENDING"` with the actual short sha
 10. **Commit and push** — "Update README with vX.Y.Z git coordinates"
+
+## Parallel-safe Helpers
+
+gherclj can isolate `gherclj.core/*state*` per scenario, but parallel execution
+is only safe when helper code also avoids shared external resources.
+
+- Use a fresh temp directory per scenario instead of a singleton temp path
+- Use ephemeral ports instead of fixed ports
+- Use per-thread or per-scenario DB connections instead of singletons
+- Avoid mutating JVM-global process state such as system properties; inject config instead
+- Treat files, sockets, and other shared handles as scenario-local resources unless they are explicitly synchronized

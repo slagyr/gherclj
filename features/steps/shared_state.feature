@@ -1,8 +1,8 @@
 Feature: Shared state
 
-  gherclj provides a global state atom for step definitions
-  to share data across steps within a scenario. State is
-  reset before each scenario.
+  gherclj provides scenario-local state for step definitions
+  to share data across steps within a scenario. Fresh scenario
+  state starts empty unless feature-level hooks seed it.
 
   @smoke
   Scenario: State starts empty after reset
@@ -97,8 +97,7 @@ Feature: Shared state
       {}
       """
 
-  Scenario: gherclj internal state is namespaced under :_gherclj
+  Scenario: reset leaves no internal framework data in user state
     When the state is reset
-    And gherclj stores internal data
-    Then get :_gherclj should not be nil
+    Then get :_framework should be nil
     And get :user should be nil

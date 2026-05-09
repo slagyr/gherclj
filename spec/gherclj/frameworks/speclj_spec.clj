@@ -49,10 +49,9 @@
                                      "Authentication"
                                      "  (it \"test\")")]
         (should (str/includes? result "(describe \"Authentication\""))
-        (should (str/includes? result "before-all"))
-        (should (str/includes? result "before"))
-        (should (str/includes? result "after"))
-        (should (str/includes? result "after-all"))
+        (should (str/includes? result "(around [it]"))
+        (should (str/includes? result "(binding [g/*state* (atom {})]"))
+        (should (str/includes? result "(binding [g/*state* (atom @g/*state*)]"))
         (should (str/includes? result "(it \"test\")")))))
 
   (context "wrap-scenario"

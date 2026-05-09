@@ -81,7 +81,8 @@
         (should (str/includes? result "(generator-spec/check-result \"ok\")"))
         (should (str/includes? result "[gherclj.generator-spec :as generator-spec]"))
         (should (str/includes? result "[gherclj.core :as g]"))
-        (should (str/includes? result "(g/reset!)"))))
+        (should (str/includes? result "(binding [g/*state* (atom {})]"))
+        (should (str/includes? result "(binding [g/*state* (atom @g/*state*)]"))))
 
     (it "returns nil when tag filtering removes every scenario"
       (let [config {:step-namespaces ['gherclj.generator-spec]

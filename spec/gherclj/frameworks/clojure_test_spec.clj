@@ -48,6 +48,8 @@
         (should (str/includes? result "feature-fixture"))
         (should (str/includes? result "scenario-fixture"))
         (should (str/includes? result "use-fixtures"))
+        (should (str/includes? result "(binding [g/*state* (atom {})]"))
+        (should (str/includes? result "(binding [g/*state* (atom @g/*state*)]"))
         (should (str/includes? result "run-before-feature-hooks!"))
         (should (str/includes? result "run-after-feature-hooks!"))
         (should (str/includes? result "run-before-scenario-hooks!"))

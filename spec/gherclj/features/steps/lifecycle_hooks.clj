@@ -5,6 +5,7 @@
             [gherclj.framework :as fw]
             [gherclj.lifecycle :as lifecycle]
             [gherclj.sample.app-steps]
+            [gherclj.sample.state-steps]
             [gherclj.frameworks.clojure.test]
             [gherclj.frameworks.clojure.speclj]
             [gherclj.generator :as gen]
@@ -49,11 +50,11 @@
   (g/reset!))
 
 (defn- pipeline-config [framework]
-  {:features-dir (features-dir)
-   :edn-dir (edn-dir)
-   :output-dir (output-dir)
-   :step-namespaces ['gherclj.sample.app-steps 'gherclj.sample.dragon-steps]
-   :framework framework})
+  {:features-dirs [(features-dir)]
+    :edn-dir (edn-dir)
+    :output-dir (output-dir)
+    :step-namespaces ['gherclj.sample.app-steps 'gherclj.sample.dragon-steps 'gherclj.sample.state-steps]
+    :framework framework})
 
 (defn- ensure-feature-file! [source]
   (let [f (io/file (features-dir) source)]
@@ -115,6 +116,9 @@
 (defn after-all-records! [event]
   (register-recording-hook! g/after-all event))
 
+(defn before-feature-seeds-shared-value! [value]
+  (g/before-feature #(g/assoc! :shared value)))
+
 (defn generate-with-lifecycle-hooks! [framework]
   (let [fw (keyword (str/replace framework #"^:" ""))]
     (g/assoc! :generated-output (gen/generate-spec {:step-namespaces ['gherclj.sample.app-steps]
@@ -149,12 +153,23 @@
                 (map? result) (pos? (+ (:fail result 0) (:error result 0)))
                 :else false))))
 
+(defn run-should-succeed []
+  (let [result (g/get :run-result)]
+    (g/should (or (number? result)
+                  (map? result)))
+    (g/should-not (cond
+                    (number? result) (pos? result)
+                    (map? result) (pos? (+ (:fail result 0) (:error result 0)))
+                    :else true))))
+
 (defgiven "lifecycle event recording is enabled" lifecycle-hooks/lifecycle-recording-enabled!
   "Must be the first step in any lifecycle scenario. Resets state, clears recorded events, and clears all registered lifecycle hooks.")
 
 (defgiven "a before-all hook records {event:string}" lifecycle-hooks/before-all-records!)
 
 (defgiven "a before-feature hook records {event:string}" lifecycle-hooks/before-feature-records!)
+
+(defgiven "a before-feature hook seeds the shared value {value:string}" lifecycle-hooks/before-feature-seeds-shared-value!)
 
 (defgiven "a before-scenario hook records {event:string}" lifecycle-hooks/before-scenario-records!)
 
@@ -174,3 +189,5 @@
 (defthen "the recorded lifecycle events should be:" lifecycle-hooks/recorded-events-should-be)
 
 (defthen "the run should fail" lifecycle-hooks/run-should-fail)
+
+(defthen "the run should succeed" lifecycle-hooks/run-should-succeed)

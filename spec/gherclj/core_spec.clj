@@ -138,9 +138,9 @@
         (should-throw RuntimeException
           (core/classify-step steps "hello world")))))
 
-  (context "state management"
+   (context "state management"
 
-    (before (core/reset!))
+     (before (core/reset!))
 
     (it "starts empty after reset"
       (should= {} (core/get)))
@@ -181,10 +181,36 @@
       (should= 1 (core/get :x))
       (should= 2 (core/get :y)))
 
-     (it "preserves internal :_gherclj key across user operations"
-       (core/reset!)
-       (core/assoc! :user-data "hello")
-       (should-not-be-nil (core/get-in [:_gherclj]))))
+     (it "uses the currently bound state atom"
+       (let [outer (atom {})
+             inner (atom {})]
+         (binding [core/*state* outer]
+           (core/assoc! :scope :outer)
+           (binding [core/*state* inner]
+             (core/assoc! :scope :inner)
+             (should= :inner (core/get :scope)))
+           (should= :outer (core/get :scope)))
+         (should= {:scope :outer} @outer)
+         (should= {:scope :inner} @inner)))
+
+     (it "reset clears only the currently bound state atom"
+       (let [outer (atom {:scope :outer})
+             inner (atom {:scope :inner})]
+         (binding [core/*state* outer]
+           (binding [core/*state* inner]
+             (core/reset!)
+             (should= {} @inner))
+           (should= {:scope :outer} @outer)))))
+
+   (context "framework management"
+
+     (it "stores the active framework outside the scenario state"
+       (binding [core/*state* (atom {:user "alice"})
+                 core/*framework* nil]
+         (core/set-framework! :clojure/test)
+         (should= {:user "alice"} (core/get))
+         (should= nil (core/get :_framework))
+         (should= :clojure/test core/*framework*))))
 
   (context "lifecycle hooks"
 

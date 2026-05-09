@@ -27,10 +27,20 @@
 (defmethod fw/wrap-feature :clojure/speclj
   [_config feature-name scenario-blocks]
   (str "(describe \"" feature-name "\"\n\n"
-       "  (before-all (lifecycle/run-before-feature-hooks!))\n"
-       "  (before (g/reset!) (lifecycle/run-before-scenario-hooks!))\n"
-       "  (after (lifecycle/run-after-scenario-hooks!))\n"
-       "  (after-all (lifecycle/run-after-feature-hooks!))\n\n"
+       "  (around [it]\n"
+       "    (binding [g/*state* (atom {})]\n"
+       "      (lifecycle/run-before-feature-hooks!)\n"
+       "      (try\n"
+       "        (it)\n"
+       "        (finally\n"
+       "          (lifecycle/run-after-feature-hooks!)))))\n\n"
+       "  (around [it]\n"
+       "    (binding [g/*state* (atom @g/*state*)]\n"
+       "      (lifecycle/run-before-scenario-hooks!)\n"
+       "      (try\n"
+       "        (it)\n"
+       "        (finally\n"
+       "          (lifecycle/run-after-scenario-hooks!)))))\n\n"
        scenario-blocks ")\n"))
 
 (defmethod fw/wrap-scenario :clojure/speclj

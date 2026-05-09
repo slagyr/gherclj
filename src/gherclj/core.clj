@@ -6,10 +6,11 @@
             [gherclj.template :as template]))
 
 ;; --- State management ---
-;; Shared state atom for step definitions to use. Internal gherclj
-;; data lives under :_gherclj to avoid collisions with user state.
+;; Step definitions read and write through dynamic bindings so each scenario
+;; can get its own atom without changing the public API.
 
-(defonce ^:private state (atom {}))
+(def ^:dynamic *state* (atom {}))
+(def ^:dynamic *framework* nil)
 
 (defn before-all [f] (lifecycle/register! :before-all f))
 (defn before-feature [f] (lifecycle/register! :before-feature f))
@@ -19,60 +20,62 @@
 (defn after-all [f] (lifecycle/register! :after-all f))
 
 (defn reset!
-  "Clear user state, preserving internal keys."
+  "Clear user state for the current scenario binding."
   []
-  (clojure.core/swap! state (fn [s] {:_gherclj {} :_framework (:_framework s)})))
+  (clojure.core/reset! *state* {}))
 
 (defn get
-  "Access state. No args returns user-visible state (excludes internal keys),
+  "Access state. No args returns the whole scenario state,
    with key returns value, with key+default returns value or default."
-  ([] (clojure.core/dissoc @state :_gherclj :_framework))
-  ([key] (clojure.core/get @state key))
-  ([key default] (clojure.core/get @state key default)))
+  ([] @*state*)
+  ([key] (clojure.core/get @*state* key))
+  ([key default] (clojure.core/get @*state* key default)))
 
 (defn get-in
   "Nested state access."
-  ([keys] (clojure.core/get-in @state keys))
-  ([keys default] (clojure.core/get-in @state keys default)))
+  ([keys] (clojure.core/get-in @*state* keys))
+  ([keys default] (clojure.core/get-in @*state* keys default)))
 
 (defn swap!
   "Apply function to entire state."
   [f & args]
-  (apply clojure.core/swap! state f args))
+  (apply clojure.core/swap! *state* f args))
 
 (defn assoc!
   "Set key-value pairs in state."
   [key val & kvs]
-  (apply clojure.core/swap! state clojure.core/assoc key val kvs))
+  (apply clojure.core/swap! *state* clojure.core/assoc key val kvs))
 
 (defn assoc-in!
   "Set a nested value in state."
   [keys val]
-  (clojure.core/swap! state clojure.core/assoc-in keys val))
+  (clojure.core/swap! *state* clojure.core/assoc-in keys val))
 
 (defn dissoc!
   "Remove keys from state."
   [key & keys]
-  (apply clojure.core/swap! state clojure.core/dissoc key keys))
+  (apply clojure.core/swap! *state* clojure.core/dissoc key keys))
 
 (defn update!
   "Update a value in state by applying f."
   [key f & args]
-  (apply clojure.core/swap! state clojure.core/update key f args))
+  (apply clojure.core/swap! *state* clojure.core/update key f args))
 
 (defn update-in!
   "Update a nested value in state by applying f."
   [keys f & args]
-  (apply clojure.core/swap! state clojure.core/update-in keys f args))
+  (apply clojure.core/swap! *state* clojure.core/update-in keys f args))
 
 ;; --- Assertions ---
 ;; Delegate to the active test framework via multimethods.
 
 (defn- active-framework []
-  (clojure.core/get @state :_framework))
+  *framework*)
 
 (defn set-framework! [fw]
-  (clojure.core/swap! state clojure.core/assoc :_framework fw))
+  (if (thread-bound? #'*framework*)
+    (set! *framework* fw)
+    (alter-var-root #'*framework* (constantly fw))))
 
 (defmulti should=           (fn [_ _] (active-framework)))
 (defmulti should            (fn [_]   (active-framework)))
