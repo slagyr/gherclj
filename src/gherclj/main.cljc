@@ -13,7 +13,12 @@
 (def version (str/trim (slurp (io/resource "gherclj/VERSION"))))
 
 (def ^:private base-cli-options
-  [["-f" "--features-dir DIR" "Features directory (default: features)"]
+  [["-f" "--features-dir DIR" "Features directory (repeatable; supports glob; default: features)"
+    :id :features-dirs
+    :multi true
+    :default :none
+    :default-desc ""
+    :update-fn (fn [acc v] (conj (if (= :none acc) [] acc) v))]
    ["-e" "--edn-dir DIR" "EDN IR output directory (default: target/gherclj/edn)"]
    ["-o" "--output-dir DIR" "Generated spec output directory (default: target/gherclj/generated)"]
    ["-s" "--step-namespaces NS" "Step namespace (repeatable, supports globs)"
@@ -80,20 +85,22 @@
   "Parse CLI arguments. Returns {:options map :help bool :errors seq}."
   [args]
   (let [{:keys [options errors summary arguments]} (cli/parse-opts args cli-options)
-        tags     (let [t (:tag options)] (when-not (= :none t) t))
-        tag-opts (parse-tag-flags tags)
-        step-ns  (let [s (:step-namespaces options)] (when-not (= :none s) s))
+        tags          (let [t (:tag options)] (when-not (= :none t) t))
+        tag-opts      (parse-tag-flags tags)
+        step-ns       (let [s (:step-namespaces options)] (when-not (= :none s) s))
+        features-dirs (let [f (:features-dirs options)] (when-not (= :none f) f))
         {:keys [locations framework-opts subcommand subcommand-args]} (parse-positional-args arguments)
-        opts     (-> (dissoc options :help :tag :step-namespaces)
-                     (merge tag-opts)
-                     (cond-> step-ns (assoc :step-namespaces step-ns)
-                             (seq locations) (assoc :locations locations)
-                             (seq framework-opts) (assoc :framework-opts framework-opts)
-                             subcommand (assoc :subcommand subcommand)
-                             (seq subcommand-args) (assoc :subcommand-args subcommand-args)))
-        errors   (cond-> (vec errors)
-                   (and (:json options) (:edn options))
-                   (conj "--json and --edn are mutually exclusive"))]
+        opts          (-> (dissoc options :help :tag :step-namespaces :features-dirs)
+                          (merge tag-opts)
+                          (cond-> step-ns (assoc :step-namespaces step-ns)
+                                  features-dirs (assoc :features-dirs features-dirs)
+                                  (seq locations) (assoc :locations locations)
+                                  (seq framework-opts) (assoc :framework-opts framework-opts)
+                                  subcommand (assoc :subcommand subcommand)
+                                  (seq subcommand-args) (assoc :subcommand-args subcommand-args)))
+        errors        (cond-> (vec errors)
+                         (and (:json options) (:edn options))
+                         (conj "--json and --edn are mutually exclusive"))]
     (cond-> {:options opts
              :help    (:help options)
              :errors  errors
@@ -113,7 +120,25 @@
          "                   gherclj match        classify a step phrase against the registry\n"
          "                   gherclj steps        list registered step definitions\n"
          "                   gherclj unused       list registered steps unused by features\n\n"
-         summary "\n")))
+          summary "\n")))
+
+(def ^:private pipeline-option-keys (set (keys config/pipeline-schema)))
+
+(defn resolve-run-config [file-config options]
+  (if (config/invalid? file-config)
+    file-config
+    (let [cli-overrides (into {} (filter (fn [[_ v]] (some? v))) options)
+          merged (merge file-config cli-overrides)
+          root-path (System/getProperty "user.dir")
+          resolved-input (cond-> (select-keys merged pipeline-option-keys)
+                           (contains? merged :features-dir)
+                           (assoc :features-dir (:features-dir merged)))
+          resolved (config/resolve-config resolved-input
+                                          {:root-path root-path})]
+      (if (config/invalid? resolved)
+        resolved
+        (assoc (merge resolved (apply dissoc merged pipeline-option-keys))
+               :root-path root-path)))))
 
 (defn- failures? [run-specs-result]
   (cond
@@ -142,22 +167,24 @@
           0)
 
       :else
-      (let [file-config   (config/load-config)
-            cli-overrides (into {} (filter (fn [[_ v]] (some? v))) options)
-            merged        (merge file-config cli-overrides)]
-        (case (:subcommand options)
-          :ambiguity (ambiguity/run! merged (or (:subcommand-args options) []))
-          :match (match/run! merged (or (:subcommand-args options) []))
+      (let [resolved-config (resolve-run-config (config/raw-config) options)]
+        (if (config/invalid? resolved-config)
+          (do (binding [*out* *err*]
+                (println (config/error-message resolved-config)))
+              1)
+          (case (:subcommand options)
+          :ambiguity (ambiguity/run! resolved-config (or (:subcommand-args options) []))
+          :match (match/run! resolved-config (or (:subcommand-args options) []))
           :steps (do
-                   (catalog/run! merged (or (:subcommand-args options) []))
+                   (catalog/run! resolved-config (or (:subcommand-args options) []))
                    0)
           :unused (do
-                    (unused/run! merged (or (:subcommand-args options) []))
+                    (unused/run! resolved-config (or (:subcommand-args options) []))
                     0)
           (do
-            (pipeline/run! merged)
-            (let [result (fw/run-specs merged)]
-              (if (failures? result) 1 0))))))))
+            (pipeline/run! resolved-config)
+            (let [result (fw/run-specs resolved-config)]
+              (if (failures? result) 1 0)))))))))
 
 (defn -main [& args]
   (let [exit-code (run args)]

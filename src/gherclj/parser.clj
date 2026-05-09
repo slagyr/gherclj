@@ -5,6 +5,11 @@
 
 (def ^:private step-keywords #{"Given" "When" "Then" "And" "But"})
 
+(defn- normalize-path [path]
+  (-> path
+      (str/replace "\\" "/")
+      (str/replace #"^\./" "")))
+
 (defn- step-keyword? [trimmed]
   (some #(str/starts-with? trimmed (str % " ")) step-keywords))
 
@@ -347,16 +352,34 @@
 
 (defn parse-feature-file
   "Parse a .feature file into an EDN IR map with :source (relative path)."
-  [root-dir file]
-  (let [content (slurp file)
-        rel-path (str (.relativize (.toPath (io/file root-dir)) (.toPath file)))]
-    (assoc (parse-feature content) :source rel-path)))
+  ([root-dir file]
+   (parse-feature-file root-dir nil file))
+  ([root-dir source-prefix file]
+   (let [content (slurp file)
+         rel-path (str (.relativize (.toPath (io/file root-dir)) (.toPath file)))
+         source (if source-prefix
+                  (str (normalize-path source-prefix) "/" rel-path)
+                  rel-path)]
+     (assoc (parse-feature content) :source source))))
+
+(defn- root-spec [dir-spec]
+  (if (map? dir-spec)
+    dir-spec
+    {:root dir-spec
+     :path dir-spec}))
 
 (defn parse-features-dir
   "Parse all .feature files in a directory, recursively. Returns a seq of IR maps."
-  [dir-path]
-  (let [dir (io/file dir-path)]
-    (->> (file-seq dir)
-         (filter #(str/ends-with? (.getName %) ".feature"))
-         (sort-by #(str (.toPath %)))
-         (mapv #(parse-feature-file dir-path %)))))
+  [dir-specs]
+  (let [roots (if (sequential? dir-specs) (mapv root-spec dir-specs) [(root-spec dir-specs)])
+        multi-root? (> (count roots) 1)]
+    (->> roots
+         (mapcat (fn [{:keys [root path]}]
+                   (let [dir (io/file path)]
+                     (when (.exists dir)
+                       (->> (file-seq dir)
+                            (filter #(str/ends-with? (.getName %) ".feature"))
+                            (sort-by #(str (.toPath %)))
+                            (mapv #(parse-feature-file path (when multi-root? root) %)))))))
+         (sort-by :source)
+         vec)))

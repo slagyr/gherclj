@@ -51,6 +51,10 @@
         (should= :clojure/speclj (get-in result [:options :framework]))
         (should= true (get-in result [:options :verbose]))))
 
+    (it "parses repeated -f flags into features-dirs"
+      (let [result (main/parse-args ["-f" "features" "-f" "modules/*"])]
+        (should= ["features" "modules/*"] (get-in result [:options :features-dirs]))))
+
     (it "parses -t as tag include"
       (let [result (main/parse-args ["-t" "smoke"])]
         (should= ["smoke"] (get-in result [:options :include-tags]))))
@@ -107,7 +111,7 @@
     (it "leaves nil for unspecified options"
       (let [result (main/parse-args ["-v"])]
         (should-be-nil (get-in result [:options :step-namespaces]))
-        (should-be-nil (get-in result [:options :features-dir]))))
+        (should-be-nil (get-in result [:options :features-dirs]))))
 
     (it "captures positional args as :framework-opts"
       (let [result (main/parse-args ["--" "-f" "documentation"])]
@@ -174,6 +178,7 @@
         (should (str/includes? text "Gherkin -> test code transducer"))
         (should (str/includes? text "Copyright"))
         (should (str/includes? text "--features-dir"))
+        (should (str/includes? text "repeatable"))
         (should (str/includes? text "--ir-edn"))
         (should (str/includes? text "--help"))))
 
@@ -265,10 +270,10 @@
 
     (it "dispatches the steps subcommand without running the pipeline"
       (let [catalog-config (atom nil)]
-        (with-redefs [config/load-config (fn [] {:step-namespaces ['gherclj.sample.app-steps]})
-                      pipeline/run!      (fn [_] (throw (RuntimeException. "pipeline should not run")))
-                      catalog/run!       (fn [config args]
-                                           (reset! catalog-config [config args]))]
+        (with-redefs [config/raw-config (fn [] {:step-namespaces ['gherclj.sample.app-steps]})
+                       pipeline/run!      (fn [_] (throw (RuntimeException. "pipeline should not run")))
+                       catalog/run!       (fn [config args]
+                                            (reset! catalog-config [config args]))]
           (with-out-str
             (should= 0 (main/run ["-s" "gherclj.features.steps.step-docstrings" "steps"])))
           (should= [['gherclj.features.steps.step-docstrings] []]
@@ -276,10 +281,10 @@
 
     (it "dispatches the unused subcommand without running the pipeline"
       (let [unused-config (atom nil)]
-        (with-redefs [config/load-config (fn [] {:step-namespaces ['gherclj.sample.app-steps]})
-                      pipeline/run!      (fn [_] (throw (RuntimeException. "pipeline should not run")))
-                      unused/run!        (fn [config args]
-                                           (reset! unused-config [config args]))]
+        (with-redefs [config/raw-config (fn [] {:step-namespaces ['gherclj.sample.app-steps]})
+                       pipeline/run!      (fn [_] (throw (RuntimeException. "pipeline should not run")))
+                       unused/run!        (fn [config args]
+                                            (reset! unused-config [config args]))]
           (with-out-str
             (should= 0 (main/run ["-s" "gherclj.sample.app-steps" "unused" "extra"])))
           (should= [['gherclj.sample.app-steps] ["extra"]]
@@ -287,7 +292,7 @@
 
     (context "pipeline execution"
       (around [it]
-        (with-redefs [config/load-config (fn [] {})
+        (with-redefs [config/raw-config (fn [] {})
                       pipeline/run!      (fn [_] nil)]
           (it)))
 
@@ -313,4 +318,12 @@
 
       (it "returns 0 when run-specs returns non-number non-map (else branch)"
         (with-redefs [fw/run-specs (fn [_] nil)]
-          (should= 0 (main/run [])))))))
+          (should= 0 (main/run []))))
+
+      (it "cli -f replaces configured features-dirs"
+        (let [pipeline-config (atom nil)]
+          (with-redefs [config/raw-config (fn [] {:features-dirs ["features" "modules/*"]})
+                         pipeline/run!      (fn [config] (reset! pipeline-config config))
+                         fw/run-specs       (fn [_] 0)]
+            (should= 0 (main/run ["-f" "experiments"])))
+          (should= ["experiments"] (:features-dirs @pipeline-config)))))))

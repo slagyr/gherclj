@@ -53,9 +53,10 @@
          (or (empty? include-tags)
              (some scenario-tags include-tags)))))
 
-(defn- scan-feature-file [root-dir file {:keys [include-tags exclude-tags] :as filter-config}]
+(defn- scan-feature-file [root-entries {:keys [root path]} file {:keys [include-tags exclude-tags] :as filter-config}]
   (let [lines (str/split-lines (slurp file))
-        rel-path (str (.relativize (.toPath (io/file root-dir)) (.toPath file)))]
+        rel-path (str (.relativize (.toPath (io/file path)) (.toPath file)))
+        source (pipeline/qualify-source root-entries root rel-path)]
     (loop [indexed (map-indexed vector lines)
            state {:feature-tags []
                   :pending-tags []
@@ -111,11 +112,11 @@
                   effective-type (resolve-step-type (:background-last-type state) node-type)]
               (recur (rest indexed)
                      (cond-> (assoc state :background-last-type effective-type)
-                       effective-type
-                       (update :background-occurrences conj {:type effective-type
-                                                            :phrase (strip-keyword trimmed)
-                                                            :feature-file rel-path
-                                                            :line line-number}))))
+                        effective-type
+                        (update :background-occurrences conj {:type effective-type
+                                                             :phrase (strip-keyword trimmed)
+                                                             :feature-file source
+                                                             :line line-number}))))
 
             (and (= :scenario (:section state)) (:current-included? state) (step-keyword? trimmed))
             (let [keyword (some #(when (str/starts-with? trimmed (str % " ")) %) step-keywords)
@@ -123,11 +124,11 @@
                   effective-type (resolve-step-type (:scenario-last-type state) node-type)]
               (recur (rest indexed)
                      (cond-> (assoc state :scenario-last-type effective-type)
-                       effective-type
-                       (update :occurrences conj {:type effective-type
-                                                 :phrase (strip-keyword trimmed)
-                                                 :feature-file rel-path
-                                                 :line line-number}))))
+                        effective-type
+                        (update :occurrences conj {:type effective-type
+                                                  :phrase (strip-keyword trimmed)
+                                                  :feature-file source
+                                                  :line line-number}))))
 
             :else
             (recur (rest indexed) state)))
@@ -155,16 +156,20 @@
    :doc doc
    :bindings (mapv #(select-keys % [:name :type]) (or bindings []))})
 
-(defn analyze [steps features-dir config]
+(defn analyze [steps root-entries config]
   (let [filter-config {:include-tags (vec (or (:include-tags config) []))
                        :exclude-tags (vec (or (:exclude-tags config) []))}
-        files (->> (file-seq (io/file features-dir))
-                   (filter #(str/ends-with? (.getName %) ".feature"))
-                   (sort-by #(str (.toPath %))))
-        scans (map #(scan-feature-file features-dir % filter-config) files)
+        scans (mapcat (fn [{:keys [path] :as root-entry}]
+                        (let [root (io/file path)]
+                          (when (.exists root)
+                            (map #(scan-feature-file root-entries root-entry % filter-config)
+                                 (->> (file-seq root)
+                                      (filter #(str/ends-with? (.getName %) ".feature"))
+                                      (sort-by #(str (.toPath %))))))))
+                      root-entries)
         ambiguities (->> (mapcat :occurrences scans)
                          (keep (fn [{:keys [phrase] :as occurrence}]
-                                 (let [matches (vec (core/classify-all steps phrase))]
+                                  (let [matches (vec (core/classify-all steps phrase))]
                                    (when (> (count matches) 1)
                                      (assoc occurrence :matches (vec (sort-steps matches)))))))
                          (sort-by (juxt :feature-file :line))
@@ -237,7 +242,7 @@
 (defn run! [config _args]
   (let [step-namespaces (pipeline/load-step-namespaces! (:step-namespaces config))
         steps (core/collect-steps step-namespaces)
-        analysis (analyze steps (:features-dir config) config)
+        analysis (analyze steps (pipeline/feature-root-entries config) config)
         data (build-data analysis)]
     (println (cond
                (:json config) (render-json data)

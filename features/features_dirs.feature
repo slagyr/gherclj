@@ -1,4 +1,3 @@
-@wip
 Feature: Multi-root features directories
 
   gherclj accepts multiple -f flags and supports glob patterns, letting

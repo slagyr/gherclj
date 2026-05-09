@@ -188,8 +188,8 @@ Feature: Scenario location selection
           Given a sleepy dragon
       """
     When running gherclj with "adventure/ghost.feature"
-    Then the output should contain "Feature file not found"
-    And the output should contain "adventure/ghost.feature"
+    Then the error output should mention "Feature file not found"
+    And the error output should mention "adventure/ghost.feature"
 
   Scenario: Unknown file:line selector is rejected
     Given a features directory containing:
@@ -203,5 +203,5 @@ Feature: Scenario location selection
           Given a sleepy dragon
       """
     When running gherclj with "adventure/dragon_cave.feature:99"
-    Then the output should contain "No scenario found for location"
-    And the output should contain "adventure/dragon_cave.feature:99"
+    Then the error output should mention "No scenario found for location"
+    And the error output should mention "adventure/dragon_cave.feature:99"

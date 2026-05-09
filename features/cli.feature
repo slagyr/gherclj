@@ -26,7 +26,7 @@ Feature: CLI
   Scenario: CLI flags override config file
     Given a config file:
       """
-      {:features-dir "features"
+      {:features-dirs ["features"]
        :framework :clojure/speclj}
       """
     When running gherclj with "--framework clojure/test --verbose"

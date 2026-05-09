@@ -6,13 +6,13 @@ Feature: Config file loading
   Scenario: Load config from project root
     Given a gherclj.edn file at the project root:
       """
-      {:features-dir "my-features"
+      {:features-dirs ["my-features"]
        :framework :clojure/test}
       """
     When the config is loaded
     Then the resolved config should contain:
       """
-      {:features-dir "my-features"
+      {:features-dirs ["my-features"]
        :framework :clojure/test}
       """
 
@@ -47,7 +47,7 @@ Feature: Config file loading
     When the config is loaded
     Then the resolved config should be:
       """
-      {:features-dir "features"
+      {:features-dirs ["features"]
        :edn-dir "target/gherclj/edn"
        :output-dir "target/gherclj/generated"
        :step-namespaces []
@@ -56,7 +56,7 @@ Feature: Config file loading
        :ir-edn false
        :framework-opts []
        :include-tags []
-       :exclude-tags []}
+        :exclude-tags []}
       """
 
   Scenario: Config file is validated

@@ -146,7 +146,7 @@
 (defn run! [config _args]
   (let [step-namespaces (pipeline/load-step-namespaces! (:step-namespaces config))
         steps (core/collect-steps step-namespaces)
-        irs (parser/parse-features-dir (:features-dir config))
+        irs (parser/parse-features-dir (pipeline/feature-root-entries config))
         analysis (analyze steps irs config)
         data (build-data analysis)]
     (println (cond

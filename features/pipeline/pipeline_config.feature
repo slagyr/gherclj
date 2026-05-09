@@ -9,7 +9,7 @@ Feature: Pipeline configuration
     When the config is resolved
     Then the resolved config should be:
       """
-      {:features-dir "features"
+      {:features-dirs ["features"]
        :edn-dir "target/gherclj/edn"
        :output-dir "target/gherclj/generated"
        :step-namespaces []
@@ -24,14 +24,14 @@ Feature: Pipeline configuration
   Scenario: Explicit values override defaults
     Given a config:
       """
-      {:features-dir "specs/features"
+      {:features-dirs ["specs/features"]
        :framework :clojure/test
        :verbose true}
       """
     When the config is resolved
     Then the resolved config should be:
       """
-      {:features-dir "specs/features"
+      {:features-dirs ["specs/features"]
        :edn-dir "target/gherclj/edn"
        :output-dir "target/gherclj/generated"
        :step-namespaces []
@@ -51,18 +51,18 @@ Feature: Pipeline configuration
     When the config is resolved
     Then the config should be invalid with message "banana"
 
-  Scenario: features-dir must be a string
+  Scenario: features-dirs must be a list
     Given a config:
       """
-      {:features-dir 42}
+      {:features-dirs 42}
       """
     When the config is resolved
-    Then the config should be invalid with message "features-dir"
+    Then the config should be invalid with message "features-dirs"
 
   Scenario: Unrecognized keys are rejected
     Given a config:
       """
-      {:features-dir "features"
+      {:features-dirs ["features"]
        :turbo-mode true}
       """
     When the config is resolved

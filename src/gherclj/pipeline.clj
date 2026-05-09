@@ -101,6 +101,30 @@
 (defn- log [verbose & args]
   (when verbose (apply println args)))
 
+(defn normalize-path [path]
+  (-> path
+      (str/replace "\\" "/")
+      (str/replace #"^\./" "")))
+
+(defn feature-root-entries [{:keys [features-dirs features-dir root-path]}]
+  (let [roots (or features-dirs
+                  (some-> features-dir vector)
+                  ["features"])
+        root-path (or root-path ".")]
+    (mapv (fn [root]
+            (let [normalized-root (normalize-path root)]
+              {:root normalized-root
+               :path (if (.isAbsolute (io/file root))
+                       root
+                       (str (io/file root-path root)))}))
+          roots)))
+
+(defn qualify-source [root-entries root relative-source]
+  (let [relative-source (normalize-path relative-source)]
+    (if (= 1 (count root-entries))
+      relative-source
+      (str root "/" relative-source))))
+
 (defn- emit-spec-for-ir!
   [config ir source-label]
   (let [{:keys [output-dir framework verbose]} config
@@ -115,11 +139,6 @@
         (spit out-path spec-str)
         (log verbose (str "  " (count (:scenarios ir)) " scenarios generated")))
       (.delete out-file))))
-
-(defn- normalize-path [path]
-  (-> path
-      (str/replace "\\" "/")
-      (str/replace #"^\./" "")))
 
 (defn- scenario-title [trimmed]
   (cond
@@ -158,45 +177,76 @@
           (range (count starts))
           starts)))
 
-(defn- selector->relative-source [features-dir source]
-  (let [normalized-source (normalize-path source)
-        normalized-features-dir (normalize-path features-dir)
-        prefix (str normalized-features-dir "/")]
-    (if (str/starts-with? normalized-source prefix)
-      (subs normalized-source (count prefix))
-      normalized-source)))
+(defn- prefixed-selector-candidate [root-entries source]
+  (let [normalized-source (normalize-path source)]
+    (some (fn [{:keys [root path] :as entry}]
+            (let [prefix (str root "/")]
+              (when (str/starts-with? normalized-source prefix)
+                (let [relative (subs normalized-source (count prefix))
+                      feature-file (io/file path relative)]
+                  (when (.exists feature-file)
+                    {:entry entry
+                     :relative relative
+                     :qualified (qualify-source root-entries root relative)
+                     :file feature-file})))))
+          root-entries)))
 
-(defn- selected-scenario-name [features-dir {:keys [source line]}]
-  (let [relative-source (selector->relative-source features-dir source)
-        feature-file (io/file features-dir relative-source)
-        scenario (when (.exists feature-file)
-                   (->> (scenario-ranges feature-file)
-                        (some (fn [{:keys [scenario start-line end-line]}]
-                                (when (<= start-line line end-line)
-                                  scenario)))))]
+(defn- bare-selector-candidates [root-entries source]
+  (let [relative (normalize-path source)]
+    (->> root-entries
+         (keep (fn [{:keys [root path] :as entry}]
+                 (let [feature-file (io/file path relative)]
+                   (when (.exists feature-file)
+                     {:entry entry
+                      :relative relative
+                      :qualified (qualify-source root-entries root relative)
+                      :file feature-file}))))
+         vec)))
+
+(defn- selector-candidates [root-entries source]
+  (if-let [prefixed (prefixed-selector-candidate root-entries source)]
+    [prefixed]
+    (bare-selector-candidates root-entries source)))
+
+(defn- resolve-selector! [root-entries source]
+  (let [candidates (selector-candidates root-entries source)]
+    (cond
+      (empty? candidates)
+      (throw (ex-info (str "Feature file not found: " source)
+                      {:source source}))
+
+      (= 1 (count candidates))
+      (first candidates)
+
+      :else
+      (throw (ex-info (str "Ambiguous selector: " source "\n"
+                           (str/join "\n" (map :qualified candidates))
+                           "\nQualify with the root path")
+                      {:source source
+                       :candidates (mapv :qualified candidates)})))))
+
+(defn- selected-scenario-name [root-entries {:keys [source line]}]
+  (let [{:keys [qualified file]} (resolve-selector! root-entries source)
+        scenario (when (.exists file)
+                    (->> (scenario-ranges file)
+                          (some (fn [{:keys [scenario start-line end-line]}]
+                                  (when (<= start-line line end-line)
+                                    scenario)))))]
     (when-not scenario
       (throw (ex-info (str "No scenario found for location " source ":" line)
                       {:source source :line line})))
-    {:source relative-source
+    {:source qualified
      :scenario scenario}))
 
-(defn- verify-feature-file! [features-dir source]
-  (let [relative (selector->relative-source features-dir source)
-        file (io/file features-dir relative)]
-    (when-not (.exists file)
-      (throw (ex-info (str "Feature file not found: " source)
-                      {:source source})))
-    relative))
-
-(defn- selected-scenarios-by-source [features-dir locations]
+(defn- selected-scenarios-by-source [root-entries locations]
   (reduce (fn [acc {:keys [source line] :as location}]
             (if line
-              (let [{:keys [source scenario]} (selected-scenario-name features-dir location)]
+              (let [{:keys [source scenario]} (selected-scenario-name root-entries location)]
                 (if (= :all (get acc source))
                   acc
                   (update acc source (fnil conj #{}) scenario)))
-              (let [relative (verify-feature-file! features-dir source)]
-                (assoc acc relative :all))))
+              (let [{:keys [qualified]} (resolve-selector! root-entries source)]
+                (assoc acc qualified :all))))
           {}
           locations))
 
@@ -216,13 +266,13 @@
   "Parse .feature files into .edn IR files.
 
    Config keys:
-     :features-dir - directory containing .feature files
-     :edn-dir      - directory to write .edn IR files (default: target/gherclj/edn)
-     :verbose      - when truthy, print progress to stdout"
+     :features-dirs - directories containing .feature files
+      :edn-dir      - directory to write .edn IR files (default: target/gherclj/edn)
+      :verbose      - when truthy, print progress to stdout"
   [config]
-  (let [{:keys [features-dir edn-dir verbose]
-         :or {edn-dir "target/gherclj/edn"}} config
-        features (parser/parse-features-dir features-dir)]
+  (let [{:keys [edn-dir verbose]
+          :or {edn-dir "target/gherclj/edn"}} config
+        features (parser/parse-features-dir (feature-root-entries config))]
     (doseq [ir features]
       (let [edn-name (source->edn-filename (:source ir))
             edn-path (str edn-dir "/" edn-name)]
@@ -235,51 +285,52 @@
   "Generate spec files from .edn IR files.
 
    Config keys:
-     :edn-dir         - directory containing .edn IR files (default: target/gherclj/edn)
-     :output-dir      - directory to write generated specs (default: target/gherclj/generated)
-     :step-namespaces - vector of namespace symbols containing step definitions
-     :framework  - :clojure/speclj or :clojure/test"
+      :edn-dir         - directory containing .edn IR files (default: target/gherclj/edn)
+      :output-dir      - directory to write generated specs (default: target/gherclj/generated)
+      :step-namespaces - vector of namespace symbols containing step definitions
+      :framework  - :clojure/speclj or :clojure/test"
   [config]
-  (let [{:keys [edn-dir output-dir step-namespaces framework verbose locations features-dir]
-          :or {edn-dir "target/gherclj/edn"
-               output-dir "target/gherclj/generated"
-               features-dir "features"}} config]
+  (let [{:keys [edn-dir output-dir step-namespaces framework verbose locations]
+           :or {edn-dir "target/gherclj/edn"
+                output-dir "target/gherclj/generated"}} config
+         root-entries (feature-root-entries config)]
     (ensure-framework-loaded! framework)
     (let [resolved-steps (load-step-namespaces! step-namespaces)
           config (assoc config :step-namespaces resolved-steps)
           selected-scenarios (when (seq locations)
-                               (selected-scenarios-by-source features-dir locations))
+                               (selected-scenarios-by-source root-entries locations))
           edn-files (->> (file-seq (io/file edn-dir))
                          (filter #(str/ends-with? (.getName %) ".edn"))
                          (sort-by #(str (.toPath %))))]
-       (doseq [f edn-files]
-         (let [parsed-ir (edn/read-string (slurp f))
-               ir (if selected-scenarios
-                    (filter-ir-by-locations parsed-ir selected-scenarios)
-                    parsed-ir)]
-           (emit-spec-for-ir! config ir (.getName f)))))))
+      (doseq [f edn-files]
+        (let [parsed-ir (edn/read-string (slurp f))
+              ir (if selected-scenarios
+                   (filter-ir-by-locations parsed-ir selected-scenarios)
+                   parsed-ir)]
+          (emit-spec-for-ir! config ir (.getName f)))))))
 
 (defn run!
   "Run the full pipeline: parse .feature -> .edn -> generated specs.
 
    Config keys:
-     :features-dir    - directory containing .feature files
-     :edn-dir         - directory to write .edn IR files (default: target/gherclj/edn)
-     :output-dir      - directory to write generated specs (default: target/gherclj/generated)
-     :step-namespaces - vector of namespace symbols containing step definitions
-     :framework  - :clojure/speclj or :clojure/test"
+     :features-dirs   - directories containing .feature files
+      :edn-dir         - directory to write .edn IR files (default: target/gherclj/edn)
+      :output-dir      - directory to write generated specs (default: target/gherclj/generated)
+      :step-namespaces - vector of namespace symbols containing step definitions
+      :framework  - :clojure/speclj or :clojure/test"
   [config]
-  (let [{:keys [features-dir edn-dir step-namespaces framework verbose locations ir-edn]
-         :or {edn-dir "target/gherclj/edn"}} config
-        features (parser/parse-features-dir features-dir)]
-    (ensure-framework-loaded! framework)
-    (let [resolved-steps (load-step-namespaces! step-namespaces)
-          config (assoc config :step-namespaces resolved-steps)
-          selected-scenarios (when (seq locations)
-                               (selected-scenarios-by-source features-dir locations))]
-      (doseq [parsed-ir features]
-        (let [ir (if selected-scenarios
-                   (filter-ir-by-locations parsed-ir selected-scenarios)
+  (let [{:keys [edn-dir step-namespaces framework verbose locations ir-edn]
+          :or {edn-dir "target/gherclj/edn"}} config
+         root-entries (feature-root-entries config)
+         features (parser/parse-features-dir root-entries)]
+     (ensure-framework-loaded! framework)
+     (let [resolved-steps (load-step-namespaces! step-namespaces)
+           config (assoc config :step-namespaces resolved-steps)
+           selected-scenarios (when (seq locations)
+                                (selected-scenarios-by-source root-entries locations))]
+       (doseq [parsed-ir features]
+         (let [ir (if selected-scenarios
+                    (filter-ir-by-locations parsed-ir selected-scenarios)
                    parsed-ir)]
           (when ir-edn
             (let [edn-name (source->edn-filename (:source ir))

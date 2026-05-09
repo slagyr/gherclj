@@ -19,7 +19,7 @@
                          (println "Cleaned target/gherclj/"))}
 
   parse         {:doc  "Run parse stage only"
-                 :task (p/parse! {:features-dir "features" :verbose true})}
+                 :task (p/parse! {:features-dirs ["features"] :verbose true})}
 
   generate      {:doc      "Run generate stage only (parse must have run first)"
                  :requires ([gherclj.sample.app-steps])

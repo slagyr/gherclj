@@ -1,6 +1,15 @@
 (ns gherclj.parser-spec
   (:require [speclj.core :refer :all]
+            [clojure.java.io :as io]
             [gherclj.parser :as parser]))
+
+(defn- tmp-root [name]
+  (str (System/getProperty "java.io.tmpdir") "/gherclj-parser-spec-" name))
+
+(defn- cleanup [& dirs]
+  (doseq [dir dirs]
+    (doseq [f (reverse (file-seq (io/file dir)))]
+      (.delete f))))
 
 (describe "Parser"
 
@@ -220,6 +229,38 @@
     (it "throws on empty input"
       (should-throw RuntimeException
         (parser/parse-feature ""))))
+
+  (context "source qualification"
+
+    (it "preserves bare :source for a single root"
+      (let [features-dir (tmp-root "single")
+            feature-file (io/file features-dir "auth/login.feature")]
+        (io/make-parents feature-file)
+        (spit feature-file "Feature: Login\n\n  Scenario: User logs in\n    Given a user\n")
+        (try
+          (should= [{:feature "Login"
+                     :scenarios [{:scenario "User logs in"
+                                  :steps [{:type :given :text "a user"}]}]
+                     :source "auth/login.feature"}]
+                   (parser/parse-features-dir features-dir))
+          (finally
+            (cleanup features-dir)))))
+
+    (it "qualifies :source with the root path when multiple roots are parsed"
+      (let [base-root (tmp-root "multi-base")
+            module-root (tmp-root "multi-module")
+            base-file (io/file base-root "auth/login.feature")
+            module-file (io/file module-root "auth/login.feature")]
+        (io/make-parents base-file)
+        (io/make-parents module-file)
+        (spit base-file "Feature: Base\n\n  Scenario: Login\n    Given a user\n")
+        (spit module-file "Feature: Module\n\n  Scenario: SSO login\n    Given an SSO user\n")
+        (try
+          (should= [(str base-root "/auth/login.feature")
+                    (str module-root "/auth/login.feature")]
+                   (mapv :source (parser/parse-features-dir [base-root module-root])))
+          (finally
+            (cleanup base-root module-root))))))
 
   (context "scenario outlines"
 

@@ -17,9 +17,11 @@
   (g/assoc! :generated-specs-dir dir))
 
 (defn- pipeline-base-dir []
-  (some-> (g/get :pipeline-dir)
-          io/file
-          .getParent))
+  (let [pipeline-dir (g/get :pipeline-dir)]
+    (when pipeline-dir
+      (if (g/get :features-dirs)
+        pipeline-dir
+        (some-> pipeline-dir io/file .getParent)))))
 
 (defn- absolute-path? [path]
   (.isAbsolute (io/file path)))
@@ -37,19 +39,19 @@
       (if-let [token (first remaining)]
         (if (#{"-f" "--features-dir" "-e" "--edn-dir" "-o" "--output-dir"} token)
           (let [value (second remaining)
-                path (case token
-                       ("-f" "--features-dir") (or (g/get :pipeline-dir) (absolutize-under base-dir value))
-                       ("-e" "--edn-dir") (absolutize-under base-dir value)
-                       ("-o" "--output-dir") (absolutize-under base-dir value))]
-            (recur (nnext remaining)
-                   (conj rewritten token path)
-                   (conj seen token)))
+                 path (case token
+                        ("-f" "--features-dir") value
+                        ("-e" "--edn-dir") (absolutize-under base-dir value)
+                        ("-o" "--output-dir") (absolutize-under base-dir value))]
+             (recur (nnext remaining)
+                    (conj rewritten token path)
+                    (conj seen token)))
           (recur (next remaining) (conj rewritten token) seen))
         (let [missing-features? (not (or (contains? seen "-f") (contains? seen "--features-dir")))
               missing-edn? (not (or (contains? seen "-e") (contains? seen "--edn-dir")))
               missing-output? (not (or (contains? seen "-o") (contains? seen "--output-dir")))]
           (cond-> rewritten
-            missing-features? (into ["-f" (or (g/get :pipeline-dir) (str (io/file base-dir "features")))])
+            missing-features? (into ["-f" "features"])
             missing-edn? (into ["-e" (str (io/file base-dir "target/gherclj/edn"))])
             missing-output? (into ["-o" (str (io/file base-dir "target/gherclj/generated"))])))))
     args))
@@ -61,27 +63,35 @@
   (let [arg-vec (mapv #(str/replace % #"\\\"" "\"") (str/split args #"\s+"))
         {:keys [options help errors]} (main/parse-args arg-vec)
         file-config (or (g/get :cli-config) {})
-        cli-overrides (into {} (filter (fn [[_ v]] (some? v))) options)
-        merged (merge (config/resolve-config file-config) cli-overrides)
-        run-args (with-sandbox-defaults arg-vec)]
-    (when-not (seq errors)
-      (g/assoc! :loaded-config merged))
-    (when (or help (pipeline-base-dir) (= :steps (:subcommand options)) (= :unused (:subcommand options)) (= :ambiguity (:subcommand options)) (= :match (:subcommand options)) (seq errors))
-      (let [previous-framework (g/get :_framework)
-            stdout (java.io.StringWriter.)
-            stderr (java.io.StringWriter.)
-            exit-code (binding [*out* stdout *err* stderr]
-                        (try
-                          (main/run run-args)
-                          (catch RuntimeException e
-                            (println (.getMessage e))
-                            1)
-                          (finally
-                            (when previous-framework
-                              (g/set-framework! previous-framework)))))]
-        (g/assoc! :cli-output (str stdout)
-                  :cli-error-output (str stderr)
-                  :cli-exit-code exit-code)))))
+        run-args (with-sandbox-defaults arg-vec)
+        sandbox-dir (pipeline-base-dir)
+        previous-dir (System/getProperty "user.dir")]
+    (try
+      (when sandbox-dir
+        (System/setProperty "user.dir" sandbox-dir))
+      (let [merged (when-not (seq errors) (main/resolve-run-config file-config options))]
+        (when-not (seq errors)
+          (g/assoc! :loaded-config merged))
+        (when (or help sandbox-dir (= :steps (:subcommand options)) (= :unused (:subcommand options)) (= :ambiguity (:subcommand options)) (= :match (:subcommand options)) (seq errors) (config/invalid? merged))
+          (let [previous-framework (g/get :_framework)
+                stdout (java.io.StringWriter.)
+                stderr (java.io.StringWriter.)
+                exit-code (binding [*out* stdout *err* stderr]
+                            (try
+                              (with-redefs [config/raw-config (fn [& _] file-config)]
+                                (main/run run-args))
+                              (catch RuntimeException e
+                                (binding [*out* *err*]
+                                  (println (.getMessage e)))
+                                1)
+                              (finally
+                                (when previous-framework
+                                  (g/set-framework! previous-framework)))))]
+            (g/assoc! :cli-output (str stdout)
+                      :cli-error-output (str stderr)
+                      :cli-exit-code exit-code))))
+      (finally
+        (System/setProperty "user.dir" previous-dir)))))
 
 (defn run-speclj-with-framework-options! [opts]
   (g/assoc! :speclj-run-args

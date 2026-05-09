@@ -725,4 +725,63 @@
                             (.getMessage e)))]
             (should (str/includes? message "Feature file not found"))
             (should (str/includes? message "ghost.feature")))
-          (finally (cleanup features-dir edn-dir output-dir)))))))
+          (finally (cleanup features-dir edn-dir output-dir)))))
+
+    (it "qualifies generated output paths when multiple roots share the same relative feature path"
+      (let [base-root (tmp "multi-root-features")
+            module-root (tmp "multi-root-modules/sso")
+            edn-dir (tmp "multi-root-edn")
+            output-dir (tmp "multi-root-output")
+            base-file (io/file base-root "auth/login.feature")
+            module-file (io/file module-root "auth/login.feature")]
+        (io/make-parents base-file)
+        (io/make-parents module-file)
+        (spit base-file
+              (str "Feature: Auth base\n"
+                   "\n"
+                   "  Scenario: Login\n"
+                   "    Given a user \"alice\" with role \"admin\"\n"))
+        (spit module-file
+              (str "Feature: Auth SSO\n"
+                   "\n"
+                   "  Scenario: Login\n"
+                   "    Given a user \"bob\" with role \"guest\"\n"))
+        (try
+          (pipeline/run!
+            {:features-dirs [base-root module-root]
+             :edn-dir edn-dir
+             :output-dir output-dir
+             :step-namespaces ['gherclj.pipeline-spec]
+             :framework :clojure/speclj})
+
+          (should (.exists (io/file (str output-dir "/" base-root "/auth/login_spec.clj"))))
+          (should (.exists (io/file (str output-dir "/" module-root "/auth/login_spec.clj"))))
+          (finally (cleanup base-root module-root edn-dir output-dir)))))
+
+    (it "rejects an ambiguous bare selector across multiple roots"
+      (let [base-root (tmp "multi-loc-features")
+            module-root (tmp "multi-loc-modules/sso")
+            edn-dir (tmp "multi-loc-edn")
+            output-dir (tmp "multi-loc-output")
+            base-file (io/file base-root "auth.feature")
+            module-file (io/file module-root "auth.feature")]
+        (io/make-parents base-file)
+        (io/make-parents module-file)
+        (spit base-file "Feature: Base\n\n  Scenario: Login\n    Given a user \"alice\" with role \"admin\"\n")
+        (spit module-file "Feature: Override\n\n  Scenario: Login\n    Given a user \"bob\" with role \"guest\"\n")
+        (try
+          (let [message (try
+                          (pipeline/run!
+                            {:features-dirs [base-root module-root]
+                             :edn-dir edn-dir
+                             :output-dir output-dir
+                             :step-namespaces ['gherclj.pipeline-spec]
+                             :locations [{:source "auth.feature"}]
+                             :framework :clojure/speclj})
+                          nil
+                          (catch RuntimeException e
+                            (.getMessage e)))]
+            (should (str/includes? message "Ambiguous selector"))
+            (should (str/includes? message "auth.feature"))
+            (should (str/includes? message "Qualify with the root path")))
+          (finally (cleanup base-root module-root edn-dir output-dir)))))))
