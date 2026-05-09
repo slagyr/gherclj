@@ -6,7 +6,7 @@ This project uses [toolbox](https://raw.githubusercontent.com/slagyr/toolbox/mai
 to manage agent components. If `.toolbox/` doesn't exist, fetch the toolbox
 SKILL.md from the URL above and follow its instructions. Once bootstrapped:
 
-- **Skills:** Load from `.toolbox/skills/{name}/SKILL.md` when their descriptions match the task at hand.
+- **Skills:** Load from `.toolbox/skills/{name}/SKILL.md` when their descriptions match the task at hand. The gherclj skill itself lives in-tree at `./SKILL.md` — load directly when a task touches feature steps.
 - **Commands:** When the user invokes a command by name (e.g., "/plan"), read and follow `.toolbox/commands/{name}.md`.
 
 ### Skills
@@ -15,7 +15,6 @@ SKILL.md from the URL above and follow its instructions. Once bootstrapped:
 - [crap4clj](https://raw.githubusercontent.com/unclebob/crap4clj/master/SKILL.md)
 - [clj-mutate](https://raw.githubusercontent.com/slagyr/clj-mutate/master/SKILL.md)
 - [speclj-structure-check](https://raw.githubusercontent.com/unclebob/speclj-structure-check/master/.claude/skills/speclj-structure-check/SKILL.md)
-- [gherclj](https://raw.githubusercontent.com/slagyr/agent-lib/main/skills/gherclj/SKILL.md)
 
 ### Commands
 
