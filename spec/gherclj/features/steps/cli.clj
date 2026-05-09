@@ -73,7 +73,7 @@
         (when-not (seq errors)
           (g/assoc! :loaded-config merged))
         (when (or help sandbox-dir (= :steps (:subcommand options)) (= :unused (:subcommand options)) (= :ambiguity (:subcommand options)) (= :match (:subcommand options)) (seq errors) (config/invalid? merged))
-          (let [previous-framework (g/get :_framework)
+          (let [previous-framework g/*framework*
                 stdout (java.io.StringWriter.)
                 stderr (java.io.StringWriter.)
                 exit-code (binding [*out* stdout *err* stderr]
@@ -85,8 +85,7 @@
                                   (println (.getMessage e)))
                                 1)
                               (finally
-                                (when previous-framework
-                                  (g/set-framework! previous-framework)))))]
+                                (g/set-framework! previous-framework))))]
             (g/assoc! :cli-output (str stdout)
                       :cli-error-output (str stderr)
                       :cli-exit-code exit-code))))

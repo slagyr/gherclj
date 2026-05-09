@@ -171,6 +171,17 @@ Helpers use `gherclj.core` for state, aliased as `g`:
 - `g/dissoc!` — remove state
 - `g/reset!` — called automatically before each scenario
 
+## Parallel-safe Helpers
+
+gherclj can isolate `gherclj.core/*state*` per scenario, but parallel execution
+is only safe when helper code also avoids shared external resources.
+
+- Use a fresh temp directory per scenario instead of a singleton temp path
+- Use ephemeral ports instead of fixed ports
+- Use per-thread or per-scenario DB connections instead of singletons
+- Avoid mutating JVM-global process state such as system properties; inject config instead
+- Treat files, sockets, and other shared handles as scenario-local resources unless they are explicitly synchronized
+
 ## Running Features and Scenarios
 
 You can run a whole feature file by passing its path, or run a specific scenario by passing a `file:line` selector as a positional argument. A selector matches the scenario whose declaration contains the given line.
