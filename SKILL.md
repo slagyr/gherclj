@@ -25,11 +25,11 @@ If gherclj is not yet wired into the project, do this once:
    ;; bb.edn
    {:deps  {io.github.slagyr/gherclj {:git/tag "vX.Y.Z" :git/sha "..."}}
     :tasks
-    {features {:doc      "Run feature specs"
-               :requires ([gherclj.main :as main])
-               :task     (apply main/-main "-s" "myapp.features.steps.*"
-                                           "-F" "clojure/speclj"
-                                           *command-line-args*)}}}
+    {gherclj {:doc      "Run gherclj feature specs"
+              :requires ([gherclj.main :as main])
+              :task     (apply main/-main "-s" "myapp.features.steps.*"
+                                          "-F" "clojure/speclj"
+                                          *command-line-args*)}}}
    ```
 
    Forward `*command-line-args*` so callers can pass tag filters, `file:line` selectors, and other flags through.
@@ -46,9 +46,9 @@ If gherclj is not yet wired into the project, do this once:
      src/...
    ```
 
-4. **Run the suite** with `bb features`. The runner invokes `gherclj.main`, which parses every `.feature` file under `:features-dirs`, generates spec files under `target/gherclj/generated/`, and executes them via the configured test framework.
+4. **Run the suite** with `bb gherclj`. The runner invokes `gherclj.main`, which parses every `.feature` file under `:features-dirs`, generates spec files under `target/gherclj/generated/`, and executes them via the configured test framework.
 
-The README has the full reference: configuration keys, supported frameworks, CLI flags, tag filtering, and `file:line` scenario selectors.
+Run `bb gherclj --help` to see all CLI flags and subcommands (`steps`, `match`, `unused`, `ambiguity`). The README has the full reference: configuration keys, supported frameworks, tag filtering, and `file:line` scenario selectors.
 
 ## Feature Contract Integrity
 
@@ -267,7 +267,7 @@ After implementing steps, always run the feature specs and verify:
 1. **Assertion count > 0** — If you see `0 assertions`, your `defthen` helpers are not asserting
 2. **No unexpected pending** — Pending scenarios mean step text isn't matching registered steps
 3. **Real behavior is exercised** — Scenarios pass because the product implements the behavior, not because helpers simulated it
-4. **Run:** the project's feature-suite command (e.g. `bb features`, `clj -M:features`, `lein test`)
+4. **Run:** the project's feature-suite task (e.g. `bb gherclj`, `clj -M:features`, `lein test`)
 
 ```
 # Good — assertions present
