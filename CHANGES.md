@@ -1,5 +1,15 @@
 # Changes
 
+## v1.2.0
+
+- **Repeatable `-f / --features-dir` with glob support**: pass `-f` more than once, or use a glob like `-f 'modules/*/features'`, to compose feature suites from a base directory plus per-module roots. Globs expand at config-resolve time (sorted lexicographically); patterns matching no directories fail fast with the offending pattern. When more than one root contributes, each IR's `:source` is qualified with its root path so cross-root collisions never overwrite generated output. Single-root behavior is unchanged — bare `:source` is preserved.
+- **Selector resolution across multiple roots**: positional `file[:line]` selectors try each `-f` root. Bare selectors must match exactly one root; ambiguous matches error with the candidate list and a "Qualify with the root path" hint. Selectors starting with a known root prefix are honored as-given.
+- **BREAKING**: `:features-dir` (singular) config key is removed. Configs must use `:features-dirs` (a list of strings). Existing files with `:features-dir` fail with a targeted message: `:features-dir is no longer supported; use :features-dirs (a list)`.
+- **Per-scenario state isolation via dynamic binding**: `gherclj.core/*state*` is now a `^:dynamic` var (was a private atom). Each generated scenario binds its own atom, unblocking parallel scenario execution when speclj/clojure.test runners support it. Sequential behavior is unchanged. Public `g/get`, `g/assoc!`, `g/swap!`, etc. APIs are unchanged.
+- **BREAKING (generator output)**: generated speclj specs now use `(around [it] (binding [g/*state* (atom @g/*state*)] ...))` instead of `(before-all)`/`(before)`/`(after)`/`(after-all)`. Generated clojure.test specs use `use-fixtures :once`/`:each` with corresponding `binding` wrappers. Two-level binding (feature outer, scenario inner with snapshot copy) preserves `before-feature` seed semantics — every scenario starts with the feature's seed state, and per-scenario writes don't leak back. Generated specs regenerate every run, so committed-stale-spec divergence is cosmetic only.
+- **`:_framework` moved out of state into a separate `*framework*` dynvar.** Assertion dispatch reads `g/*framework*` directly. `g/reset!` now simply clears the current scenario binding (no preserved keys).
+- **Skill in-tree**: the gherclj agent skill (`SKILL.md`) lives at the project root instead of in agent-lib, so prose and API change in the same PR. The skill has been generalized for downstream consumers (workflow-agnostic; no beads-specific terminology) and gained a "Parallel-safe Helpers" section documenting the helper-side discipline that parallel execution requires (per-scenario temp dirs, ephemeral ports, per-thread DB connections, no JVM-global mutation).
+
 ## v1.1.1
 
 - **Revert type-aware classification** (introduced in v1.1.0). Step matching is type-blind, matching Cucumber/SpecFlow/Cucumber.js semantics. The Gherkin keyword on a step (`Given`/`When`/`Then`/`And`/`But`) is narrative — only the regex/template participates in matching. Two stepdefs registered with the same phrase but different types are ambiguous, as they should be.
