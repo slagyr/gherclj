@@ -34,6 +34,8 @@ If gherclj is not yet wired into the project, do this once:
 
    Forward `*command-line-args*` so callers can pass tag filters, `file:line` selectors, and other flags through.
 
+   **`-s` glob semantics.** `*` matches within a single namespace segment (no dots crossed); `**` crosses segment boundaries (bash globstar / gitignore / Java NIO `PathMatcher`). Separators around `**` collapse, so `myapp.**.steps` matches `myapp.steps`, `myapp.auth.steps`, and `myapp.auth.admin.steps`. Use `**.steps` to match `steps` under any prefix, or `myapp.**` to match `myapp` and every namespace below it. Prefer a single `**` pattern over the old per-depth fan-out (`-s myapp.*.steps -s myapp.*.*.steps …`).
+
 3. **Lay out features and steps.** Feature files live under `features/` at the project root (override with `-f` or `:features-dirs` in `gherclj.edn`). Step routing and helpers live under your spec tree:
 
    ```
