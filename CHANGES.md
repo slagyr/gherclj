@@ -1,5 +1,9 @@
 # Changes
 
+## v1.3.0
+
+- **`**` cross-segment matching in `-s` namespace globs**: glob patterns now support `**` to cross segment boundaries, following the conventional zero-or-more semantics from bash globstar / gitignore / Java NIO `PathMatcher` (separators around `**` collapse). `isaac.**.acp-steps` matches `isaac.acp-steps`, `isaac.x.acp-steps`, and `isaac.x.y.acp-steps`. `**.acp-steps` matches `acp-steps` through any depth of prefix; `isaac.**` matches `isaac` and every namespace below it. Bare `**` and `**` mid-segment (e.g. `isaac.**-steps`) match one or more characters including dots. Single-`*` semantics are unchanged: it still matches within a single segment. Replaces the per-depth fan-out (`-s isaac.*-steps -s isaac.*.*-steps -s isaac.*.*.*-steps …`) with a single suffix glob.
+
 ## v1.2.0
 
 - **Repeatable `-f / --features-dir` with glob support**: pass `-f` more than once, or use a glob like `-f 'modules/*/features'`, to compose feature suites from a base directory plus per-module roots. Globs expand at config-resolve time (sorted lexicographically); patterns matching no directories fail fast with the offending pattern. When more than one root contributes, each IR's `:source` is qualified with its root path so cross-root collisions never overwrite generated output. Single-root behavior is unchanged — bare `:source` is preserved.

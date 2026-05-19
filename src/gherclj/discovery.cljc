@@ -4,11 +4,24 @@
 
 (defn- glob->regex
   "Convert a glob pattern string to a regex pattern.
-   * matches any sequence of non-dot characters within a segment."
+   * matches any sequence of non-dot characters within a segment.
+   ** crosses segment boundaries:
+     .**. — zero or more inner segments (dots collapse)
+     **. (at start) — zero or more leading segments
+     .** (at end) — zero or more trailing segments
+     ** elsewhere — one or more characters (may include dots)"
   [pattern]
   (-> pattern
+      (str/replace #"\.\*\*\." "<<MID>>")
+      (str/replace #"^\*\*\." "<<START>>")
+      (str/replace #"\.\*\*$" "<<END>>")
+      (str/replace "**" "<<BARE>>")
       (str/replace "." "\\.")
       (str/replace "*" "[^.]*")
+      (str/replace "<<MID>>" "(\\.[^.]+)*\\.")
+      (str/replace "<<START>>" "([^.]+\\.)*")
+      (str/replace "<<END>>" "(\\.[^.]+)*")
+      (str/replace "<<BARE>>" ".+")
       (->> (format "^%s$"))
       re-pattern))
 
