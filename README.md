@@ -2,12 +2,12 @@
 
 ### gherclj
 
-[![CI Tests](https://github.com/slagyr/gherclj/actions/workflows/ci.yml/badge.svg)](https://github.com/slagyr/gherclj/actions/workflows/ci.yml)
-
 _pronounced: /ˈɡɜːrkəl/, gur-kull_
 
 Translates Gherkin acceptance tests into code.
 Written by Human-Agent interaction, for Human-Agent interaction.
+
+[![CI Tests](https://github.com/slagyr/gherclj/actions/workflows/ci.yml/badge.svg)](https://github.com/slagyr/gherclj/actions/workflows/ci.yml)
 
 <br clear="left">
 
