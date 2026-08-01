@@ -15,3 +15,4 @@
 features/edn/
 features/generated/
 target/
+.verify-baseline.edn

@@ -4,10 +4,8 @@ title: 'Runtime failure provenance: feature:line, step text, and table cells'
 status: completed
 type: feature
 priority: high
-tags:
-    - unverified
 created_at: 2026-08-01T16:54:52Z
-updated_at: 2026-08-01T17:08:45Z
+updated_at: 2026-08-01T17:34:22Z
 ---
 
 ## Problem

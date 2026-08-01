@@ -4,10 +4,8 @@ title: Gherkin Rule with nested Background
 status: completed
 type: feature
 priority: high
-tags:
-    - unverified
 created_at: 2026-08-01T17:28:41Z
-updated_at: 2026-08-01T17:31:01Z
+updated_at: 2026-08-01T17:34:22Z
 ---
 
 ## Goal
