@@ -222,20 +222,47 @@
         (assoc :tags-pending [])
         (update :result update :description-lines conj trimmed))))
 
+(defn- process-rule [ctx trimmed]
+  (when (str/starts-with? trimmed "Rule:")
+    (let [name (str/trim (subs trimmed 5))
+          rule {:name name
+                :line (:line ctx)
+                :tags (vec (:tags-pending ctx))
+                :background-lines []}]
+      (-> ctx
+          (assoc :section :rule
+                 :tags-pending []
+                 :current-rule rule)))))
+
 (defn- process-background [ctx trimmed]
   (when (str/starts-with? trimmed "Background:")
-    (assoc ctx :section :background :tags-pending [])))
+    (if (:current-rule ctx)
+      (assoc ctx :section :rule-background :tags-pending [])
+      (assoc ctx :section :background :tags-pending []))))
 
 (defn- process-tag-line [ctx trimmed]
   (when (tag-line? trimmed)
     (update ctx :tags-pending into (parse-tags trimmed))))
 
+(defn- scenario-entry-with-rule
+  "Attach current Rule metadata (name, line, tags, background lines) to a scenario entry."
+  [ctx entry]
+  (if-let [rule (:current-rule ctx)]
+    (cond-> (assoc entry
+                   :rule (:name rule)
+                   :rule-tags (:tags rule)
+                   :rule-background-lines (:background-lines rule))
+      (:line rule) (assoc :rule-line (:line rule)))
+    entry))
+
 (defn- process-scenario-outline [ctx trimmed]
   (when (str/starts-with? trimmed "Scenario Outline:")
     (let [title (str/trim (subs trimmed 17))
-          entry (cond-> {:title title :lines [] :tags (:tags-pending ctx)
-                         :outline? true :examples-lines []}
-                  (:line ctx) (assoc :line (:line ctx)))]
+          entry (scenario-entry-with-rule
+                  ctx
+                  (cond-> {:title title :lines [] :tags (:tags-pending ctx)
+                           :outline? true :examples-lines []}
+                    (:line ctx) (assoc :line (:line ctx))))]
       (-> ctx
           (assoc :section :scenario :tags-pending [])
           (update :result update :scenarios conj entry)))))
@@ -243,8 +270,10 @@
 (defn- process-scenario [ctx trimmed]
   (when (str/starts-with? trimmed "Scenario:")
     (let [title (str/trim (subs trimmed 9))
-          entry (cond-> {:title title :lines [] :tags (:tags-pending ctx)}
-                  (:line ctx) (assoc :line (:line ctx)))]
+          entry (scenario-entry-with-rule
+                  ctx
+                  (cond-> {:title title :lines [] :tags (:tags-pending ctx)}
+                    (:line ctx) (assoc :line (:line ctx))))]
       (-> ctx
           (assoc :section :scenario :tags-pending [])
           (update :result update :scenarios conj entry)))))
@@ -255,11 +284,18 @@
     (assoc ctx :section :examples :tags-pending [])))
 
 (defn- process-background-line [ctx trimmed]
-  (when (and (= :background (:section ctx))
-             (or (step-keyword? trimmed) (table-line? trimmed)))
+  (cond
+    (and (= :background (:section ctx))
+         (or (step-keyword? trimmed) (table-line? trimmed)))
     (-> ctx
         (assoc :tags-pending [])
-        (update :result update :background-lines conj (numbered-entry ctx trimmed)))))
+        (update :result update :background-lines conj (numbered-entry ctx trimmed)))
+
+    (and (= :rule-background (:section ctx))
+         (or (step-keyword? trimmed) (table-line? trimmed)))
+    (-> ctx
+        (assoc :tags-pending [])
+        (update :current-rule update :background-lines conj (numbered-entry ctx trimmed)))))
 
 (defn- process-scenario-step [ctx trimmed]
   (when (and (#{:scenario :examples} (:section ctx))
@@ -291,8 +327,9 @@
         (process-doc-string-open ctx trimmed line)
         (process-feature-line ctx trimmed)
         (process-blank-in-description ctx trimmed)
-        (process-background ctx trimmed)
         (process-tag-line ctx trimmed)
+        (process-rule ctx trimmed)
+        (process-background ctx trimmed)
         (process-scenario-outline ctx trimmed)
         (process-scenario ctx trimmed)
         (process-examples ctx trimmed)
@@ -328,10 +365,21 @@
   (reduce-kv (fn [s k v] (str/replace s (str "<" k ">") v))
              text row-map))
 
+(defn- attach-rule-fields
+  "Copy Rule name/line/background from a section entry onto a concrete scenario.
+   Tags are merged by the caller (feature + rule + scenario)."
+  [scenario {:keys [rule rule-line rule-background-lines]}]
+  (let [rule-bg (when (seq rule-background-lines)
+                  (parse-scenario-lines rule-background-lines))]
+    (cond-> scenario
+      rule (assoc :rule rule)
+      rule-line (assoc :rule-line rule-line)
+      rule-bg (assoc :rule-background rule-bg))))
+
 (defn- expand-outline
   "Expand a Scenario Outline into concrete scenarios.
    Step :line values come from the outline body; scenario :line from the outline header."
-  [{:keys [title lines tags examples-lines line]}]
+  [{:keys [title lines tags examples-lines line] :as entry}]
   (let [parsed-steps (:steps (parse-scenario-lines lines))
         examples-table (mapv (comp parse-table-line entry-text) examples-lines)
         headers (first examples-table)
@@ -342,9 +390,11 @@
                   expanded-steps (mapv (fn [step]
                                          (update step :text #(substitute-placeholders % row-map)))
                                        parsed-steps)]
-              (cond-> {:scenario scenario-name :steps expanded-steps}
-                line (assoc :line line)
-                (seq tags) (assoc :tags tags))))
+              (attach-rule-fields
+                (cond-> {:scenario scenario-name :steps expanded-steps}
+                  line (assoc :line line)
+                  (seq tags) (assoc :tags tags))
+                entry)))
           rows)))
 ;; --- Public API ---
 
@@ -364,13 +414,21 @@
         scenarios (->> (:scenarios sections)
                        (mapcat (fn [{:keys [outline?] :as entry}]
                                  (if outline?
-                                   (expand-outline (update entry :tags #(into feature-tags %)))
+                                   (expand-outline
+                                     (update entry :tags
+                                             #(into [] (concat feature-tags
+                                                               (or (:rule-tags entry) [])
+                                                               %))))
                                    (let [{:keys [title lines tags line]} entry
                                          parsed (parse-scenario-lines lines)
-                                         all-tags (into feature-tags tags)]
-                                     [(cond-> (assoc parsed :scenario title)
-                                        line (assoc :line line)
-                                        (seq all-tags) (assoc :tags all-tags))]))))
+                                         ;; feature tags + rule tags + scenario tags
+                                         rule-tags (or (:rule-tags entry) [])
+                                         all-tags (into [] (concat feature-tags rule-tags tags))]
+                                     [(attach-rule-fields
+                                        (cond-> (assoc parsed :scenario title)
+                                          line (assoc :line line)
+                                          (seq all-tags) (assoc :tags all-tags))
+                                        entry)]))))
                        vec)]
     (cond-> {:feature feature-name
              :scenarios scenarios}

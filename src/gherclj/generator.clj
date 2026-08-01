@@ -141,15 +141,28 @@
                                        (mapcat #(render-step-lines config %))
                                        vec)))
 
+(defn- merge-backgrounds
+  "Feature Background steps, then Rule Background steps (Cucumber order)."
+  [feature-bg rule-bg]
+  (let [fsteps (or (:steps feature-bg) [])
+        rsteps (or (:steps rule-bg) [])]
+    (when (or (seq fsteps) (seq rsteps))
+      {:steps (into (vec fsteps) rsteps)})))
+
+(defn- effective-background
+  "Background applied to a scenario: feature-level then that scenario's rule background."
+  [feature-bg scenario]
+  (merge-backgrounds feature-bg (:rule-background scenario)))
+
 (defn- step-namespaces-used
   "Return the set of step namespace symbols that have at least one step
-   matching a step in this feature's background or scenarios. Framework
-   adapters get this set in `generate-preamble` and decide what to look up
-   from each — Clojure adapters query helper-imports; the rspec adapter
-   queries its own file-setup and describe-setup registries."
-  [background scenarios]
-  (->> (concat (when background (:steps background))
-               (mapcat :steps scenarios))
+   matching a step in this feature's background, rule backgrounds, or scenarios."
+  [feature-bg scenarios]
+  (->> (concat (when feature-bg (:steps feature-bg))
+               (mapcat (fn [sc]
+                         (concat (get-in sc [:rule-background :steps])
+                                 (:steps sc)))
+                       scenarios))
        (keep :ns)
        (into #{})))
 
@@ -175,7 +188,13 @@
         filtered (cond->> scenarios
                    (seq effective-excludes) (remove #(some (set effective-excludes) (:tags %)))
                    (seq effective-includes) (filter #(some (set effective-includes) (:tags %))))
-        classified-scenarios (mapv #(classify-scenario steps %) filtered)]
+        classified-scenarios
+        (mapv (fn [sc]
+                (let [sc (classify-scenario steps sc)]
+                  (if-let [rb (:rule-background sc)]
+                    (assoc sc :rule-background (classify-scenario steps rb))
+                    sc)))
+              filtered)]
     (when (seq classified-scenarios)
       (let [classified-bg (when background (classify-scenario steps background))
             used-nses     (step-namespaces-used classified-bg classified-scenarios)
@@ -184,13 +203,18 @@
             ;; their declarations via :_used-nses; Java derives class names
             ;; from :_source since wrap-feature doesn't otherwise see it.
             config        (assoc config :_used-nses used-nses :_source source)
-            rendered-bg   (render-background config classified-bg)
             preamble      (fw/generate-preamble config source used-nses)
-            scenario-blocks (->> classified-scenarios
-                                 (map (fn [scenario]
-                                        (if (all-classified? scenario)
-                                          (fw/wrap-scenario config (render-scenario config scenario) rendered-bg)
-                                          (fw/wrap-pending config scenario rendered-bg))))
-                                 (str/join "\n\n"))]
+            scenario-blocks
+            (->> classified-scenarios
+                 (map (fn [scenario]
+                        (let [eff-bg (render-background
+                                       config
+                                       (effective-background classified-bg scenario))]
+                          (if (and (all-classified? scenario)
+                                   (or (nil? (:rule-background scenario))
+                                       (all-classified? (:rule-background scenario))))
+                            (fw/wrap-scenario config (render-scenario config scenario) eff-bg)
+                            (fw/wrap-pending config scenario eff-bg)))))
+                 (str/join "\n\n"))]
         (str preamble "\n\n"
              (fw/wrap-feature config feature scenario-blocks))))))

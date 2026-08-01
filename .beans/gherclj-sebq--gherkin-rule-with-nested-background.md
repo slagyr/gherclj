@@ -1,11 +1,13 @@
 ---
 # gherclj-sebq
 title: Gherkin Rule with nested Background
-status: in-progress
+status: completed
 type: feature
 priority: high
+tags:
+    - unverified
 created_at: 2026-08-01T17:28:41Z
-updated_at: 2026-08-01T17:28:41Z
+updated_at: 2026-08-01T17:31:01Z
 ---
 
 ## Goal
@@ -66,3 +68,19 @@ effective-bg = concat(feature-bg steps, rule-bg steps).
 
 - Rule-level hooks API
 - Changing polyglot adapter signatures beyond receiving merged background
+
+
+
+## Done
+
+### IR
+- Scenarios under a `Rule:` get `:rule`, `:rule-line`
+- Rule `Background:` becomes `:rule-background {:steps [...]}` on those scenarios
+- Feature `:background` unchanged; tags on Rule merge into scenario `:tags`
+
+### Generator
+- Effective background = feature bg steps then rule bg steps
+- Per-scenario background rendering (adapters unchanged)
+
+### Dogfood
+- features/parsing/rule.feature (6 scenarios)

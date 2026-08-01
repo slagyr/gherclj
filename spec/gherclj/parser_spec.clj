@@ -264,6 +264,67 @@
         (should= ["wip"] (:tags (first (:scenarios ir))))
         (should-be-nil (:wip (first (:scenarios ir)))))))
 
+  (context "rules"
+
+    (it "attaches rule name and line to scenarios under a Rule"
+      (let [ir (parser/parse-feature
+                 (str "Feature: Highlander\n"
+                      "\n"
+                      "  Rule: There can be only One\n"
+                      "\n"
+                      "    Scenario: Only One\n"
+                      "      Given one ninja\n"))
+            sc (first (:scenarios ir))]
+        (should= "There can be only One" (:rule sc))
+        (should= 3 (:rule-line sc))
+        (should= "Only One" (:scenario sc))))
+
+    (it "parses a nested Rule Background onto rule scenarios"
+      (let [ir (parser/parse-feature
+                 (str "Feature: Overdue\n"
+                      "\n"
+                      "  Rule: Notify\n"
+                      "\n"
+                      "    Background:\n"
+                      "      Given overdue tasks\n"
+                      "\n"
+                      "    Scenario: First use\n"
+                      "      When I open the app\n"))
+            sc (first (:scenarios ir))]
+        (should= "Notify" (:rule sc))
+        (should= ["overdue tasks"] (mapv :text (:steps (:rule-background sc))))
+        (should= 6 (:line (first (:steps (:rule-background sc)))))))
+
+    (it "keeps feature Background separate from rule Background"
+      (let [ir (parser/parse-feature
+                 (str "Feature: Nested\n"
+                      "\n"
+                      "  Background:\n"
+                      "    Given global\n"
+                      "\n"
+                      "  Rule: Client\n"
+                      "\n"
+                      "    Background:\n"
+                      "      Given client\n"
+                      "\n"
+                      "    Scenario: Post\n"
+                      "      When posting\n"))]
+        (should= ["global"] (mapv :text (:steps (:background ir))))
+        (should= ["client"] (mapv :text (:steps (:rule-background (first (:scenarios ir))))))))
+
+    (it "merges rule tags into scenario tags"
+      (let [ir (parser/parse-feature
+                 (str "Feature: Tagged\n"
+                      "\n"
+                      "  @billing\n"
+                      "  Rule: Invoices\n"
+                      "\n"
+                      "    @wip\n"
+                      "    Scenario: Draft\n"
+                      "      Given a draft\n"))
+            sc (first (:scenarios ir))]
+        (should= ["billing" "wip"] (:tags sc)))))
+
   (context "error reporting"
 
     (it "throws on missing Feature keyword"

@@ -141,6 +141,27 @@
         (should (str/includes? result "[gherclj.sample.app-steps :as app-steps]"))
         (should (str/includes? result "(app-steps/create-adventurer \"alice\")")))))
 
+  (context "rules and nested backgrounds"
+
+    (it "prepends feature then rule background steps for a rule scenario"
+      (let [config {:step-namespaces ['gherclj.generator-spec 'gherclj.sample.app-steps]
+                    :framework :clojure/speclj}
+            ir {:feature "Nested"
+                :source "nested.feature"
+                :background {:steps [{:type :given :text "a user \"admin\"" :line 3}]}
+                :scenarios [{:scenario "Under rule"
+                             :rule "Client blogs"
+                             :rule-background {:steps [{:type :given :text "a user \"client\"" :line 8}]}
+                             :steps [{:type :when :text "running the action" :line 10}
+                                     {:type :then :text "the result should be ok" :line 11}]}]}
+            result (gen/generate-spec config ir)]
+        (should (str/includes? result "create-adventurer \"admin\""))
+        (should (str/includes? result "create-adventurer \"client\""))
+        (should (str/includes? result "run-action"))
+        ;; admin (feature bg) before client (rule bg)
+        (should (< (str/index-of result "create-adventurer \"admin\"")
+                   (str/index-of result "create-adventurer \"client\""))))))
+
   (context "generate-spec with tables and doc-strings"
 
     (it "generates spec with table step"
