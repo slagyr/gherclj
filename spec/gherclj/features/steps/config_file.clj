@@ -51,7 +51,7 @@
 (defn config-should-be-invalid [text]
   (let [result (g/get :loaded-config)]
     (g/should (config/invalid? result))
-    (g/should (str/includes? (config/error-message result) text))))
+    (g/should-include text (config/error-message result))))
 
 ;; --- Step defs ---
 

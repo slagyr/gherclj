@@ -5,6 +5,7 @@
             [gherclj.generator :as gen]
             [gherclj.lifecycle :as lifecycle]
             [speclj.cli :as speclj]
+            [speclj.components :as components]
             [speclj.core :as sc]))
 
 (defmethod fw/generate-preamble :clojure/speclj
@@ -83,8 +84,30 @@
       (finally
         (lifecycle/run-after-all-hooks!)))))
 
+(defn- count-assertion! []
+  (components/inc-assertions!))
+
 (defmethod g/should= :clojure/speclj [expected actual] (sc/should= expected actual))
-(defmethod g/should :clojure/speclj [value] (sc/should value))
-(defmethod g/should-not :clojure/speclj [value] (sc/should-not value))
+
+(defmethod g/assert-truthy :clojure/speclj [form value]
+  (count-assertion!)
+  (when-not value
+    (throw (AssertionError. (str "Expected truthy: " (pr-str form)
+                                 "\n     got: " (pr-str value))))))
+
+(defmethod g/assert-falsy :clojure/speclj [form value]
+  (count-assertion!)
+  (when value
+    (throw (AssertionError. (str "Expected falsy: " (pr-str form)
+                                 "\n     got: " (pr-str value))))))
+
 (defmethod g/should-be-nil :clojure/speclj [value] (sc/should-be-nil value))
 (defmethod g/should-not-be-nil :clojure/speclj [value] (sc/should-not-be-nil value))
+
+(defmethod g/should-include :clojure/speclj [expected actual]
+  (count-assertion!)
+  ((get-method g/should-include :default) expected actual))
+
+(defmethod g/should-not-include :clojure/speclj [expected actual]
+  (count-assertion!)
+  ((get-method g/should-not-include :default) expected actual))

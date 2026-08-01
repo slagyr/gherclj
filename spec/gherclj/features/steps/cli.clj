@@ -184,7 +184,7 @@
   (g/should (pos? (or (g/get :cli-exit-code) 0))))
 
 (defn error-output-should-mention [text]
-  (g/should (str/includes? (g/get :cli-error-output "") text)))
+  (g/should-include text (g/get :cli-error-output "")))
 
 (defgiven "a config file:" cli/cli-config-file!
   "Stores EDN config in :cli-config state. NOT written to disk — used as file-config override when 'running gherclj with' executes.")

@@ -77,27 +77,72 @@
     (set! *framework* fw)
     (alter-var-root #'*framework* (constantly fw))))
 
-(defmulti should=           (fn [_ _] (active-framework)))
-(defmulti should            (fn [_]   (active-framework)))
-(defmulti should-not        (fn [_]   (active-framework)))
-(defmulti should-be-nil     (fn [_]   (active-framework)))
-(defmulti should-not-be-nil (fn [_]   (active-framework)))
+(defmulti should=            (fn [_ _] (active-framework)))
+(defmulti assert-truthy      (fn [_form _value] (active-framework)))
+(defmulti assert-falsy       (fn [_form _value] (active-framework)))
+(defmulti should-be-nil      (fn [_]   (active-framework)))
+(defmulti should-not-be-nil  (fn [_]   (active-framework)))
+(defmulti should-include     (fn [_ _] (active-framework)))
+(defmulti should-not-include (fn [_ _] (active-framework)))
+
+(defmacro should
+  "Assert that form is truthy. Captures the expression in the failure message."
+  [form]
+  `(let [v# ~form]
+     (assert-truthy '~form v#)))
+
+(defmacro should-not
+  "Assert that form is falsy. Captures the expression in the failure message."
+  [form]
+  `(let [v# ~form]
+     (assert-falsy '~form v#)))
 
 (defmethod should= :default [expected actual]
   (when (not= expected actual)
     (throw (AssertionError. (str "Expected: " (pr-str expected) "\n     got: " (pr-str actual))))))
-(defmethod should :default [value]
+
+(defmethod assert-truthy :default [form value]
   (when-not value
-    (throw (AssertionError. (str "Expected truthy but was: " (pr-str value))))))
-(defmethod should-not :default [value]
+    (throw (AssertionError. (str "Expected truthy: " (pr-str form)
+                                 "\n     got: " (pr-str value))))))
+
+(defmethod assert-falsy :default [form value]
   (when value
-    (throw (AssertionError. (str "Expected falsy but was: " (pr-str value))))))
+    (throw (AssertionError. (str "Expected falsy: " (pr-str form)
+                                 "\n     got: " (pr-str value))))))
+
 (defmethod should-be-nil :default [value]
   (when (some? value)
     (throw (AssertionError. (str "Expected nil but was: " (pr-str value))))))
+
 (defmethod should-not-be-nil :default [value]
   (when (nil? value)
     (throw (AssertionError. "Expected not nil but was: nil"))))
+
+(defn- contains-expected?
+  "True when actual includes expected: substring for strings, membership for colls/sets,
+   key presence for maps."
+  [expected actual]
+  (cond
+    (string? actual) (str/includes? actual (str expected))
+    (map? actual) (contains? actual expected)
+    (or (coll? actual) (seq? actual)) (boolean (some #(= expected %) (seq actual)))
+    :else
+    (throw (IllegalArgumentException.
+             (str "should-include does not support actual of type "
+                  (if (nil? actual) "nil" (.getName (class actual))))))))
+
+(defmethod should-include :default [expected actual]
+  (when-not (contains-expected? expected actual)
+    (throw (AssertionError.
+             (str "Expected to include: " (pr-str expected)
+                  "\n      actual value: " (pr-str actual))))))
+
+(defmethod should-not-include :default [expected actual]
+  (when (contains-expected? expected actual)
+    (throw (AssertionError.
+             (str "Expected not to include: " (pr-str expected)
+                  "\n         actual value: " (pr-str actual))))))
 
 ;; --- Failure provenance ---
 ;; Generated specs wrap each step in with-step*; helpers can use each-row /

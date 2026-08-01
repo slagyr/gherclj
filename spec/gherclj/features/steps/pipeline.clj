@@ -185,8 +185,8 @@
                     value (get m "value")]]
         (g/should (contains? #{"contains" "not-contains"} check))
         (case check
-          "contains" (g/should (str/includes? content value))
-          "not-contains" (g/should-not (str/includes? content value))
+          "contains" (g/should-include value content)
+          "not-contains" (g/should-not-include value content)
           nil)))))
 
 (defn- matches-expected?

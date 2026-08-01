@@ -237,6 +237,53 @@
 
         (should= [:cleanup] @events))))
 
+  (context "should-include"
+
+    (around [it]
+      (binding [core/*framework* nil]
+        (it)))
+
+    (it "passes when a string contains the expected substring"
+      (core/should-include "Feature" "Missing Feature keyword"))
+
+    (it "fails with expected/actual wording when substring is missing"
+      (let [err (try
+                  (core/should-include "FeatureXYZ" "Missing Feature keyword")
+                  nil
+                  (catch Throwable e e))]
+        (should-not-be-nil err)
+        (should (str/includes? (.getMessage err) "Expected to include:"))
+        (should (str/includes? (.getMessage err) "FeatureXYZ"))
+        (should (str/includes? (.getMessage err) "Missing Feature keyword"))))
+
+    (it "passes when a collection contains the expected element"
+      (core/should-include :b [:a :b :c]))
+
+    (it "should-not-include fails when the substring is present"
+      (let [err (try
+                  (core/should-not-include "Feature" "Missing Feature keyword")
+                  nil
+                  (catch Throwable e e))]
+        (should-not-be-nil err)
+        (should (str/includes? (.getMessage err) "Expected not to include:"))
+        (should (str/includes? (.getMessage err) "Feature")))))
+
+  (context "should form capture"
+
+    (around [it]
+      (binding [core/*framework* nil]
+        (it)))
+
+    (it "includes the expression in the failure message"
+      (let [err (try
+                  (core/should (= 1 2))
+                  nil
+                  (catch Throwable e e))]
+        (should-not-be-nil err)
+        (should (str/includes? (.getMessage err) "Expected truthy:"))
+        (should (str/includes? (.getMessage err) "(= 1 2)"))
+        (should (str/includes? (.getMessage err) "got: false")))))
+
   (context "failure provenance"
 
     ;; Use default assertion methods (not speclj's) so failures throw and can be inspected.

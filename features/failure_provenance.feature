@@ -139,6 +139,12 @@ Feature: Failure provenance
 
   # --- Runtime failure messages ---
 
+  Scenario: should-include reports expected substring and actual value
+    When should-include fails looking for "FeatureXYZ" in "Missing Feature keyword"
+    Then the failure message should include "Expected to include:"
+    And the failure message should include "FeatureXYZ"
+    And the failure message should include "Missing Feature keyword"
+
   Scenario: with-step* prefixes assertion failures with step text and location
     When a step "Then the status is 200" at "features/auth.feature" line 12 fails with:
       """

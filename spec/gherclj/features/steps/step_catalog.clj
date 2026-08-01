@@ -40,7 +40,7 @@
   (let [output (strip-ansi (g/get :cli-output ""))
         lines (concat (:headers table) (mapcat identity (:rows table)))]
     (doseq [line lines]
-      (g/should (str/includes? output line)))))
+      (g/should-include line output))))
 
 (defthen "the catalog output should include:" step-catalog/catalog-output-should-include
   "Checks that expected lines appear adjacent and in order in :cli-output. Leading/trailing blank lines in expected are trimmed.")

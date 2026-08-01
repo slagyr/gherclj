@@ -110,14 +110,32 @@
              (when (not= expected actual)
                (str "Expected: " (pr-str expected) "\n  Actual: " (pr-str actual)))))
 
-(defmethod g/should :clojure/test [value]
-  (ct-assert value (str "Expected truthy but was: " (pr-str value))))
+(defmethod g/assert-truthy :clojure/test [form value]
+  (ct-assert value (str "Expected truthy: " (pr-str form) "\n     got: " (pr-str value))))
 
-(defmethod g/should-not :clojure/test [value]
-  (ct-assert (not value) (str "Expected falsy but was: " (pr-str value))))
+(defmethod g/assert-falsy :clojure/test [form value]
+  (ct-assert (not value) (str "Expected falsy: " (pr-str form) "\n     got: " (pr-str value))))
 
 (defmethod g/should-be-nil :clojure/test [value]
   (ct-assert (nil? value) (str "Expected nil but was: " (pr-str value))))
 
 (defmethod g/should-not-be-nil :clojure/test [value]
   (ct-assert (some? value) "Expected not nil but was: nil"))
+
+(defmethod g/should-include :clojure/test [expected actual]
+  (try
+    ((get-method g/should-include :default) expected actual)
+    (ct-assert true "should-include")
+    (catch AssertionError e
+      (ct-assert false (.getMessage e)))
+    (catch IllegalArgumentException e
+      (ct-assert false (.getMessage e)))))
+
+(defmethod g/should-not-include :clojure/test [expected actual]
+  (try
+    ((get-method g/should-not-include :default) expected actual)
+    (ct-assert true "should-not-include")
+    (catch AssertionError e
+      (ct-assert false (.getMessage e)))
+    (catch IllegalArgumentException e
+      (ct-assert false (.getMessage e)))))

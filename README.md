@@ -585,13 +585,15 @@ gherclj provides framework-agnostic assertion functions that delegate to the act
 
 ```clojure
 (g/should= expected actual)
-(g/should value)
-(g/should-not value)
+(g/should (some-predicate?))          ; captures the form in the failure message
+(g/should-not (bad-predicate?))
 (g/should-be-nil value)
 (g/should-not-be-nil value)
+(g/should-include expected actual)    ; substring (string) or membership (coll/set/map key)
+(g/should-not-include expected actual)
 ```
 
-These work under both `:clojure/speclj` and `:clojure/test`. If your project uses a single framework, you can use its native assertions directly (e.g., speclj's `should=`). Use `g/should=` when your steps need to be framework-agnostic.
+These work under both `:clojure/speclj` and `:clojure/test`. Prefer `should-include` over `(should (str/includes? …))` so failures show expected vs actual. If your project uses a single framework, you can use its native assertions directly (e.g., speclj's `should=`). Use `g/should*` when helpers need to be framework-agnostic.
 
 ## Test Framework Support
 

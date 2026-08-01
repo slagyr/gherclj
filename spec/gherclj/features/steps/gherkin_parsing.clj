@@ -39,7 +39,7 @@
 (defn parsing-should-fail [text]
   (let [error (g/get :error)]
     (g/should-not-be-nil error)
-    (g/should (str/includes? error text))))
+    (g/should-include text error)))
 
 (defgiven "a feature file containing:" gherkin-parsing/feature-file-containing!)
 

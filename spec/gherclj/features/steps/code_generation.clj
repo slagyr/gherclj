@@ -69,7 +69,7 @@
         output (-> raw-output
                    (str/replace #"\u001b\[[0-9;]*m" "")
                    (str/replace (str pipeline-base-dir "/") ""))]
-    (g/should (str/includes? output expected))))
+    (g/should-include expected output)))
 
 (defn output-should-not-contain [text]
   (let [raw-output (or (g/get :cli-output) (g/get :generated-output) (g/get :pipeline-output) "")

@@ -150,7 +150,7 @@ If your project uses a single framework, you can use its native assertions direc
 ;; Exact match
 (g/should= expected (g/get :key))
 
-;; Truthiness
+;; Truthiness (failure message includes the form)
 (g/should (g/get :key))
 (g/should-not (g/get :key))
 
@@ -158,7 +158,11 @@ If your project uses a single framework, you can use its native assertions direc
 (g/should-be-nil (g/get :key))
 (g/should-not-be-nil (g/get :key))
 
-;; Collection
+;; Substring / membership — prefer over (should (str/includes? …))
+(g/should-include "Feature" error-message)
+(g/should-not-include "traceback" output)
+
+;; Collection equality
 (g/should= expected-vec (g/get :items))
 ```
 

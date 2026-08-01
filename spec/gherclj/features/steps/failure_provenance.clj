@@ -72,12 +72,20 @@
 (defn provenance-comments-should-contain [text]
   (let [text (strip-quotes text)
         comments (or (g/get :provenance-comments) "")]
-    (g/should (str/includes? comments text))))
+    (g/should-include text comments)))
 
 (defn step-fails-with! [label source line doc-string]
   (let [err (try
               (g/with-step* (strip-quotes label) (strip-quotes source) line
                 (fn [] (throw (AssertionError. doc-string))))
+              nil
+              (catch Throwable t t))]
+    (g/assoc! :failure-message (some-> err .getMessage))))
+
+(defn should-include-fails! [expected actual]
+  (let [err (try
+              (binding [g/*framework* nil]
+                (g/should-include (strip-quotes expected) (strip-quotes actual)))
               nil
               (catch Throwable t t))]
     (g/assoc! :failure-message (some-> err .getMessage))))
@@ -126,7 +134,7 @@
   (let [text (strip-quotes text)
         msg (or (g/get :failure-message) "")]
     (g/should-not-be-nil (g/get :failure-message))
-    (g/should (str/includes? msg text))))
+    (g/should-include text msg)))
 
 (defn generated-wrappers-reference-lines! [a b c]
   (let [out (or (g/get :generated-output) "")]
@@ -159,6 +167,9 @@
 
 (defwhen "a step {label:string} at {source:string} line {line:int} fails with:"
   failure-provenance/step-fails-with!)
+
+(defwhen "should-include fails looking for {expected:string} in {actual:string}"
+  failure-provenance/should-include-fails!)
 
 (defgiven "an expected table with row lines {line-a:int} and {line-b:int}:"
   failure-provenance/expected-table-with-row-lines!)
