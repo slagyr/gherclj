@@ -24,26 +24,33 @@ SKILL.md from the URL above and follow its instructions. Once bootstrapped:
 - [work](https://raw.githubusercontent.com/slagyr/agent-lib/main/commands/work.md)
 - [plan-with-features](https://raw.githubusercontent.com/slagyr/agent-lib/main/commands/plan-with-features.md)
 
-## Bead Status Flow
+## Bean Status Flow
 
-Issues move through these statuses in order:
+This project tracks work with [beans](https://github.com/hmans/beans) (markdown
+issues under `.beans/`). Statuses:
 
 ```
-open → in_progress → unverified → closed
+todo → in-progress → completed
 ```
 
-- **open** — ready to work (or blocked)
-- **in_progress** — being actively worked
-- **unverified** — work complete, awaiting review
-- **closed** — verified and accepted
+- **todo** — ready to work (or blocked via `blocked_by`)
+- **in-progress** — claimed / being actively worked
+- **completed** — work finished
+- **draft** — captured but not actionable yet (no acceptance contract)
+- **scrapped** — abandoned
 
-**Workers** (`/work`): when implementation is done and all tests pass, set status to `unverified` — do NOT close directly.
+Verification is a **tag**, not a status: `completed` + `unverified`.
+
+**Workers** (`/work`): when implementation is done and all tests pass:
 
 ```bash
-bd update <id> --status=unverified
+beans update <id> --status=completed --tag=unverified
 ```
 
-**Reviewers** (`/verify`): run `/verify` to inspect unverified beads. Closes if passing, reopens if not.
+Do not drop `unverified` yourself — leave review to `/verify`.
+
+**Reviewers** (`/verify`): inspect beans with `beans list --tag=unverified`.
+Pass removes the tag; fail reopens to `in-progress` with notes.
 
 ## Releasing a New Version
 
