@@ -70,9 +70,10 @@
             ir {:feature "Sample feature"
                 :source "sample.feature"
                 :scenarios [{:scenario "Does the thing"
-                             :steps [{:type :given :text "a project alpha with timeout 300"}
-                                     {:type :when :text "running the action"}
-                                     {:type :then :text "the result should be ok"}]}]}
+                             :line 3
+                             :steps [{:type :given :text "a project alpha with timeout 300" :line 4}
+                                     {:type :when :text "running the action" :line 5}
+                                     {:type :then :text "the result should be ok" :line 6}]}]}
             result (gen/generate-spec config ir)]
         (should (str/includes? result "(describe \"Sample feature\""))
         (should (str/includes? result "(it \"Does the thing\""))
@@ -82,7 +83,10 @@
         (should (str/includes? result "[gherclj.generator-spec :as generator-spec]"))
         (should (str/includes? result "[gherclj.core :as g]"))
         (should (str/includes? result "(binding [g/*state* (atom {})]"))
-        (should (str/includes? result "(binding [g/*state* (atom @g/*state*)]"))))
+        (should (str/includes? result "(binding [g/*state* (atom @g/*state*)]"))
+        (should (str/includes? result ";; Given a project alpha with timeout 300  (sample.feature:4)"))
+        (should (str/includes? result ";; When running the action  (sample.feature:5)"))
+        (should (str/includes? result "(g/with-step* \"Given a project alpha with timeout 300\" \"sample.feature\" 4"))))
 
     (it "returns nil when tag filtering removes every scenario"
       (let [config {:step-namespaces ['gherclj.generator-spec]
@@ -145,11 +149,18 @@
             ir {:feature "Tables"
                 :source "tables.feature"
                 :scenarios [{:scenario "With table"
-                             :steps [{:type :given :text "a table of projects:"
-                                      :table {:headers ["name"] :rows [["alpha"]]}}]}]}
+                             :line 3
+                             :steps [{:type :given :text "a table of projects:" :line 4
+                                      :table {:headers ["name"]
+                                              :rows [["alpha"]]
+                                              :header-line 5
+                                              :row-lines [6]}}]}]}
             result (gen/generate-spec config ir)]
         (should (str/includes? result "setup-table"))
-        (should (str/includes? result ":headers"))))
+        (should (str/includes? result ":headers"))
+        (should (str/includes? result ";; Given a table of projects:  (tables.feature:4)"))
+        (should (str/includes? result ";;   | name |  (tables.feature:5)"))
+        (should (str/includes? result ";;   | alpha |  (tables.feature:6)"))))
 
     (it "generates spec with doc-string step"
       (let [config {:step-namespaces ['gherclj.generator-spec]

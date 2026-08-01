@@ -25,8 +25,11 @@ Feature: Pytest code generation
 
       def test_valid_credentials():
           sut = SampleApp()
+          # Given a Python user "alice"  (login.feature)
           sut.create_adventurer('alice')
+          # When the Python user logs in  (login.feature)
           sut.enter_the_realm()
+          # Then the Python response should be 200  (login.feature)
           sut.verify_outcome(200)
       """
 

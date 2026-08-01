@@ -40,9 +40,12 @@ Feature: IR to code generation
                 (lifecycle/run-after-scenario-hooks!)))))
 
         (it "Valid credentials"
-          (app-steps/create-adventurer "alice")
-          (app-steps/enter-the-realm)
-          (app-steps/verify-outcome 200)))
+          ;; Given a user "alice"  (login.feature)
+          (g/with-step* "Given a user \"alice\"" "login.feature" nil (fn [] (app-steps/create-adventurer "alice")))
+          ;; When the user logs in  (login.feature)
+          (g/with-step* "When the user logs in" "login.feature" nil (fn [] (app-steps/enter-the-realm)))
+          ;; Then the response should be 200  (login.feature)
+          (g/with-step* "Then the response should be 200" "login.feature" nil (fn [] (app-steps/verify-outcome 200)))))
       """
 
   Scenario: Generate a clojure.test spec
@@ -82,9 +85,12 @@ Feature: IR to code generation
 
       (deftest valid-credentials
         (testing "Valid credentials"
-          (app-steps/create-adventurer "alice")
-          (app-steps/enter-the-realm)
-          (app-steps/verify-outcome 200)))
+          ;; Given a user "alice"  (login.feature)
+          (g/with-step* "Given a user \"alice\"" "login.feature" nil (fn [] (app-steps/create-adventurer "alice")))
+          ;; When the user logs in  (login.feature)
+          (g/with-step* "When the user logs in" "login.feature" nil (fn [] (app-steps/enter-the-realm)))
+          ;; Then the response should be 200  (login.feature)
+          (g/with-step* "Then the response should be 200" "login.feature" nil (fn [] (app-steps/verify-outcome 200)))))
       """
 
   Scenario: clojure.test with multiple scenarios
@@ -129,15 +135,21 @@ Feature: IR to code generation
 
       (deftest valid-credentials
         (testing "Valid credentials"
-          (app-steps/create-adventurer "alice")
-          (app-steps/enter-the-realm)
-          (app-steps/verify-outcome 200)))
+          ;; Given a user "alice"  (login.feature)
+          (g/with-step* "Given a user \"alice\"" "login.feature" nil (fn [] (app-steps/create-adventurer "alice")))
+          ;; When the user logs in  (login.feature)
+          (g/with-step* "When the user logs in" "login.feature" nil (fn [] (app-steps/enter-the-realm)))
+          ;; Then the response should be 200  (login.feature)
+          (g/with-step* "Then the response should be 200" "login.feature" nil (fn [] (app-steps/verify-outcome 200)))))
 
       (deftest invalid-credentials
         (testing "Invalid credentials"
-          (app-steps/create-adventurer "nobody")
-          (app-steps/enter-the-realm)
-          (app-steps/verify-outcome 401)))
+          ;; Given a user "nobody"  (login.feature)
+          (g/with-step* "Given a user \"nobody\"" "login.feature" nil (fn [] (app-steps/create-adventurer "nobody")))
+          ;; When the user logs in  (login.feature)
+          (g/with-step* "When the user logs in" "login.feature" nil (fn [] (app-steps/enter-the-realm)))
+          ;; Then the response should be 401  (login.feature)
+          (g/with-step* "Then the response should be 401" "login.feature" nil (fn [] (app-steps/verify-outcome 401)))))
       """
 
   Scenario: clojure.test with background
@@ -179,9 +191,12 @@ Feature: IR to code generation
 
       (deftest check-response
         (testing "Check response"
-          (app-steps/create-adventurer "alice")
-          (app-steps/enter-the-realm)
-          (app-steps/verify-outcome 200)))
+          ;; Given a user "alice"  (login.feature)
+          (g/with-step* "Given a user \"alice\"" "login.feature" nil (fn [] (app-steps/create-adventurer "alice")))
+          ;; When the user logs in  (login.feature)
+          (g/with-step* "When the user logs in" "login.feature" nil (fn [] (app-steps/enter-the-realm)))
+          ;; Then the response should be 200  (login.feature)
+          (g/with-step* "Then the response should be 200" "login.feature" nil (fn [] (app-steps/verify-outcome 200)))))
       """
 
   Scenario: clojure.test pending scenario

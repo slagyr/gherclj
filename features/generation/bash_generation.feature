@@ -40,8 +40,11 @@ Feature: Bash test code generation
 
       valid_credentials() {
         subject_new
+        # Given a Bash user "alice"  (login.feature)
         subject_create_adventurer 'alice'
+        # When the Bash user logs in  (login.feature)
         subject_enter_the_realm
+        # Then the Bash response should be 200  (login.feature)
         subject_verify_outcome 200
       }
 

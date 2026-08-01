@@ -42,11 +42,53 @@
                       "    Given users:\n"
                       "      | name  | role  |\n"
                       "      | alice | admin |\n"
-                      "      | bob   | guest |\n"))]
-        (should= {:headers ["name" "role"]
-                  :rows [["alice" "admin"] ["bob" "guest"]]}
-                 (:table (first (:steps (first (:scenarios ir))))))))
+                      "      | bob   | guest |\n"))
+            table (:table (first (:steps (first (:scenarios ir)))))]
+        (should= ["name" "role"] (:headers table))
+        (should= [["alice" "admin"] ["bob" "guest"]] (:rows table))))
 
+    (it "records 1-based line numbers on scenarios and steps"
+      (let [ir (parser/parse-feature
+                 (str "Feature: Login\n"
+                      "\n"
+                      "  Scenario: Successful login\n"
+                      "    Given a valid user\n"
+                      "    When the user logs in\n"
+                      "    Then the user sees the dashboard\n"))
+            scenario (first (:scenarios ir))
+            steps (:steps scenario)]
+        (should= 3 (:line scenario))
+        (should= 4 (:line (nth steps 0)))
+        (should= 5 (:line (nth steps 1)))
+        (should= 6 (:line (nth steps 2)))))
+
+    (it "records header and data-row line numbers on tables"
+      (let [ir (parser/parse-feature
+                 (str "Feature: Tables\n"
+                      "\n"
+                      "  Scenario: With table\n"
+                      "    Given users:\n"
+                      "      | name  | role  |\n"
+                      "      | alice | admin |\n"
+                      "      | bob   | guest |\n"))
+            table (:table (first (:steps (first (:scenarios ir)))))]
+        (should= 4 (:line (first (:steps (first (:scenarios ir))))))
+        (should= 5 (:header-line table))
+        (should= [6 7] (:row-lines table))))
+
+    (it "records line numbers on background steps"
+      (let [ir (parser/parse-feature
+                 (str "Feature: BG\n"
+                      "\n"
+                      "  Background:\n"
+                      "    Given setup\n"
+                      "    And more setup\n"
+                      "\n"
+                      "  Scenario: Test\n"
+                      "    When action\n"))
+            bg-steps (:steps (:background ir))]
+        (should= 4 (:line (nth bg-steps 0)))
+        (should= 5 (:line (nth bg-steps 1)))))
     (it "parses a background section"
       (let [ir (parser/parse-feature
                  (str "Feature: BG\n"
@@ -81,8 +123,9 @@
                       "      | alice |\n"
                       "    Then something happens\n"))]
         (should= 2 (count (:steps (first (:scenarios ir)))))
-        (should= {:headers ["name"] :rows [["alice"]]}
-                 (:table (first (:steps (first (:scenarios ir))))))
+        (let [table (:table (first (:steps (first (:scenarios ir)))))]
+          (should= ["name"] (:headers table))
+          (should= [["alice"]] (:rows table)))
         (should= "something happens"
                  (:text (second (:steps (first (:scenarios ir))))))))
 
@@ -97,8 +140,9 @@
                       "\n"
                       "  Scenario: Test\n"
                       "    When action\n"))]
-        (should= {:headers ["name"] :rows [["alice"]]}
-                 (:table (first (:steps (:background ir)))))))
+        (let [table (:table (first (:steps (:background ir))))]
+          (should= ["name"] (:headers table))
+          (should= [["alice"]] (:rows table)))))
 
     (it "parses multiple scenarios"
       (let [ir (parser/parse-feature
@@ -238,11 +282,18 @@
         (io/make-parents feature-file)
         (spit feature-file "Feature: Login\n\n  Scenario: User logs in\n    Given a user\n")
         (try
-          (should= [{:feature "Login"
-                     :scenarios [{:scenario "User logs in"
-                                  :steps [{:type :given :text "a user"}]}]
-                     :source "auth/login.feature"}]
-                   (parser/parse-features-dir features-dir))
+          (let [irs (parser/parse-features-dir features-dir)
+                ir (first irs)
+                scenario (first (:scenarios ir))
+                step (first (:steps scenario))]
+            (should= 1 (count irs))
+            (should= "Login" (:feature ir))
+            (should= "auth/login.feature" (:source ir))
+            (should= "User logs in" (:scenario scenario))
+            (should= :given (:type step))
+            (should= "a user" (:text step))
+            (should= 3 (:line scenario))
+            (should= 4 (:line step)))
           (finally
             (cleanup features-dir)))))
 

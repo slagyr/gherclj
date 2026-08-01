@@ -31,8 +31,11 @@ Feature: TypeScript node:test code generation
 
 
         test('Valid credentials', () => {
+          // Given a TypeScript user "alice"  (login.feature)
           subject.createAdventurer('alice')
+          // When the TypeScript user logs in  (login.feature)
           subject.enterTheRealm()
+          // Then the TypeScript response should be 200  (login.feature)
           subject.verifyOutcome(200)
         })
       })

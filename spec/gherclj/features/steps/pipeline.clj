@@ -189,11 +189,26 @@
           "not-contains" (g/should-not (str/includes? content value))
           nil)))))
 
+(defn- matches-expected?
+  "Expected maps are matched as a subset of actual (additive IR fields ok)."
+  [expected actual]
+  (cond
+    (and (map? expected) (map? actual))
+    (every? (fn [[k v]] (matches-expected? v (get actual k))) expected)
+
+    (and (sequential? expected) (not (string? expected))
+         (sequential? actual) (not (string? actual)))
+    (and (= (count expected) (count actual))
+         (every? true? (map matches-expected? expected actual)))
+
+    :else
+    (= expected actual)))
+
 (defn file-should-contain-ir [path doc-string]
   (let [p (strip-quotes path)
         actual (edn/read-string (slurp (io/file base-dir p)))
         expected (edn/read-string doc-string)]
-    (g/should= expected actual)))
+    (g/should (matches-expected? expected actual))))
 
 (defn file-should-contain-ir-with-n-scenarios [path n]
   (let [ir (edn/read-string (slurp (io/file base-dir (strip-quotes path))))]

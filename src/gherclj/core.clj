@@ -99,6 +99,130 @@
   (when (nil? value)
     (throw (AssertionError. "Expected not nil but was: nil"))))
 
+;; --- Failure provenance ---
+;; Generated specs wrap each step in with-step*; helpers can use each-row /
+;; should-table= so failures name the Gherkin step and table cell.
+
+(def ^:dynamic *step-context* nil)
+(def ^:dynamic *table-context* nil)
+
+(defn- format-step-context
+  [{:keys [label source line]}]
+  (when label
+    (str label
+         (when (or source line)
+           (str "\n  at " source (when line (str ":" line)))))))
+
+(defn- format-table-context
+  [{:keys [row-index col-header col-index row-line]}]
+  (when row-index
+    (str "table cell [row " row-index
+         (cond
+           col-header (str ", col " (pr-str col-header))
+           col-index  (str ", col " col-index)
+           :else "")
+         "]"
+         (when row-line (str "\n  at line " row-line)))))
+
+(defn- context-prefix []
+  (->> [(format-step-context *step-context*)
+        (format-table-context *table-context*)]
+       (remove nil?)
+       (str/join "\n")))
+
+(defn- enrich-message [msg]
+  (let [prefix (context-prefix)]
+    (if (str/blank? prefix)
+      msg
+      (str prefix "\n" msg))))
+
+(defn- enrich-throwable
+  "Return a new throwable of the same class with context prefixed on the message.
+   Cause chain is preserved via initCause when supported."
+  [^Throwable t]
+  (let [prefix (context-prefix)]
+    (if (str/blank? prefix)
+      t
+      (let [msg (str prefix "\n" (.getMessage t))
+            enriched (try
+                       (.newInstance
+                         (.getConstructor (class t) (into-array Class [String]))
+                         (into-array Object [msg]))
+                       (catch Exception _
+                         (AssertionError. msg)))]
+        (try (.initCause ^Throwable enriched t) (catch Exception _))
+        enriched))))
+
+(defn with-step*
+  "Run f under step provenance. Assertion failures (and other throwables)
+   are rethrown with the step label and feature location prefixed."
+  [label source line f]
+  (binding [*step-context* {:label label :source source :line line}]
+    (try
+      (f)
+      (catch Throwable t
+        (throw (enrich-throwable t))))))
+
+(defmacro with-step
+  "Macro form of with-step* for hand-written specs."
+  [label source line & body]
+  `(with-step* ~label ~source ~line (fn [] ~@body)))
+
+(defn- row->map [headers row]
+  (zipmap headers row))
+
+(defn each-row
+  "Invoke f once per data row. f receives a map of header->cell-value.
+   Binds *table-context* so nested assertions name the row and feature line."
+  [{:keys [headers rows row-lines]} f]
+  (doseq [[idx row] (map-indexed vector rows)]
+    (let [row-index (inc idx)
+          row-line (when row-lines (nth row-lines idx nil))
+          row-map (row->map headers row)]
+      (binding [*table-context* {:row-index row-index :row-line row-line}]
+        (try
+          (f row-map)
+          (catch Throwable t
+            (throw (enrich-throwable t))))))))
+
+(defn should-table=
+  "Assert two Gherkin-style tables are equal cell-by-cell.
+   On mismatch, throws with row index, column header, and optional row line.
+   Actual may be a full table map or a sequence of row vectors."
+  [expected actual]
+  (let [exp-headers (:headers expected)
+        exp-rows (:rows expected)
+        act-headers (if (map? actual) (:headers actual) exp-headers)
+        act-rows (if (map? actual) (:rows actual) (vec actual))
+        row-lines (:row-lines expected)]
+    (when (not= exp-headers act-headers)
+      (throw (AssertionError.
+               (enrich-message
+                 (str "Table headers differ\nExpected: " (pr-str exp-headers)
+                      "\n     got: " (pr-str act-headers))))))
+    (when (not= (count exp-rows) (count act-rows))
+      (throw (AssertionError.
+               (enrich-message
+                 (str "Table row count differs\nExpected: " (count exp-rows)
+                      "\n     got: " (count act-rows))))))
+    (doseq [r-idx (range (count exp-rows))]
+      (let [exp-row (nth exp-rows r-idx)
+            act-row (nth act-rows r-idx)
+            row-line (when row-lines (nth row-lines r-idx nil))]
+        (doseq [c-idx (range (count exp-headers))]
+          (let [header (nth exp-headers c-idx)
+                exp-cell (nth exp-row c-idx nil)
+                act-cell (nth act-row c-idx nil)]
+            (when (not= exp-cell act-cell)
+              (let [msg (str "table cell [row " (inc r-idx)
+                             ", col " (pr-str header) "]"
+                             (when row-line (str "\n  at line " row-line))
+                             "\nExpected: " (pr-str exp-cell)
+                             "\n     got: " (pr-str act-cell))
+                    prefix (context-prefix)
+                    full (if (str/blank? prefix) msg (str prefix "\n" msg))]
+                (throw (AssertionError. full))))))))))
+
 ;; --- Step registry ---
 ;; Each namespace that uses defgiven/defwhen/defthen accumulates steps here,
 ;; keyed by namespace symbol.

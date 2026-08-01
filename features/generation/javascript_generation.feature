@@ -25,8 +25,11 @@ Feature: JavaScript node:test code generation
 
       test('Valid credentials', () => {
         const subject = new javascript_app_steps.SampleAppSteps()
+        // Given a JavaScript user "alice"  (login.feature)
         subject.createAdventurer('alice')
+        // When the JavaScript user logs in  (login.feature)
         subject.enterTheRealm()
+        // Then the JavaScript response should be 200  (login.feature)
         subject.verifyOutcome(200)
       })
       """

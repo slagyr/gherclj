@@ -32,8 +32,11 @@ Feature: xUnit code generation
               public void ValidCredentials()
               {
                   var subject = new SampleAppSteps();
+                  // Given a CSharp user "alice"  (login.feature)
                   subject.CreateAdventurer("alice");
+                  // When the CSharp user logs in  (login.feature)
                   subject.EnterTheRealm();
+                  // Then the CSharp response should be 200  (login.feature)
                   subject.VerifyOutcome(200);
               }
           }

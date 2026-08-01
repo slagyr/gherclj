@@ -29,8 +29,11 @@ Feature: RSpec code generation
 
 
         it 'Valid credentials' do
+          # Given a Ruby user "alice"  (login.feature)
           subject.create_adventurer('alice')
+          # When the Ruby user logs in  (login.feature)
           subject.enter_the_realm
+          # Then the Ruby response should be 200  (login.feature)
           subject.verify_outcome(200)
         end
       end

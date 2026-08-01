@@ -41,13 +41,31 @@
 (defn- doc-string-fence? [trimmed]
   (= "\"\"\"" trimmed))
 
+(defn- entry-text
+  "Scenario/background lines may be plain strings or {:text :line} maps."
+  [entry]
+  (if (map? entry) (:text entry) entry))
+
+(defn- entry-line
+  "1-based feature line number when the entry carries provenance."
+  [entry]
+  (when (map? entry) (:line entry)))
+
 (defn- attach-table
-  "Attach parsed table data to an IR node, if table-lines are present."
+  "Attach parsed table data to an IR node, if table-lines are present.
+   Table lines may be plain strings or {:text :line} maps. When lines are
+   present, :header-line and :row-lines are recorded for failure provenance."
   [ir-node table-lines]
   (if (seq table-lines)
-    (let [parsed (mapv parse-table-line table-lines)]
-      (assoc ir-node :table {:headers (first parsed)
-                             :rows (vec (rest parsed))}))
+    (let [texts  (mapv entry-text table-lines)
+          lines  (mapv entry-line table-lines)
+          parsed (mapv parse-table-line texts)
+          table  (cond-> {:headers (first parsed)
+                          :rows (vec (rest parsed))}
+                   (first lines) (assoc :header-line (first lines))
+                   (some identity (rest lines))
+                   (assoc :row-lines (vec (rest lines))))]
+      (assoc ir-node :table table))
     ir-node))
 
 (defn- add-step [scenario ir-node]
@@ -69,34 +87,36 @@
     state))
 
 (defn- process-step-entry [state entry]
-  (cond
-    (:in-doc-string state)
-    (if (doc-string-fence? entry)
-      (attach-doc-string state)
-      (update state :pending-doc-string (fnil conj []) entry))
+  (let [text (entry-text entry)
+        line (entry-line entry)]
+    (cond
+      (:in-doc-string state)
+      (if (doc-string-fence? text)
+        (attach-doc-string state)
+        (update state :pending-doc-string (fnil conj []) text))
 
-    (doc-string-fence? entry)
-    (assoc state :in-doc-string true :pending-doc-string [])
+      (doc-string-fence? text)
+      (assoc state :in-doc-string true :pending-doc-string [])
 
-    (table-line? entry)
-    (update state :pending-table (fnil conj []) entry)
+      (table-line? text)
+      (update state :pending-table (fnil conj []) entry)
 
-    :else
-    (let [state (if (seq (:pending-table state))
-                  (let [steps (get-in state [:scenario :steps])
-                        last-step (peek steps)
-                        updated-step (attach-table last-step (:pending-table state))
-                        updated-steps (conj (pop steps) updated-step)]
-                    (-> state
-                        (assoc-in [:scenario :steps] updated-steps)
-                        (dissoc :pending-table)))
-                  state)
-          gherkin-type (gherkin-type-for-keyword entry)]
-      (when gherkin-type
-        (let [text (strip-keyword entry)
-              ir-node {:type gherkin-type :text text}]
-          (update state :scenario add-step ir-node))))))
-
+      :else
+      (let [state (if (seq (:pending-table state))
+                    (let [steps (get-in state [:scenario :steps])
+                          last-step (peek steps)
+                          updated-step (attach-table last-step (:pending-table state))
+                          updated-steps (conj (pop steps) updated-step)]
+                      (-> state
+                          (assoc-in [:scenario :steps] updated-steps)
+                          (dissoc :pending-table)))
+                    state)
+            gherkin-type (gherkin-type-for-keyword text)]
+        (when gherkin-type
+          (let [step-text (strip-keyword text)
+                ir-node (cond-> {:type gherkin-type :text step-text}
+                          line (assoc :line line))]
+            (update state :scenario add-step ir-node)))))))
 (defn- finalize-pending-attachments
   "Attach any remaining pending table or doc-string to the last step."
   [state]
@@ -129,23 +149,29 @@
 
 ;; --- parse-sections helpers ---
 
-(defn- append-to-current-scenario [result trimmed]
+(defn- numbered-entry
+  "Capture trimmed text with optional 1-based line from the section context."
+  [ctx text]
+  (cond-> {:text text}
+    (:line ctx) (assoc :line (:line ctx))))
+
+(defn- append-to-current-scenario [result entry]
   (let [scenarios (:scenarios result)
         current (peek scenarios)
-        updated (update current :lines conj trimmed)]
+        updated (update current :lines conj entry)]
     (assoc result :scenarios (conj (pop scenarios) updated))))
 
-(defn- append-examples-line [result trimmed]
+(defn- append-examples-line [result entry]
   (let [scenarios (:scenarios result)
         current (peek scenarios)
-        updated (update current :examples-lines (fnil conj []) trimmed)]
+        updated (update current :examples-lines (fnil conj []) entry)]
     (assoc result :scenarios (conj (pop scenarios) updated))))
 
 (defn- append-line-to-section [{:keys [section] :as ctx} content]
-  (if (= section :background)
-    (update ctx :result update :background-lines conj content)
-    (update ctx :result append-to-current-scenario content)))
-
+  (let [entry (if (map? content) content (numbered-entry ctx content))]
+    (if (= section :background)
+      (update ctx :result update :background-lines conj entry)
+      (update ctx :result append-to-current-scenario entry))))
 (defn- doc-string-indent [line]
   (- (count line) (count (str/triml line))))
 
@@ -207,8 +233,9 @@
 (defn- process-scenario-outline [ctx trimmed]
   (when (str/starts-with? trimmed "Scenario Outline:")
     (let [title (str/trim (subs trimmed 17))
-          entry {:title title :lines [] :tags (:tags-pending ctx)
-                 :outline? true :examples-lines []}]
+          entry (cond-> {:title title :lines [] :tags (:tags-pending ctx)
+                         :outline? true :examples-lines []}
+                  (:line ctx) (assoc :line (:line ctx)))]
       (-> ctx
           (assoc :section :scenario :tags-pending [])
           (update :result update :scenarios conj entry)))))
@@ -216,7 +243,8 @@
 (defn- process-scenario [ctx trimmed]
   (when (str/starts-with? trimmed "Scenario:")
     (let [title (str/trim (subs trimmed 9))
-          entry {:title title :lines [] :tags (:tags-pending ctx)}]
+          entry (cond-> {:title title :lines [] :tags (:tags-pending ctx)}
+                  (:line ctx) (assoc :line (:line ctx)))]
       (-> ctx
           (assoc :section :scenario :tags-pending [])
           (update :result update :scenarios conj entry)))))
@@ -231,28 +259,28 @@
              (or (step-keyword? trimmed) (table-line? trimmed)))
     (-> ctx
         (assoc :tags-pending [])
-        (update :result update :background-lines conj trimmed))))
+        (update :result update :background-lines conj (numbered-entry ctx trimmed)))))
 
 (defn- process-scenario-step [ctx trimmed]
   (when (and (#{:scenario :examples} (:section ctx))
              (step-keyword? trimmed))
     (-> ctx
         (assoc :section :scenario :tags-pending [])
-        (update :result append-to-current-scenario trimmed))))
+        (update :result append-to-current-scenario (numbered-entry ctx trimmed)))))
 
 (defn- process-examples-table [ctx trimmed]
   (when (and (= :examples (:section ctx))
              (table-line? trimmed))
     (-> ctx
         (assoc :tags-pending [])
-        (update :result append-examples-line trimmed))))
+        (update :result append-examples-line (numbered-entry ctx trimmed)))))
 
 (defn- process-scenario-table [ctx trimmed]
   (when (and (= :scenario (:section ctx))
              (table-line? trimmed))
     (-> ctx
         (assoc :tags-pending [])
-        (update :result append-to-current-scenario trimmed))))
+        (update :result append-to-current-scenario (numbered-entry ctx trimmed)))))
 
 (defn- process-line
   "Classify and process a single line. Returns updated ctx."
@@ -276,7 +304,8 @@
         ctx)))
 
 (defn- parse-sections
-  "Splits feature lines into sections: feature line, description, background, and scenarios."
+  "Splits feature lines into sections: feature line, description, background, and scenarios.
+   Each physical line is tagged with a 1-based :line for provenance."
   [lines]
   (let [initial {:section :start
                  :tags-pending []
@@ -287,8 +316,10 @@
                           :description-lines []
                           :background-lines []
                           :scenarios []}}]
-    (:result (reduce process-line initial lines))))
-
+    (:result (reduce (fn [ctx [idx line]]
+                       (process-line (assoc ctx :line (inc idx)) line))
+                     initial
+                     (map-indexed vector lines)))))
 ;; --- Outline expansion ---
 
 (defn- substitute-placeholders
@@ -298,10 +329,11 @@
              text row-map))
 
 (defn- expand-outline
-  "Expand a Scenario Outline into concrete scenarios."
-  [{:keys [title lines tags examples-lines]}]
+  "Expand a Scenario Outline into concrete scenarios.
+   Step :line values come from the outline body; scenario :line from the outline header."
+  [{:keys [title lines tags examples-lines line]}]
   (let [parsed-steps (:steps (parse-scenario-lines lines))
-        examples-table (mapv parse-table-line examples-lines)
+        examples-table (mapv (comp parse-table-line entry-text) examples-lines)
         headers (first examples-table)
         rows (rest examples-table)]
     (mapv (fn [row]
@@ -311,9 +343,9 @@
                                          (update step :text #(substitute-placeholders % row-map)))
                                        parsed-steps)]
               (cond-> {:scenario scenario-name :steps expanded-steps}
+                line (assoc :line line)
                 (seq tags) (assoc :tags tags))))
           rows)))
-
 ;; --- Public API ---
 
 (defn parse-feature
@@ -333,10 +365,11 @@
                        (mapcat (fn [{:keys [outline?] :as entry}]
                                  (if outline?
                                    (expand-outline (update entry :tags #(into feature-tags %)))
-                                   (let [{:keys [title lines tags]} entry
+                                   (let [{:keys [title lines tags line]} entry
                                          parsed (parse-scenario-lines lines)
                                          all-tags (into feature-tags tags)]
                                      [(cond-> (assoc parsed :scenario title)
+                                        line (assoc :line line)
                                         (seq all-tags) (assoc :tags all-tags))]))))
                        vec)]
     (cond-> {:feature feature-name

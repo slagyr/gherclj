@@ -1,7 +1,8 @@
 (ns gherclj.core-spec
   (:require [speclj.core :refer :all]
-             [gherclj.core :as core :refer [defgiven defwhen defthen helper!]]
-             [gherclj.lifecycle :as lifecycle]))
+            [clojure.string :as str]
+            [gherclj.core :as core :refer [defgiven defwhen defthen helper!]]
+            [gherclj.lifecycle :as lifecycle]))
 
 (helper! gherclj.core-spec)
 
@@ -234,4 +235,55 @@
         (core/reset!)
         (lifecycle/run-after-scenario-hooks!)
 
-        (should= [:cleanup] @events)))))
+        (should= [:cleanup] @events))))
+
+  (context "failure provenance"
+
+    ;; Use default assertion methods (not speclj's) so failures throw and can be inspected.
+    (around [it]
+      (binding [core/*framework* nil]
+        (it)))
+
+    (it "with-step* prefixes assertion failures with step text and location"
+      (let [err (try
+                  (core/with-step* "Then the status is 200" "features/auth.feature" 12
+                    (fn [] (throw (AssertionError. "Expected: 200\n     got: 401"))))
+                  (catch AssertionError e e))]
+        (should (str/includes? (.getMessage err) "Then the status is 200"))
+        (should (str/includes? (.getMessage err) "features/auth.feature:12"))
+        (should (str/includes? (.getMessage err) "Expected: 200"))))
+
+    (it "should-table= reports the mismatched cell coordinates"
+      (let [expected {:headers ["name" "role"]
+                      :rows [["alice" "admin"]
+                             ["bob" "guest"]]
+                      :row-lines [14 15]}
+            actual {:headers ["name" "role"]
+                    :rows [["alice" "admin"]
+                           ["bob" "member"]]}
+            err (try
+                  (core/should-table= expected actual)
+                  nil
+                  (catch Throwable e e))]
+        (should-not-be-nil err)
+        (should (str/includes? (.getMessage err) "row 2"))
+        (should (str/includes? (.getMessage err) "role"))
+        (should (str/includes? (.getMessage err) "line 15"))
+        (should (str/includes? (.getMessage err) "guest"))
+        (should (str/includes? (.getMessage err) "member"))))
+
+    (it "each-row binds row context so should= names the failing row"
+      (let [table {:headers ["name" "role"]
+                   :rows [["alice" "admin"]
+                          ["bob" "guest"]]
+                   :row-lines [14 15]}
+            err (try
+                  (core/each-row table
+                    (fn [row]
+                      (when (= "bob" (row "name"))
+                        (core/should= "admin" (row "role")))))
+                  nil
+                  (catch Throwable e e))]
+        (should-not-be-nil err)
+        (should (str/includes? (.getMessage err) "row 2"))
+        (should (str/includes? (.getMessage err) "line 15"))))))

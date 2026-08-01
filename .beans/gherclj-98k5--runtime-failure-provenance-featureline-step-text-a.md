@@ -1,13 +1,13 @@
 ---
 # gherclj-98k5
 title: 'Runtime failure provenance: feature:line, step text, and table cells'
-status: in-progress
+status: completed
 type: feature
 priority: high
 tags:
-    - wip
+    - unverified
 created_at: 2026-08-01T16:54:52Z
-updated_at: 2026-08-01T16:54:52Z
+updated_at: 2026-08-01T17:04:10Z
 ---
 
 ## Problem
@@ -75,3 +75,25 @@ Expected: "guest"
 - Parser currently drops lines: sections collect bare strings, then `parse-scenario-lines` loses original numbers — fix at the section boundary
 - Scenario outlines: step line from outline; example values already in expanded title
 - Prefer shared comment formatter used by all framework adapters
+
+
+
+## Implementation notes (2026-08-01)
+
+### Shipped
+- Parser: `:line` on scenarios/steps; tables get `:header-line` and `:row-lines` (rows stay vectors)
+- Generator: language-aware provenance comments on every step; Clojure wraps calls in `g/with-step*`
+- Step-def `:file`/`:line` stored as `:def-file`/`:def-line` so they never overwrite feature provenance
+- Core: `with-step*`, `with-step`, `should-table=`, `each-row` + dynamic `*step-context*` / `*table-context*`
+- IR equality helpers use subset match so additive provenance fields don't break older fixtures
+
+### Exceptions (feature golden updates for new annotations)
+Authorized edits to expected generated code (comments + with-step wrappers only):
+- features/generation/ir_to_code.feature
+- features/generation/typescript_generation.feature
+- features/generation/xunit_generation.feature
+- features/generation/rust_generation.feature
+- features/generation/bash_generation.feature
+- features/generation/rspec_generation.feature
+- features/generation/javascript_generation.feature
+- features/generation/pytest_generation.feature

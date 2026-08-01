@@ -15,8 +15,26 @@
     (catch Exception e
       (g/assoc! :error (.getMessage e)))))
 
+(defn matches-expected?
+  "True when expected equals actual, treating expected maps as a subset of
+   actual (so additive IR fields like :line do not break older fixtures)."
+  [expected actual]
+  (cond
+    (and (map? expected) (map? actual))
+    (every? (fn [[k v]] (matches-expected? v (get actual k))) expected)
+
+    (and (sequential? expected) (not (string? expected))
+         (sequential? actual) (not (string? actual)))
+    (and (= (count expected) (count actual))
+         (every? true? (map matches-expected? expected actual)))
+
+    :else
+    (= expected actual)))
+
 (defn ir-should-be [doc-string]
-  (g/should= (edn/read-string doc-string) (g/get :parsed-ir)))
+  (let [expected (edn/read-string doc-string)
+        actual (g/get :parsed-ir)]
+    (g/should (matches-expected? expected actual))))
 
 (defn parsing-should-fail [text]
   (let [error (g/get :error)]

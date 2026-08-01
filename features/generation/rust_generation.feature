@@ -26,8 +26,11 @@ Feature: Rust rustc --test code generation
       #[test]
       fn valid_credentials() {
           let mut subject = sample_app::SampleAppSteps::new();
+          // Given a Rust user "alice"  (login.feature)
           subject.create_adventurer("alice");
+          // When the Rust user logs in  (login.feature)
           subject.enter_the_realm();
+          // Then the Rust response should be 200  (login.feature)
           subject.verify_outcome(200);
       }
       """
