@@ -7,7 +7,7 @@ priority: high
 tags:
     - unverified
 created_at: 2026-08-01T16:54:52Z
-updated_at: 2026-08-01T17:04:10Z
+updated_at: 2026-08-01T17:08:45Z
 ---
 
 ## Problem
@@ -97,3 +97,16 @@ Authorized edits to expected generated code (comments + with-step wrappers only)
 - features/generation/rspec_generation.feature
 - features/generation/javascript_generation.feature
 - features/generation/pytest_generation.feature
+
+
+
+## Dogfood (2026-08-01)
+
+Added features/failure_provenance.feature (11 scenarios) covering:
+- IR :line on scenarios/steps/background
+- table :header-line / :row-lines
+- generated speclj provenance comments + with-step* wrappers from real parse→generate
+- language-appropriate comment prefixes
+- with-step*, should-table=, each-row, and composed step+table failure messages
+
+Steps: spec/gherclj/features/steps/failure_provenance.clj
