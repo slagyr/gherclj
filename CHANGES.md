@@ -1,5 +1,15 @@
 # Changes
 
+## v1.4.0
+
+- **Gherkin `Rule:` with nested `Background:`**: parse `Rule` blocks (name, optional description, tags, nested `Background`, scenarios/outlines). Scenarios under a rule carry `:rule`, `:rule-line`, and `:rule-background` in the IR. Generators apply feature-level Background then rule Background (Cucumber order). Top-level scenarios without a rule are unchanged. Covered by `features/parsing/rule.feature`.
+- **Runtime failure provenance**: parser records 1-based `:line` on scenarios and steps; tables gain `:header-line` and `:row-lines` (row vectors unchanged). Generated specs emit language-aware provenance comments (`feature:line` + step text, including table rows). Clojure targets wrap each step in `g/with-step*` so assertion failures name the Gherkin step and source location.
+- **Table failure helpers**: `g/should-table=` compares cell-by-cell with row index, column header, and feature line in the message; `g/each-row` binds table row context so plain `g/should*` failures name the row. Dynamic step and table context compose.
+- **Assertion kit**: `g/should-include` / `g/should-not-include` (substring or membership) and form-aware `g/should` / `g/should-not` macros that capture the expression in failure messages (speclj and clojure.test adapters).
+- **Dogfood**: `features/failure_provenance.feature` exercises parse line numbers, generated annotations, and runtime failure messages through gherclj itself.
+- **CI**: GitHub Actions workflow runs `bb test-all` (all 6 bb/clj × framework combinations) on push and pull requests.
+- **Issue tracking**: migrated from beads to beans (markdown issues under `.beans/`).
+
 ## v1.3.0
 
 - **`**` cross-segment matching in `-s` namespace globs**: glob patterns now support `**` to cross segment boundaries, following the conventional zero-or-more semantics from bash globstar / gitignore / Java NIO `PathMatcher` (separators around `**` collapse). `isaac.**.acp-steps` matches `isaac.acp-steps`, `isaac.x.acp-steps`, and `isaac.x.y.acp-steps`. `**.acp-steps` matches `acp-steps` through any depth of prefix; `isaac.**` matches `isaac` and every namespace below it. Bare `**` and `**` mid-segment (e.g. `isaac.**-steps`) match one or more characters including dots. Single-`*` semantics are unchanged: it still matches within a single segment. Replaces the per-depth fan-out (`-s isaac.*-steps -s isaac.*.*-steps -s isaac.*.*.*-steps …`) with a single suffix glob.

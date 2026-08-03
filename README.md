@@ -39,7 +39,7 @@ Internally the pipeline goes `feature → IR → spec`. The IR isn't persisted b
 
 ```clojure
 ;; deps.edn or bb.edn
-{:deps {io.github.slagyr/gherclj {:git/tag "v1.3.0" :git/sha "9c3bb1d"}}}
+{:deps {io.github.slagyr/gherclj {:git/tag "v1.4.0" :git/sha "PENDING"}}}
 ```
 
 ### 2. Write features
@@ -159,7 +159,7 @@ There are several ways to configure and run the pipeline.
 
 ```clojure
 ;; bb.edn
-{:deps {io.github.slagyr/gherclj {:git/tag "v1.3.0" :git/sha "9c3bb1d"}}
+{:deps {io.github.slagyr/gherclj {:git/tag "v1.4.0" :git/sha "PENDING"}}
  :tasks
  {features {:doc "Run feature specs"
             :requires ([gherclj.main :as main])
@@ -168,7 +168,7 @@ There are several ways to configure and run the pipeline.
                               "-t" "speclj")}}}
 
 ;; deps.edn
-{:deps {io.github.slagyr/gherclj {:git/tag "v1.3.0" :git/sha "9c3bb1d"}}
+{:deps {io.github.slagyr/gherclj {:git/tag "v1.4.0" :git/sha "PENDING"}}
  :aliases
  {:features {:main-opts ["-m" "gherclj.main"
                          "-s" "myapp.features.steps.auth"
