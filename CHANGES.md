@@ -1,5 +1,10 @@
 # Changes
 
+## v1.5.0
+
+- **Outline placeholders reach data tables and doc strings**: `expand-outline` substitutes `<placeholder>` in a step's data table (headers and row cells) and doc-string, not only in its `:text`. Previously a table cell such as `| stop-reason | <expected> |` compared against the literal `<expected>`, and a step definition could not fix it downstream because the expanded scenario carries no example row. Outline *titles* still keep their placeholders (unchanged). Covered by `features/parsing/scenario_outline.feature`.
+- **Stale generated specs are swept**: `pipeline/run!` deletes generated files belonging to the run's framework that no parsed feature accounts for. Runners execute whatever sits in `:output-dir`, and `emit-spec-for-ir!` only deleted a file while regenerating that same IR — so a deleted `.feature` kept failing the suite forever and a renamed one ran under both names. Positional selectors stay safe: `run!` always parses every feature and only filters scenarios within each IR. Other frameworks' output in the same tree (`_spec.clj` beside `_test.clj`) is left alone.
+
 ## v1.4.0
 
 - **Gherkin `Rule:` with nested `Background:`**: parse `Rule` blocks (name, optional description, tags, nested `Background`, scenarios/outlines). Scenarios under a rule carry `:rule`, `:rule-line`, and `:rule-background` in the IR. Generators apply feature-level Background then rule Background (Cucumber order). Top-level scenarios without a rule are unchanged. Covered by `features/parsing/rule.feature`.
