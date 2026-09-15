@@ -123,6 +123,47 @@
             (should (str/includes? content "(pipeline-spec/check-the-gate 200)")))
           (finally (cleanup features-dir edn-dir output-dir)))))
 
+    (it "removes a generated spec whose feature file is gone"
+      (let [features-dir (tmp "features")
+            output-dir   (tmp "output")
+            keeper       (io/file features-dir "auth.feature")
+            goner        (io/file features-dir "temp.feature")
+            config       {:features-dir    features-dir
+                          :output-dir      output-dir
+                          :step-namespaces ['gherclj.pipeline-spec]
+                          :framework       :clojure/speclj}]
+        (io/make-parents keeper)
+        (spit keeper feature-content)
+        (spit goner (str/replace feature-content "Authentication" "Temporary"))
+        (try
+          (pipeline/run! config)
+          (should (.exists (io/file output-dir "auth_spec.clj")))
+          (should (.exists (io/file output-dir "temp_spec.clj")))
+
+          (.delete goner)
+          (pipeline/run! config)
+          (should (.exists (io/file output-dir "auth_spec.clj")))
+          (should-not (.exists (io/file output-dir "temp_spec.clj")))
+          (finally (cleanup features-dir output-dir)))))
+
+    (it "leaves another framework's generated files alone"
+      (let [features-dir (tmp "features")
+            output-dir   (tmp "output")
+            feature-file (io/file features-dir "auth.feature")
+            config       {:features-dir    features-dir
+                          :output-dir      output-dir
+                          :step-namespaces ['gherclj.pipeline-spec]}]
+        (io/make-parents feature-file)
+        (spit feature-file feature-content)
+        (try
+          (pipeline/run! (assoc config :framework :clojure/test))
+          (should (.exists (io/file output-dir "auth_test.clj")))
+
+          (pipeline/run! (assoc config :framework :clojure/speclj))
+          (should (.exists (io/file output-dir "auth_spec.clj")))
+          (should (.exists (io/file output-dir "auth_test.clj")))
+          (finally (cleanup features-dir output-dir)))))
+
     (it "persists edn when ir-edn is true"
       (let [features-dir (tmp "features")
             edn-dir (tmp "edn")

@@ -309,6 +309,44 @@
                    parsed-ir)]
           (emit-spec-for-ir! config ir (.getName f)))))))
 
+(defn- spec-filename-suffix
+  "The tail `source->spec-filename` gives every file for this framework.
+   Used to sweep only this framework's generated files — a tree can hold
+   another framework's output alongside (`_spec.clj` next to `_test.clj`)."
+  [framework]
+  (case framework
+    :clojure/test         "_test.clj"
+    :bash/testing         "_test.sh"
+    :javascript/node-test "_test.js"
+    :ruby/rspec           "_spec.rb"
+    :python/pytest        "_test.py"
+    :go/testing           "_test.go"
+    :typescript/node-test "_test.ts"
+    :rust/rustc-test      "_test.rs"
+    :csharp/xunit         "_test.cs"
+    :java/junit5          "Test.java"
+    "_spec.clj"))
+
+(defn- sweep-orphaned-specs!
+  "Delete generated specs no parsed feature accounts for. Runners execute
+   whatever sits in :output-dir, so a deleted or renamed .feature would
+   otherwise keep running from its leftover spec forever."
+  [config features]
+  (let [{:keys [output-dir framework verbose]
+         :or   {output-dir "target/gherclj/generated"}} config
+        suffix   (spec-filename-suffix framework)
+        expected (set (map (fn [ir]
+                             (.getPath (io/file (str output-dir "/" (source->spec-filename (:source ir) framework)))))
+                           features))
+        dir      (io/file output-dir)]
+    (when (.exists dir)
+      (doseq [f (file-seq dir)
+              :when (and (.isFile f)
+                         (str/ends-with? (.getName f) suffix)
+                         (not (contains? expected (.getPath f))))]
+        (log verbose (str "Removing orphaned " (.getPath f)))
+        (.delete f)))))
+
 (defn run!
   "Run the full pipeline: parse .feature -> .edn -> generated specs.
 
@@ -339,4 +377,5 @@
               (log verbose (str "Parsing " (:source ir) " -> " edn-path))
               (write-edn edn-path ir)
               (log verbose (str "  " (count (:scenarios ir)) " scenarios parsed"))))
-          (emit-spec-for-ir! config ir (:source ir)))))))
+          (emit-spec-for-ir! config ir (:source ir))))
+       (sweep-orphaned-specs! config features))))
