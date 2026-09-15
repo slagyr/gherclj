@@ -407,4 +407,36 @@
                       "      | two |\n"))]
         (should= 2 (count (:scenarios ir)))
         (should= ["wip"] (:tags (first (:scenarios ir))))
-        (should= ["wip"] (:tags (second (:scenarios ir))))))))
+        (should= ["wip"] (:tags (second (:scenarios ir))))))
+
+    (it "substitutes placeholders in a step's table headers and cells"
+      (let [ir (parser/parse-feature
+                 (str "Feature: Tables\n"
+                      "\n"
+                      "  Scenario Outline: Check the <part>\n"
+                      "    Then the report matches:\n"
+                      "      | key | <column> |\n"
+                      "      | <field> | <value> |\n"
+                      "\n"
+                      "    Examples:\n"
+                      "      | part | column | field  | value |\n"
+                      "      | hull | actual | status | sound |\n"))
+            table (:table (first (:steps (first (:scenarios ir)))))]
+        (should= ["key" "actual"] (:headers table))
+        (should= [["status" "sound"]] (:rows table))))
+
+    (it "substitutes placeholders in a step's doc-string"
+      (let [ir (parser/parse-feature
+                 (str "Feature: Docs\n"
+                      "\n"
+                      "  Scenario Outline: Send <part>\n"
+                      "    When the payload is sent:\n"
+                      "      \"\"\"\n"
+                      "      {\"part\": \"<part>\"}\n"
+                      "      \"\"\"\n"
+                      "\n"
+                      "    Examples:\n"
+                      "      | part |\n"
+                      "      | hull |\n"))]
+        (should= "{\"part\": \"hull\"}"
+                 (:doc-string (first (:steps (first (:scenarios ir))))))))))

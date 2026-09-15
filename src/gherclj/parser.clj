@@ -365,6 +365,21 @@
   (reduce-kv (fn [s k v] (str/replace s (str "<" k ">") v))
              text row-map))
 
+(defn- substitute-table
+  "Replace <placeholder> in a step table's headers and row cells."
+  [table row-map]
+  (-> table
+      (update :headers #(mapv (fn [cell] (substitute-placeholders cell row-map)) %))
+      (update :rows #(mapv (fn [row] (mapv (fn [cell] (substitute-placeholders cell row-map)) row)) %))))
+
+(defn- substitute-step
+  "Replace <placeholder> everywhere a step carries example-varying text:
+   its :text, its data table (headers and cells), and its doc-string."
+  [step row-map]
+  (cond-> (update step :text #(substitute-placeholders % row-map))
+    (:table step)      (update :table substitute-table row-map)
+    (:doc-string step) (update :doc-string substitute-placeholders row-map)))
+
 (defn- attach-rule-fields
   "Copy Rule name/line/background from a section entry onto a concrete scenario.
    Tags are merged by the caller (feature + rule + scenario)."
@@ -387,9 +402,7 @@
     (mapv (fn [row]
             (let [row-map (zipmap headers row)
                   scenario-name (str title " — " (str/join ", " row))
-                  expanded-steps (mapv (fn [step]
-                                         (update step :text #(substitute-placeholders % row-map)))
-                                       parsed-steps)]
+                  expanded-steps (mapv #(substitute-step % row-map) parsed-steps)]
               (attach-rule-fields
                 (cond-> {:scenario scenario-name :steps expanded-steps}
                   line (assoc :line line)

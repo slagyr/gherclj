@@ -107,3 +107,53 @@ Feature: Scenario Outline
                     :tags ["wip"]
                     :steps [{:type :given :text "value is two"}]}]}
       """
+
+  Scenario: Placeholders are substituted in a step's data table
+    Given a feature file containing:
+      """
+      Feature: Tables
+
+        Scenario Outline: Check the <part>
+          Then the report matches:
+            | key     | <column> |
+            | <field> | <value>  |
+
+          Examples:
+            | part | column | field  | value |
+            | hull | actual | status | sound |
+      """
+    When the feature is parsed
+    Then the IR should be:
+      """
+      {:feature "Tables"
+       :scenarios [{:scenario "Check the <part> — hull, actual, status, sound"
+                    :steps [{:type :then
+                             :text "the report matches:"
+                             :table {:headers ["key" "actual"]
+                                     :rows [["status" "sound"]]}}]}]}
+      """
+
+  Scenario: Placeholders are substituted in a step's doc string
+    Given a feature file containing:
+      """
+      Feature: Docs
+
+        Scenario Outline: Send <part>
+          When the payload is sent:
+            \"\"\"
+            {"part": "<part>"}
+            \"\"\"
+
+          Examples:
+            | part |
+            | hull |
+      """
+    When the feature is parsed
+    Then the IR should be:
+      """
+      {:feature "Docs"
+       :scenarios [{:scenario "Send <part> — hull"
+                    :steps [{:type :when
+                             :text "the payload is sent:"
+                             :doc-string "{\"part\": \"hull\"}"}]}]}
+      """
