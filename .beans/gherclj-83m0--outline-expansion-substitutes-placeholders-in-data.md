@@ -4,10 +4,8 @@ title: Outline expansion substitutes placeholders in data tables and doc strings
 status: completed
 type: task
 priority: normal
-tags:
-    - unverified
 created_at: 2026-09-15T23:26:38Z
-updated_at: 2026-09-15T23:31:05Z
+updated_at: 2026-09-16T00:10:07Z
 ---
 
 ## Problem
