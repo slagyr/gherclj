@@ -1,13 +1,11 @@
 ---
 # gherclj-cfeq
 title: Stale generated specs keep running after their feature is deleted or renamed
-status: completed
+status: in-progress
 type: task
 priority: normal
-tags:
-    - unverified
 created_at: 2026-09-15T23:36:18Z
-updated_at: 2026-09-15T23:39:34Z
+updated_at: 2026-09-16T00:09:44Z
 ---
 
 ## Problem
@@ -32,3 +30,27 @@ Constraints:
 - Renaming a feature leaves only the new name's spec.
 - A positional single-file selector run does not delete other features' specs.
 - `bb test-all` green.
+
+
+
+## Verification failed
+
+HEAD: 4930af23af1a8fda0812bf49d63c7639a4c87105
+Working tree: clean
+
+Acceptance criterion 3 is not met: a positional single-file selector run deletes other features' specs.
+
+`sweep-orphaned-specs!` correctly keys the expected set off *all* parsed IRs, but `run!` still calls `emit-spec-for-ir!` on the *filtered* IR. `filter-ir-by-locations` sets `:scenarios []` for files not in the selector; `generate-spec` returns nil; emit then `.delete`s that spec. Sweep never gets a chance to keep it.
+
+Reproduced at HEAD against two features in a temp dir (step namespaces `gherclj.pipeline-spec`):
+
+- after `run!` with no `:locations`: `keep_spec.clj` and `other_spec.clj` both exist
+- after `run!` with `:locations [{:source "keep.feature"}]`: `keep_spec.clj` exists, `other_spec.clj` is gone
+
+The new specs cover delete-orphan and leave-the-other-framework-alone. They do not cover a selector run with two features. Rename is the same path as delete (old file gone) and is fine.
+
+Secondary: `:edn-dir` is not swept. Constraint said leave IR files consistent with the same rule; only `:output-dir` is cleaned.
+
+bb spec / bb features / bb test-all were green. Do not treat that as a pass of criterion 3.
+
+Fix: skip emit (or skip delete) for IRs emptied only by the selector; sweep should remain the orphan cleaner.
